@@ -4,7 +4,7 @@ def init():
     global dataset_path
     global save_models_path
     global download_path
-    base_path = "/Users/qaziammar/Documents/Thesis/Mode_Result_Dataset/"
+    base_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/"
     dataset_path = base_path + "Dataset/"
     save_models_path = base_path + "SavedModel/"
     download_path = "/Users/qaziammar/Downloads/"
