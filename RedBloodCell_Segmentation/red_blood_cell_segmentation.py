@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 import os
 import cv2
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+import numpy as np
 
 path.init()
 
@@ -26,6 +28,7 @@ training_path = "Training/"
 validation_path = "Validation/"
 images = "Images/"
 annotation = "Annotations/"
+save_results_folder = path.result_folder_path + "RGB_Annotated"
 
 cell_dataset_path = path.dataset_path + dataset_name
 training_images = cell_dataset_path + training_path + images
@@ -98,7 +101,47 @@ for image_name in all_images_name:
         # cv2.drawContours(first_image, (xmin, ymin, xmax, ymax), -1, (0, 255, 0), 1)
         cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 1)
     #       save the annotated images.
-    outfile = '%s/%s.jpg' % ("/Users/qaziammar/Downloads/RGB_Annotated", i)
+    outfile = '%s/%s.jpg' % (save_results_folder, i)
     cv2.imwrite(outfile, image)
     i = i + 1
 
+
+# %%
+# applying k-means clustering algorithm.
+
+def apply_kmeans_clustring(image_path=""):
+    pic = cv2.imread(image_path) / 255
+    pic_n = pic.reshape(pic.shape[0] * pic.shape[1], pic.shape[2])
+    pic_n.shape
+    kmeans = KMeans(n_clusters=2, random_state=0).fit(pic_n)
+    pic2show = kmeans.cluster_centers_[kmeans.labels_]
+    cluster_pic = pic2show.reshape(pic.shape[0], pic.shape[1], pic.shape[2])
+    plt.imshow(cluster_pic, cmap='gray', vmin=0, vmax=255)
+    plt.show()
+
+
+def apply_morophological_operation(image_path=""):
+    img = cv2.imread(image_path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(gray, 0, 255,
+                                cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # Noise removal using Morphological
+    # closing operation
+    kernel = np.ones((3, 3), np.uint8)
+    closing = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE,
+                               kernel, iterations=2)
+
+    # Background area using Dialation
+    bg = cv2.dilate(closing, kernel, iterations=1)
+
+    # Finding foreground area
+    dist_transform = cv2.distanceTransform(closing, cv2.DIST_L2, 0)
+    ret, fg = cv2.threshold(dist_transform, 0.02
+                            * dist_transform.max(), 255, 0)
+
+    plt.imshow(fg, cmap='gray', vmin=0, vmax=225)
+    plt.show()
+
+
+# apply_kmeans_clustring(image_path)
+apply_morophological_operation(image_path)
