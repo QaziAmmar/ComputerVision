@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+# Link of code: https://github.com/fled/blur_detection
+# This is working code of blur score of each pixel.
+
 
 def get_blur_degree(image_file, sv_num=10):
     img = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
@@ -54,7 +57,7 @@ def get_blur_map(image_file, win_size=10, sv_num=3):
     return blur_map
 
 
-# %%
+    # %%
 
 import glob
 import path
@@ -71,7 +74,8 @@ files = glob.glob(folder_name + '*')
 
 for file in files:
     print(file), get_blur_degree(file)
-    out_file = file + 'blur_map'
+    out_file = file + 'blur_map.JPG'
     blur_map = get_blur_map(file)
-    plt.imshow((1 - blur_map) * 255, cmap='gray', vmin=0, vmax=255)
-    cv2.imwrite(out_file, (1 - blur_map) * 255)
+    blur_map_image = (1 - blur_map) * 255
+    plt.imshow(blur_map_image, cmap='gray', vmin=0, vmax=255)
+    cv2.imwrite(out_file, blur_map_image)

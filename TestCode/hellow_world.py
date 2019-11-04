@@ -1,20 +1,15 @@
-import numpy as np
-from PIL import Image, ImageDraw
-# This function find return the circular images of input image.
-def circular_image(image_path, radius):
-    image = Image.open(image_path).convert("RGB")
-    npImage = np.array(image)
-    h, w = image.size
-    # Create same size alpha layer with circle
-    alpha = Image.new('L', image.size, 0)
-    draw = ImageDraw.Draw(alpha)
-    draw.pieslice([0, 0, w, h], 0, 360, fill=255)
+import matplotlib.pyplot as plt
+import path
+import cv2
 
-    # Convert alpha Image to numpy array
-    npAlpha = np.array(alpha)
+path.init()
 
-    # Add alpha layer to RGB
-    npImage = np.dstack((npImage, npAlpha))
+folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
+complete_image = folder_name + "IMG_4030.JPG"
+crop_image = folder_name + "croped_image.JPG"
+unBlur_image = folder_name + "unBlur_image.JPG"
 
-    # Save with alpha
-    return Image.fromarray(npImage)
+img = cv2.imread(folder_name + "1_blur_map.JPG")
+
+plt.imshow(img, cmap='gray', vmax=255, vmin=0)
+plt.show()
