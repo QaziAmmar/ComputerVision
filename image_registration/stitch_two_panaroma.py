@@ -59,50 +59,35 @@ def remove_black_region(img):
     return crop
 
 
-def read_all_images_name(folder_path):
-    """
+folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/Microscope_Panaroma/"
 
-    :param folder_path: this is the path of folder in which we pick all images.
-    :return: this function return sorted name of images with complete path
-    """
-    # Reading all images form file.
-    all_images_name = []
-    # r=root, d=directories, f = files
-    for r, d, f in os.walk(folder_path):
-        for file in f:
-            if '.jpg' in file:
-                all_images_name.append(r + file)
-    return sorted(all_images_name)
+img1_path = folder_name + "IMG_4137.jpg"
+img2_path = folder_name + "IMG_4136.jpg"
 
+img1 = cv2.imread(img1_path)
+img2 = cv2.imread(img2_path)
 
-def read_all_images_form(images_names):
-    # Reading all images form file.
-    all_images_array = []
-    for image_name in images_names:
-        img = cv2.imread(image_name)
-        img = image_resize(img, height=300)
-        img = remove_black_region(img)
-        all_images_array.append(img)
-    return all_images_array
+img1 = remove_black_region(img1)
+img2 = remove_black_region(img2)
 
+img1 = image_resize(img1, height=300)
+img2 = image_resize(img2, height=300)
 
-folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/Microscope_Panaroma/selected/"
+# img1 = img1[1000: 3000, 1000: 6500, :]
+# img2 = img2[1000: 3000, 1000: 7000, :]
 
-images_name = read_all_images_name(folder_name)
-
-key_frames = read_all_images_form(images_name)
-
+key_frames = [img1, img2]
 time1 = time.time()
 stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
 
-
 (status, stitched) = stitcher.stitch(key_frames)
 time2 = time.time()
+print('Stitching: ', time2 - time1, ' sec')
 
 cv2.imwrite(folder_name + "fernStitch_panaroma.jpg", stitched)
-
-
+# cv2.imshow("img", stitched)
+# cv2.waitKey(0)
 plt.imshow(stitched)
 plt.show()
 
-print('Stitching: ', time2 - time1, ' sec')
+

@@ -24,14 +24,14 @@ __status__ = "This is working code of python that stitched python images automat
              "https://www.pyimagesearch.com/2018/12/17/image-stitching-with-opencv-and-python/ "
 
 
-def extract_key_frames_by_ammar():
+def extract_key_frames_from_movie():
     folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
-    video_name = "foldscope_fern.mov"
+    video_name = "IMG_4123.MOV"
     key_frames = []
     cap = cv2.VideoCapture(folder_name + video_name)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    for i in range(0, frame_count, 100):
+    for i in range(0, frame_count, 5):
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
         print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
         _, frame = cap.read()
@@ -41,12 +41,12 @@ def extract_key_frames_by_ammar():
     return key_frames
 
 
-results_folder = path.result_folder_path + 'Malaria_Dataset_self/'
+results_folder = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
 out_image_name = "final_stitched_image.jpg"
 
 
 time1 = time.time()
-key_frames = extract_key_frames_by_ammar()
+key_frames = extract_key_frames_from_movie()
 key_frames.reverse()
 time2 = time.time()
 
