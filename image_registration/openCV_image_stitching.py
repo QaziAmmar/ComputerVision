@@ -5,16 +5,13 @@ Run this file to perform stitching operation on videos.
 
 
 """
-import time
-import argparse
-import cv2
-# import the necessary packages
-import imutils
-import numpy as np
-import os
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
 import path
+import cv2
+import imutils
+import time
+import os
 
 path.init()
 
@@ -22,13 +19,89 @@ __author__ = "Qazi Ammar Arshad"
 __email__ = "qaziammar.g@gmail.com"
 __status__ = "This is working code of python that stitched python images automatically. Link of code: " \
              "https://www.pyimagesearch.com/2018/12/17/image-stitching-with-opencv-and-python/ "
+__description__ = "This Code stitch both video frames and multiple image form same folder. If selection == 1 then " \
+                  "this code stitch the images form images folder. other selection will stitch the video frames togather. "
 
 
-def extract_key_frames_from_movie():
-    folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
-    video_name = "IMG_4123.MOV"
-    key_frames = []
-    cap = cv2.VideoCapture(folder_name + video_name)
+def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
+    # initialize the dimensions of the image to be resized and
+    # grab the image size
+    dim = None
+    (h, w) = image.shape[:2]
+
+    # if both the width and height are None, then return the
+    # original image
+    if width is None and height is None:
+        return image
+
+    # check to see if the width is None
+    if width is None:
+        # calculate the ratio of the height and construct the
+        # dimensions
+        r = height / float(h)
+        dim = (int(w * r), height)
+
+    # otherwise, the height is None
+    else:
+        # calculate the ratio of the width and construct the
+        # dimensions
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    # resize the image
+    resized = cv2.resize(image, dim, interpolation=inter)
+
+    # return the resized image
+    return resized
+
+
+def remove_black_region(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    max_area = -1
+    best_cnt = None
+
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > max_area:
+            max_area = area
+            best_cnt = cnt
+
+    x, y, w, h = cv2.boundingRect(best_cnt)
+    crop = img[y:y + h, x:x + w]
+    return crop
+
+
+def read_all_images_name(folder_path):
+    """
+
+    :param folder_path: this is the path of folder in which we pick all images.
+    :return: this function return sorted name of images with complete path
+    """
+    # Reading all images form file.
+    all_images_name = []
+    # r=root, d=directories, f = files
+    for r, d, f in os.walk(folder_path):
+        for file in f:
+            if '.JPG' in file:
+                all_images_name.append(r + file)
+    return sorted(all_images_name)
+
+
+def read_all_images_form(images_names):
+    # Reading all images form file.
+    all_images_array = []
+    for image_name in images_names:
+        img = cv2.imread(image_name)
+        img = image_resize(img, height=300)
+        img = remove_black_region(img)
+        all_images_array.append(img)
+    return all_images_array
+
+
+def extract_key_frames_from_movie(movie_path):
+    cap = cv2.VideoCapture(movie_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     for i in range(0, frame_count, 5):
@@ -41,14 +114,23 @@ def extract_key_frames_from_movie():
     return key_frames
 
 
-results_folder = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
-out_image_name = "final_stitched_image.jpg"
+selection = 1
 
-
+out_image_name = "stitched_image.jpg"
 time1 = time.time()
-key_frames = extract_key_frames_from_movie()
-key_frames.reverse()
-time2 = time.time()
+if selection == 1:
+    results_folder = path.dataset_path + "Malaria_Dataset_self/SHIF_images/miscrscope_panaroma.2/"
+
+    # This function perform stitching on images.
+    images_name = read_all_images_name(results_folder)
+    key_frames = read_all_images_form(images_name)
+    time2 = time.time()
+else:
+    # This function perform stitching combining video frames.
+    movie_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/IMG_4123.MOV"
+    key_frames = extract_key_frames_from_movie(movie_path)
+    key_frames.reverse()
+    time2 = time.time()
 
 # initialize OpenCV's image sticher object and then perform the image
 # stitching
@@ -56,10 +138,13 @@ print("[INFO] stitching images...")
 stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
 (status, stitched) = stitcher.stitch(key_frames)
 time3 = time.time()
-filename = 'savedImage.jpg'
 cv2.imwrite(results_folder + out_image_name, stitched)
+
 plt.imshow(stitched)
 plt.show()
+
+print('key frames extraction:', time2 - time1, ' sec')
+print('Stitching: ', time3 - time2, ' sec')
 
 # if the status is '0', then OpenCV successfully performed image
 # stitching
@@ -127,6 +212,3 @@ plt.show()
 #         # being detected
 #         else:
 #             print("[INFO] image stitching failed ({})".format(status))
-
-print('key frames extraction:', time2 - time1, ' sec')
-print('Stitching: ', time3 - time2, ' sec')

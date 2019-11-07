@@ -59,10 +59,10 @@ def remove_black_region(img):
     return crop
 
 
-folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/Microscope_Panaroma/"
+folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
 
-img1_path = folder_name + "IMG_4137.jpg"
-img2_path = folder_name + "IMG_4136.jpg"
+img1_path = folder_name + "IMG_4158.JPG"
+img2_path = folder_name + "IMG_4159.JPG"
 
 img1 = cv2.imread(img1_path)
 img2 = cv2.imread(img2_path)
@@ -70,8 +70,8 @@ img2 = cv2.imread(img2_path)
 img1 = remove_black_region(img1)
 img2 = remove_black_region(img2)
 
-img1 = image_resize(img1, height=300)
-img2 = image_resize(img2, height=300)
+img1 = image_resize(img1, height=350)
+img2 = image_resize(img2, height=350)
 
 # img1 = img1[1000: 3000, 1000: 6500, :]
 # img2 = img2[1000: 3000, 1000: 7000, :]
