@@ -94,7 +94,7 @@ def read_all_images_form(images_names):
     all_images_array = []
     for image_name in images_names:
         img = cv2.imread(image_name)
-        img = image_resize(img, height=300)
+        img = image_resize(img, height=900)
         img = remove_black_region(img)
         all_images_array.append(img)
     return all_images_array
@@ -135,8 +135,17 @@ else:
 # initialize OpenCV's image sticher object and then perform the image
 # stitching
 print("[INFO] stitching images...")
-stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
+# PANORAMA is 0, SCANS is 1 as defined
+# enum  	Mode {
+#   PANORAMA = 0,
+#   SCANS = 1
+# }
+stitcher = cv2.Stitcher.create(mode=1)
 (status, stitched) = stitcher.stitch(key_frames)
+
+if status == 1:
+    print("No Key points found. Unable to stitch Image")
+
 time3 = time.time()
 cv2.imwrite(results_folder + out_image_name, stitched)
 
