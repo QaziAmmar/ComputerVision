@@ -80,7 +80,7 @@ key_frames = [img1, img2]
 time1 = time.time()
 stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
 
-(status, stitched) = stitcher.stitch(key_frames, 1)
+(status, stitched) = stitcher.stitch(key_frames)
 if status == 1:
     print("No matching found in images.")
 time2 = time.time()
