@@ -21,7 +21,7 @@ __status__ = "This is working code of python that stitched python images automat
              "https://www.pyimagesearch.com/2018/12/17/image-stitching-with-opencv-and-python/ "
 __description__ = "This Code stitch both video frames and multiple image form same folder. If selection == 1 then " \
                   "this code stitch the images form images folder. other selection will stitch the video frames togather. "
-
+"test commet is added "
 
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and
