@@ -61,8 +61,8 @@ def remove_black_region(img):
 
 folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
 
-img1_path = folder_name + "IMG_4158.JPG"
-img2_path = folder_name + "IMG_4159.JPG"
+img1_path = folder_name + "IMG_4127.JPG"
+img2_path = folder_name + "IMG_4128.JPG"
 
 img1 = cv2.imread(img1_path)
 img2 = cv2.imread(img2_path)
@@ -81,10 +81,12 @@ time1 = time.time()
 stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
 
 (status, stitched) = stitcher.stitch(key_frames)
+if status == 1:
+    print("No matching found in images.")
 time2 = time.time()
 print('Stitching: ', time2 - time1, ' sec')
 
-cv2.imwrite(folder_name + "fernStitch_panaroma.jpg", stitched)
+cv2.imwrite(folder_name + "fernStitch_panaroma_1.jpg", stitched)
 # cv2.imshow("img", stitched)
 # cv2.waitKey(0)
 plt.imshow(stitched)
