@@ -20,8 +20,9 @@ __email__ = "qaziammar.g@gmail.com"
 __status__ = "This is working code of python that stitched python images automatically. Link of code: " \
              "https://www.pyimagesearch.com/2018/12/17/image-stitching-with-opencv-and-python/ "
 __description__ = "This Code stitch both video frames and multiple image form same folder. If selection == 1 then " \
-                  "this code stitch the images form images folder. other selection will stitch the video frames togather. "
-"test commet is added "
+                  "this code stitch the images form images folder. other selection will stitch the video frames " \
+                  "together."
+
 
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and
@@ -94,7 +95,7 @@ def read_all_images_form(images_names):
     all_images_array = []
     for image_name in images_names:
         img = cv2.imread(image_name)
-        img = image_resize(img, height=900)
+        # img = image_resize(img, height=900)
         img = remove_black_region(img)
         all_images_array.append(img)
     return all_images_array
@@ -103,10 +104,10 @@ def read_all_images_form(images_names):
 def extract_key_frames_from_movie(movie_path):
     cap = cv2.VideoCapture(movie_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
+    key_frames = []
     for i in range(0, frame_count, 5):
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-        print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
+        # print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
         _, frame = cap.read()
         frame = cv2.transpose(frame)
         key_frames.append(frame)
@@ -114,7 +115,7 @@ def extract_key_frames_from_movie(movie_path):
     return key_frames
 
 
-selection = 1
+selection = 2
 
 out_image_name = "stitched_image.jpg"
 time1 = time.time()
@@ -127,7 +128,8 @@ if selection == 1:
     time2 = time.time()
 else:
     # This function perform stitching combining video frames.
-    movie_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/IMG_4123.MOV"
+    movie_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/fern_video/IMG_4194.MOV"
+    results_folder = movie_path
     key_frames = extract_key_frames_from_movie(movie_path)
     key_frames.reverse()
     time2 = time.time()
@@ -141,10 +143,15 @@ print("[INFO] stitching images...")
 #   SCANS = 1
 # }
 stitcher = cv2.Stitcher.create(mode=1)
+
 (status, stitched) = stitcher.stitch(key_frames)
 
 if status == 1:
-    print("No Key points found. Unable to stitch Image")
+    print(" ERR_NEED_MORE_IMGS = 1,")
+elif status == 2:
+    print("ERR_HOMOGRAPHY_EST_FAIL = 2,")
+elif status == 3:
+    print("ERR_CAMERA_PARAMS_ADJUST_FAIL = 3")
 
 time3 = time.time()
 cv2.imwrite(results_folder + out_image_name, stitched)

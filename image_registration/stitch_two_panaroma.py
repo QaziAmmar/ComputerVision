@@ -59,10 +59,10 @@ def remove_black_region(img):
     return crop
 
 
-folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
+folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/miscrscope_panaroma.2/"
 
-img1_path = folder_name + "IMG_4127.JPG"
-img2_path = folder_name + "IMG_4128.JPG"
+img1_path = folder_name + "IMG_4162.JPG"
+img2_path = folder_name + "IMG_4163.JPG"
 
 img1 = cv2.imread(img1_path)
 img2 = cv2.imread(img2_path)
@@ -70,15 +70,15 @@ img2 = cv2.imread(img2_path)
 img1 = remove_black_region(img1)
 img2 = remove_black_region(img2)
 
-img1 = image_resize(img1, height=350)
-img2 = image_resize(img2, height=350)
+# img1 = image_resize(img1, height=350)
+# img2 = image_resize(img2, height=350)
 
 # img1 = img1[1000: 3000, 1000: 6500, :]
 # img2 = img2[1000: 3000, 1000: 7000, :]
 
 key_frames = [img1, img2]
 time1 = time.time()
-stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
+stitcher = cv2.Stitcher.create(mode=1)
 
 (status, stitched) = stitcher.stitch(key_frames)
 if status == 1:
@@ -86,7 +86,7 @@ if status == 1:
 time2 = time.time()
 print('Stitching: ', time2 - time1, ' sec')
 
-cv2.imwrite(folder_name + "fernStitch_panaroma_1.jpg", stitched)
+cv2.imwrite(folder_name + "dr_waqas.jpg", stitched)
 # cv2.imshow("img", stitched)
 # cv2.waitKey(0)
 plt.imshow(stitched)

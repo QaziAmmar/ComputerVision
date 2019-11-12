@@ -56,7 +56,6 @@ def get_blur_map(image_file, win_size=10, sv_num=3):
     # cv2.imwrite('blurmap_norm.jpg', (1-blur_map)*255)
     return blur_map
 
-
     # %%
 
 import glob
