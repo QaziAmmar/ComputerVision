@@ -105,7 +105,7 @@ def extract_key_frames_from_movie(movie_path):
     cap = cv2.VideoCapture(movie_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     key_frames = []
-    for i in range(0, frame_count, 5):
+    for i in range(0, int(frame_count / 4), 2):
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
         # print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
         _, frame = cap.read()
@@ -117,7 +117,7 @@ def extract_key_frames_from_movie(movie_path):
 
 selection = 2
 
-out_image_name = "stitched_image.jpg"
+out_image_name = "stitched_image_2f.jpg"
 time1 = time.time()
 if selection == 1:
     results_folder = path.dataset_path + "Malaria_Dataset_self/SHIF_images/miscrscope_panaroma.2/"
