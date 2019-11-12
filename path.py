@@ -9,7 +9,7 @@ def init():
     global result_folder_path
 
     if sys.platform == "linux1" or "linux2":
-        base_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/"
+        base_path = "/home/ali/Desktop/ammar/Thesis/Model_Result_Dataset/"
     elif sys.platform == "darwin":
         base_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/"
     
