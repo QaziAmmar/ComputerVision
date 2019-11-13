@@ -61,14 +61,14 @@ def remove_black_region(img):
 
 folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/miscrscope_panaroma.2/"
 
-img1_path = folder_name + "IMG_4162.JPG"
-img2_path = folder_name + "IMG_4163.JPG"
+img1_path = folder_name + "stitched_image_61_to_69.jpg"
+img2_path = folder_name + "stitched_image_69_70.jpg"
 
 img1 = cv2.imread(img1_path)
 img2 = cv2.imread(img2_path)
 
-img1 = remove_black_region(img1)
-img2 = remove_black_region(img2)
+# img1 = remove_black_region(img1)
+# img2 = remove_black_region(img2)
 
 # img1 = image_resize(img1, height=350)
 # img2 = image_resize(img2, height=350)
@@ -86,7 +86,8 @@ if status == 1:
 time2 = time.time()
 print('Stitching: ', time2 - time1, ' sec')
 
-cv2.imwrite(folder_name + "dr_waqas.jpg", stitched)
+out_image_name = "stitched_image_69_70.jpg"
+cv2.imwrite(folder_name + out_image_name, stitched)
 # cv2.imshow("img", stitched)
 # cv2.waitKey(0)
 plt.imshow(stitched)

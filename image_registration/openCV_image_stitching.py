@@ -90,13 +90,21 @@ def read_all_images_name(folder_path):
     return sorted(all_images_name)
 
 
+def remove_100_row_of(image):
+    row, col, ch = image.shape
+    cropped_image = image[100: row - 100, 100: col - 100, :]
+    return cropped_image
+
+
 def read_all_images_form(images_names):
     # Reading all images form file.
     all_images_array = []
     for image_name in images_names:
         img = cv2.imread(image_name)
         # img = image_resize(img, height=900)
-        img = remove_black_region(img)
+        # img = remove_black_region(img)
+        # removing top 100 and bottom 100 row of image.
+        # img = remove_100_row_of(img)
         all_images_array.append(img)
     return all_images_array
 
@@ -105,22 +113,24 @@ def extract_key_frames_from_movie(movie_path):
     cap = cv2.VideoCapture(movie_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     key_frames = []
-    for i in range(0, int(frame_count / 4), 2):
+    for i in range(0, int(frame_count / 4), 3):
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
         # print('Position:', int(cap.get(cv2.CAP_PROP_POS_FRAMES)))
         _, frame = cap.read()
         frame = cv2.transpose(frame)
+        frame = image_resize(frame, height=300)
+        frame = remove_black_region(frame)
         key_frames.append(frame)
 
     return key_frames
 
 
-selection = 2
+selection = 1
 
-out_image_name = "stitched_image_2f.jpg"
+out_image_name = "stitched_image.jpg"
 time1 = time.time()
 if selection == 1:
-    results_folder = path.dataset_path + "Malaria_Dataset_self/SHIF_images/miscrscope_panaroma.2/"
+    results_folder = path.dataset_path + "Malaria_Dataset_self/SHIF_images/test_stitch/"
 
     # This function perform stitching on images.
     images_name = read_all_images_name(results_folder)
@@ -156,6 +166,7 @@ elif status == 3:
 time3 = time.time()
 cv2.imwrite(results_folder + out_image_name, stitched)
 
+# convert BGR to RGB so that color shown right.
 plt.imshow(stitched)
 plt.show()
 
