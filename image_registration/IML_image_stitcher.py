@@ -10,14 +10,6 @@ import path
 path.init()
 cv2.ocl.setUseOpenCL(False)
 
-# %%
-
-feature_extractor = 'sift'  # one of 'sift', 'surf', 'brisk', 'orb'
-feature_matching = 'bf'
-
-
-# %%
-
 def image_sharpning(image):
     """
 
@@ -100,6 +92,7 @@ def detectAndDescribe(image, method=None):
     elif method == 'orb':
         descriptor = cv2.ORB_create()
 
+
     # get keypoints and descriptors
     (kps, features) = descriptor.detectAndCompute(image, None)
 
@@ -165,26 +158,12 @@ def getHomography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh):
         return None
 
 
-def draw_matches_form_feature(matches, trainImg, kpsA, queryImg, kpsB, feature_matching):
-    print("Using: {} feature matcher".format(feature_matching))
-
-    fig = plt.figure(figsize=(20, 8))
-
-    if feature_matching == 'bf':
-        img = cv2.drawMatches(trainImg, kpsA, queryImg, kpsB, matches[:100],
-                              None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    elif feature_matching == 'knn':
-        img = cv2.drawMatches(trainImg, kpsA, queryImg, kpsB, np.random.choice(matches, 100),
-                              None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    plt.imshow(img)
-    plt.show()
-
-
-def stitch_two_images(queryImg, trainImg, feature_extractor, draw_matches=False):
+def stitch_two_images(queryImg, trainImg, feature_extractor):
     # Convert Images to gray scale.
     trainImg_gray = cv2.cvtColor(trainImg, cv2.COLOR_BGR2GRAY)
     queryImg_gray = cv2.cvtColor(queryImg, cv2.COLOR_BGR2GRAY)
     # Extract features for both images.
+    print("[INFO] Extracting Feature ...")
     kpsA, featuresA = detectAndDescribe(trainImg_gray, method=feature_extractor)
     kpsB, featuresB = detectAndDescribe(queryImg_gray, method=feature_extractor)
     # Find matching between features.
@@ -192,10 +171,8 @@ def stitch_two_images(queryImg, trainImg, feature_extractor, draw_matches=False)
         matches = matchKeyPointsBF(featuresA, featuresB, method=feature_extractor)
     elif feature_matching == 'knn':
         matches = matchKeyPointsKNN(featuresA, featuresB, ratio=0.75, method=feature_extractor)
-    # If you want to show the matches
-    if draw_matches:
-        draw_matches_form_feature(matches, trainImg, kpsA, queryImg, kpsB, feature_matching)
     # Find homography matrix.
+    print("[INFO] Find Homography ...")
     M = getHomography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh=4)
 
     if M is None:
@@ -212,69 +189,10 @@ def stitch_two_images(queryImg, trainImg, feature_extractor, draw_matches=False)
     return crop_image
 
 
-def find_homography_in_all_frames_dr_moshin(images_array, feature_extractor, feature_matching='bf'):
+feature_extractor = 'brisk'  # one of 'sift', 'surf', 'brisk', 'orb'
+feature_matching = 'bf'
 
-    homography_array = []
-
-    for i in range(0, len(images_array)):
-        print("")
-        # Read 2 consecutive frames.
-        temp_img1 = images_array[i]
-        temp_img2 = images_array[i + 1]
-        # Convert into gray
-        temp_img1_gray = cv2.cvtColor(temp_img1, cv2.COLOR_BGR2GRAY)
-        temp_img2_gray = cv2.cvtColor(temp_img2, cv2.COLOR_BGR2GRAY)
-
-        # Extract features for both images.
-        print("[INFO] Extracting Feature ...")
-        time1 = time.time()
-        kpsA, featuresA = detectAndDescribe(temp_img2_gray, method=feature_extractor)
-        kpsB, featuresB = detectAndDescribe(temp_img1_gray, method=feature_extractor)
-        time2 = time.time()
-        print('Feature Extraction Time:', time2 - time1, ' sec')
-
-        # Find matching between features.
-        print("[INFO] Feature Matching ...")
-
-        if feature_matching == 'bf':
-            matches = matchKeyPointsBF(featuresA, featuresB, method=feature_extractor)
-        elif feature_matching == 'knn':
-            matches = matchKeyPointsKNN(featuresA, featuresB, ratio=0.75, method=feature_extractor)
-
-        time3 = time.time()
-        print('Feature Matching Time:', time3 - time2, ' sec')
-
-        # Find homography matrix.
-        print("[INFO] Finding Homograpy matrix ...")
-        M = getHomography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh=4)
-
-        if M is None:
-            print("Error! In Homograpy Matrix.")
-
-        (matches, H, status) = M
-        homography_array.append(H)
-
-    return homography_array
-
-
-def stitch_images_by_dr_moshin(images_array, feature_extractor):
-
-    H_array = find_homography_in_all_frames_dr_moshin(images_array, feature_extractor)
-
-    queryImg = images_array[0]
-    trainImg = images_array[1]
-    # Apply panorama correction
-    width = trainImg.shape[1] + queryImg.shape[1]
-    height = trainImg.shape[0] + queryImg.shape[0]
-
-    result = cv2.warpPerspective(trainImg, H_array[0], (width, height))
-    result[0:queryImg.shape[0], 0:queryImg.shape[1]] = queryImg
-    crop_image = remove_black_region(result)
-
-
-
-
-images_folder_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/te/"
+images_folder_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/panaroma_3/"
 
 time1 = time.time()
 print("[INFO] Reading Frames ...")
@@ -282,32 +200,23 @@ images_name = read_all_images_name(images_folder_path)
 images_array = read_all_images_form(images_name)
 
 
-# %%
-queryImg = images_array[0]
-trainImg = images_array[1]
-stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
+if len(images_array) == 1:
+    print("Perform no Stitching")
+elif len(images_array) == 2:
+    print("stitch only 2 images.")
+elif len(images_array) > 2:
 
-# stitched_image = stitch_images_by_dr_moshin(images_array, feature_extractor)
+    queryImg = images_array[0]
+    trainImg = images_array[1]
+    stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
+    stitched_image = remove_black_region(stitched_image)
+    for i in range(2, len(images_array)):
+        print("[INFO] Reading Frames #" + str(i))
+        queryImg = stitched_image
+        trainImg = images_array[i]
+        stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
+        stitched_image = remove_black_region(stitched_image)
 
-# if len(images_array) == 1:
-#     stitched_image = images_array[0]
-# elif len(images_array) == 2:
-#     queryImg = images_array[0]
-#     trainImg = images_array[1]
-#     stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
-#     stitched_image = remove_black_region(stitched_image)
-# elif len(images_array) > 2:
-#
-#     queryImg = images_array[0]
-#     trainImg = images_array[1]
-#     stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
-#     stitched_image = remove_black_region(stitched_image)
-#     for i in range(2, len(images_array)):
-#         queryImg = stitched_image
-#         trainImg = images_array[i]
-#         stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
-#         stitched_image = remove_black_region(stitched_image)
-
-#  Write stitched images.
+cv2.imwrite(images_folder_path + "out.jpg", stitched_image)
 plt.imshow(stitched_image)
 plt.show()
