@@ -10,142 +10,98 @@ from __future__ import print_function
 
 import numpy as np
 import cv2 as cv
+import os
+import matplotlib.pyplot as plt
 
-import sys
-import argparse
+def iml_imshow(img):
+    """
 
-parser = argparse.ArgumentParser(prog='stitching_detailed.py', description='Rotation model images stitcher')
-parser.add_argument('img_names', nargs='+', help='files to stitch', type=str)
-parser.add_argument('--preview',
-                    help='Run stitching in the preview mode. Works faster than usual mode but output image will have lower resolution.',
-                    type=bool, dest='preview')
-parser.add_argument('--try_cuda', action='store', default=False,
-                    help='Try to use CUDA. The default value is no. All default values are for CPU mode.', type=bool,
-                    dest='try_cuda')
-parser.add_argument('--work_megapix', action='store', default=0.6,
-                    help=' Resolution for image registration step. The default is 0.6 Mpx', type=float,
-                    dest='work_megapix')
-parser.add_argument('--features', action='store', default='orb',
-                    help='Type of features used for images matching. The default is orb.', type=str, dest='features')
-parser.add_argument('--matcher', action='store', default='homography', help='Matcher used for pairwise image matching.',
-                    type=str, dest='matcher')
-parser.add_argument('--estimator', action='store', default='homography',
-                    help='Type of estimator used for transformation estimation.', type=str, dest='estimator')
-parser.add_argument('--match_conf', action='store', default=0.3,
-                    help='Confidence for feature matching step. The default is 0.65 for surf and 0.3 for orb.',
-                    type=float, dest='match_conf')
-parser.add_argument('--conf_thresh', action='store', default=1.0,
-                    help='Threshold for two images are from the same panorama confidence.The default is 1.0.',
-                    type=float, dest='conf_thresh')
-parser.add_argument('--ba', action='store', default='ray', help='Bundle adjustment cost function. The default is ray.',
-                    type=str, dest='ba')
-parser.add_argument('--ba_refine_mask', action='store', default='xxxxx',
-                    help='Set refinement mask for bundle adjustment.  mask is "xxxxx"', type=str, dest='ba_refine_mask')
-parser.add_argument('--wave_correct', action='store', default='horiz',
-                    help='Perform wave effect correction. The default is "horiz"', type=str, dest='wave_correct')
-parser.add_argument('--save_graph', action='store', default=None,
-                    help='Save matches graph represented in DOT language to <file_name> file.', type=str,
-                    dest='save_graph')
-parser.add_argument('--warp', action='store', default='plane', help='Warp surface type. The default is "spherical".',
-                    type=str, dest='warp')
-parser.add_argument('--seam_megapix', action='store', default=0.1,
-                    help=' Resolution for seam estimation step. The default is 0.1 Mpx.', type=float,
-                    dest='seam_megapix')
-parser.add_argument('--seam', action='store', default='no', help='Seam estimation method. The default is "gc_color".',
-                    type=str, dest='seam')
-parser.add_argument('--compose_megapix', action='store', default=-1,
-                    help='Resolution for compositing step. Use -1 for original resolution.', type=float,
-                    dest='compose_megapix')
-parser.add_argument('--expos_comp', action='store', default='no',
-                    help='Exposure compensation method. The default is "gain_blocks".', type=str, dest='expos_comp')
-parser.add_argument('--expos_comp_nr_feeds', action='store', default=1, help='Number of exposure compensation feed.',
-                    type=np.int32, dest='expos_comp_nr_feeds')
-parser.add_argument('--expos_comp_nr_filtering', action='store', default=2,
-                    help='Number of filtering iterations of the exposure compensation gains', type=float,
-                    dest='expos_comp_nr_filtering')
-parser.add_argument('--expos_comp_block_size', action='store', default=32,
-                    help='BLock size in pixels used by the exposure compensator.', type=np.int32,
-                    dest='expos_comp_block_size')
-parser.add_argument('--blend', action='store', default='multiband', help='Blending method. The default is "multiband".',
-                    type=str, dest='blend')
-parser.add_argument('--blend_strength', action='store', default=5, help='Blending strength from [0,100] range.',
-                    type=np.int32, dest='blend_strength')
-parser.add_argument('--output', action='store', default='result.jpg', help='The default is "result.jpg"', type=str,
-                    dest='output')
-parser.add_argument('--timelapse', action='store', default=None,
-                    help='Output warped images separately as frames of a time lapse movie, with "fixed_" prepended to input file names.',
-                    type=str, dest='timelapse')
-parser.add_argument('--rangewidth', action='store', default=-1,
-                    help='uses range_width to limit number of images to match with.', type=int, dest='rangewidth')
-
-__doc__ += '\n' + parser.format_help()
+    :param img: img to display.
+    :return: None
+    """
+    plt.imshow(img)
+    plt.show()
 
 
-def main():
-    args = parser.parse_args()
-    img_names = args.img_names
+def IML_stitcher(img_names, preview=False, try_cuda=False, work_megapix=0.6, features='brisk',
+                 matcher='affine', estimator='affine', match_conf=0.3, conf_thresh=0.1,
+                 ba='affine', ba_refine_mask='xxxxx', wave_correct='no', save_graph=None,
+                 warp='plane', seam_megapix=0.1, seam='no', compose_megapix=-1, expos_comp='no',
+                 expos_comp_nr_feeds=1, expos_comp_nr_filtering=2, expos_comp_block_size=32,
+                 blend='multiband', blend_strength=5, output='result.jpg', timelapse=None,
+                 rangewidth=-1):
+    # stitcher->setEstimator(makePtr < detail::AffineBasedEstimator > ()); // estimator
+    # stitcher->setWaveCorrection(false);  //wave_correct
+    # stitcher->setFeaturesMatcher(makePtr < detail::AffineBestOf2NearestMatcher > (false, false)); //matcher
+    # stitcher->setBundleAdjuster(makePtr < detail::BundleAdjusterAffinePartial > ()); //ba
+    # stitcher->setWarper(makePtr < AffineWarper > ());
+    # stitcher->setExposureCompensator(makePtr < detail::NoExposureCompensator > ()); //expos_comp
+
+    img_names = img_names
     print(img_names)
-    preview = args.preview
-    try_cuda = args.try_cuda
-    work_megapix = args.work_megapix
-    seam_megapix = args.seam_megapix
-    compose_megapix = args.compose_megapix
-    conf_thresh = args.conf_thresh
-    features_type = args.features
-    matcher_type = args.matcher
-    estimator_type = args.estimator
-    ba_cost_func = args.ba
-    ba_refine_mask = args.ba_refine_mask
-    wave_correct = args.wave_correct
+    preview = preview
+    try_cuda = try_cuda
+    work_megapix = work_megapix
+    seam_megapix = seam_megapix
+    compose_megapix = compose_megapix
+    conf_thresh = conf_thresh
+    features_type = features
+    matcher_type = matcher
+    estimator_type = estimator
+    ba_cost_func = ba
+    ba_refine_mask = ba_refine_mask
+    wave_correct = wave_correct
     if wave_correct == 'no':
         do_wave_correct = False
     else:
         do_wave_correct = True
-    if args.save_graph is None:
+    if save_graph is None:
         save_graph = False
     else:
         save_graph = True
-        save_graph_to = args.save_graph
-    warp_type = args.warp
-    if args.expos_comp == 'no':
+        save_graph_to = save_graph
+    warp_type = warp
+    if expos_comp == 'no':
         expos_comp_type = cv.detail.ExposureCompensator_NO
-    elif args.expos_comp == 'gain':
+    elif expos_comp == 'gain':
         expos_comp_type = cv.detail.ExposureCompensator_GAIN
-    elif args.expos_comp == 'gain_blocks':
+    elif expos_comp == 'gain_blocks':
         expos_comp_type = cv.detail.ExposureCompensator_GAIN_BLOCKS
-    elif args.expos_comp == 'channel':
+    elif expos_comp == 'channel':
         expos_comp_type = cv.detail.ExposureCompensator_CHANNELS
-    elif args.expos_comp == 'channel_blocks':
+    elif expos_comp == 'channel_blocks':
         expos_comp_type = cv.detail.ExposureCompensator_CHANNELS_BLOCKS
     else:
         print("Bad exposure compensation method")
         exit()
-    expos_comp_nr_feeds = args.expos_comp_nr_feeds
-    expos_comp_nr_filtering = args.expos_comp_nr_filtering
-    expos_comp_block_size = args.expos_comp_block_size
-    match_conf = args.match_conf
-    seam_find_type = args.seam
-    blend_type = args.blend
-    blend_strength = args.blend_strength
-    result_name = args.output
-    if args.timelapse is not None:
+    expos_comp_nr_feeds = expos_comp_nr_feeds
+    expos_comp_nr_filtering = expos_comp_nr_filtering
+    expos_comp_block_size = expos_comp_block_size
+    match_conf = match_conf
+    seam_find_type = seam
+    blend_type = blend
+    blend_strength = blend_strength
+    result_name = output
+    if timelapse is not None:
         timelapse = True
-        if args.timelapse == "as_is":
+        if timelapse == "as_is":
             timelapse_type = cv.detail.Timelapser_AS_IS
-        elif args.timelapse == "crop":
+        elif timelapse == "crop":
             timelapse_type = cv.detail.Timelapser_CROP
         else:
             print("Bad timelapse method")
             exit()
     else:
         timelapse = False
-    range_width = args.rangewidth
+    range_width = rangewidth
     if features_type == 'orb':
         finder = cv.ORB.create()
     elif features_type == 'surf':
         finder = cv.xfeatures2d_SURF.create()
     elif features_type == 'sift':
         finder = cv.xfeatures2d_SIFT.create()
+    elif features_type == 'brisk':
+        finder = cv.BRISK_create()
     else:
         print("Unknown descriptor type")
         exit()
@@ -157,7 +113,7 @@ def main():
     is_seam_scale_set = False
     is_compose_scale_set = False;
     for name in img_names:
-        full_img = cv.imread(cv.samples.findFile(name))
+        full_img = cv.imread(name)
         if full_img is None:
             print("Cannot read image ", name)
             exit()
@@ -175,6 +131,7 @@ def main():
             seam_scale = min(1.0, np.sqrt(seam_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))
             seam_work_aspect = seam_scale / work_scale
             is_seam_scale_set = True
+        # (kps, imgFea) = finder.detectAndCompute(img, None)
         imgFea = cv.detail.computeImageFeatures2(finder, img)
         features.append(imgFea)
         img = cv.resize(src=full_img, dsize=None, fx=seam_scale, fy=seam_scale, interpolation=cv.INTER_LINEAR_EXACT)
@@ -401,9 +358,28 @@ def main():
         cv.waitKey()
 
     print('Done')
+    return dst
 
 
-if __name__ == '__main__':
-    print(__doc__)
-    main()
-    cv.destroyAllWindows()
+def read_all_images_name(folder_path):
+    """
+
+    :param folder_path: this is the path of folder from which we pick all images.
+    :return: this function return sorted name of images with complete path
+    """
+    # Reading all images form file.
+    all_images_name = []
+    # r=root, d=directories, f = files
+    for r, d, f in os.walk(folder_path):
+        for file in f:
+            if '.jpg' in file:
+                all_images_name.append(r + file)
+    return sorted(all_images_name)
+
+
+all_images_name = read_all_images_name(
+    '/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/Dataset/Malaria_Dataset_self/SHIF_images/frames/')
+
+stitched = IML_stitcher(all_images_name)
+
+iml_imshow(stitched)
