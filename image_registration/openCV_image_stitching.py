@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
-import path
 import cv2
-import imutils
+from sys import exit
 import time
 import numpy as np
 import os
 
+from custom_classes.black_region_remove_class import removeBlackRegion
+from custom_classes import path
 # from optical_flow import IML_optical_flow
 # This current working code of images stitching.
 
@@ -83,36 +84,6 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
 
     # return the resized image
     return resized
-
-
-def remove_black_region(img):
-    """
-    This function remove the black region form image by cropping largest contours form the image.
-    :param img: input images
-    :return: image with removed black region but not removed black regions completely we need to apply some
-    thresholding to rows and col to completly remove the black region.
-    """
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    ret, thresh = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
-
-    # Find all contours form the gray image.
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    max_area = -1
-    best_cnt = None
-
-    # Find contours with largest area.
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > max_area:
-            max_area = area
-            best_cnt = cnt
-
-    # Get coordinate of largest contours
-    x, y, w, h = cv2.boundingRect(best_cnt)
-
-    # Crop original with coordinate of largest contour.
-    crop = img[y:y + h, x:x + w]
-    return crop
 
 
 def read_all_images_name(folder_path):
@@ -330,14 +301,16 @@ def read_all_images_form(images_names):
         # Read Image form given path.
         img = cv2.imread(image_name)
         # Uncomment the required method to apply.
-        img = remove_black_region(img)
+        img = removeBlackRegion(img)
         # for non panaroma.
-        img = remove_non_zero_row_col_of(img)
+        # img = remove_non_zero_row_col_of(img)
+
         # for panaroam.
         # img = remove_non_zero_row_col_for_panaroma(img)
         # img = image_sharpning(img)
+        # cv2.imwrite(image_name, img)
         all_images_array.append(img)
-
+    # exit()
     return all_images_array
 
 
@@ -350,7 +323,7 @@ def extract_key_frames_from_movie(movie_path):
     # This Array contains only selected frame of video.
     key_frames = []
 
-    # Read video frame by jump of 3.
+    # Read video frame by jump of 10.
     for i in range(0, int(frame_count), 10):
         # Lode i frame form video.
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
@@ -360,11 +333,11 @@ def extract_key_frames_from_movie(movie_path):
         # Comment/Uncomment the required method to apply.
         # frame = cv2.transpose(frame)
         # frame = image_resize(frame, height=300)
-        frame = remove_black_region(frame)
+        frame = removeBlackRegion(frame)
         frame = remove_non_zero_row_col_of(frame)
 
         key_frames.append(frame)
-        cv2.imwrite("/Users/qaziammar/Documents/frames/" + str(i) + ".jpg", frame)
+        cv2.imwrite(path.dataset_path + "/Malaria_Dataset_self/p_falcipraum_plus/frames/" + str(i) + ".jpg", frame)
     exit()
     return key_frames
 
@@ -420,7 +393,7 @@ def stitch_image_with(key_frames, images_folder_path="", out_image_name=""):
 
     #  Image stitched status.
     if status == 1:
-        print(" ERR_NEED_MORE_IMGS = 1,")
+        print("ERR_NEED_MORE_IMGS = 1,")
     elif status == 2:
         print("ERR_HOMOGRAPHY_EST_FAIL = 2,")
     elif status == 3:
@@ -428,8 +401,9 @@ def stitch_image_with(key_frames, images_folder_path="", out_image_name=""):
     elif status == 0:
         print("STITCHED")
 
+    if status != 0:
+        return
     time3 = time.time()
-    # cv2.imwrite(images_folder_path + out_image_name, stitched)
 
     # convert BGR to RGB so that color shown right.
     stitched = cv2.cvtColor(stitched, cv2.COLOR_BGR2RGB)
@@ -438,7 +412,7 @@ def stitch_image_with(key_frames, images_folder_path="", out_image_name=""):
 
     print('key frames extraction:', time2 - time1, ' sec')
     print('Stitching: ', time3 - time2, ' sec')
-
+    cv2.imwrite(images_folder_path + out_image_name, stitched)
     return stitched
 
 
@@ -784,17 +758,17 @@ def IML_stitcher(img_names, preview=False, try_cuda=False, work_megapix=0.6, fea
 # Selection = 1 : Stitch image form given folder.
 # Selection = 2 : Stitch video frames of given video file.
 # Selection = 3 : Stitch image form given folder like merge sort.
-# Selection = 4 : Stitch image form given folder by combining sub images arrays.
+# Selection = 4 : Stitch image form given folder by combining sub stitched images arrays.
 selection = 1
 
 # Name of stitched image file
-out_image_name = "stitched_image.JPG"
+out_image_name = "stitched_image.jpg"
 # Time counter.
 time1 = time.time()
 
 if selection == 1:
     # Absolute path of folder having all images.
-    images_folder_path = path.dataset_path + "/Malaria_Dataset_self/SHIF_images/panaromas/microscope_panaroma_4/"
+    images_folder_path = "/Users/qaziammar/Documents/test_code/"
     print("[INFO] key frames extraction of images...")
     # Read all images absolute path.
     images_name = read_all_images_name(images_folder_path)
@@ -813,7 +787,7 @@ elif selection == 2:
     # This portion perform stitching combining video frames.
 
     # Absolute path of video file.
-    movie_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/videos/4k.MOV"
+    movie_path = path.dataset_path + "/Malaria_Dataset_self/p_falciparum/panaromas_i7/"
     # this assigment is use to stitched image.
     images_folder_path = movie_path
     # Extract the required frames.

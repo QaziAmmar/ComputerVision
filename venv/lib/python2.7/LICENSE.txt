@@ -1,5 +1,0 @@
-XSym
-0082
-d5b9d2cd12f8743da2dfd322904fc982
-/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/LICENSE.txt
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             

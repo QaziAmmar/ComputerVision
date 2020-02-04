@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 # Link of code: https://github.com/fled/blur_detection
 # This is working code of blur score of each pixel.
 
@@ -56,25 +57,53 @@ def get_blur_map(image_file, win_size=10, sv_num=3):
     # cv2.imwrite('blurmap_norm.jpg', (1-blur_map)*255)
     return blur_map
 
-    # %%
 
-import glob
-import path
-import matplotlib.pyplot as plt
+def get_crop_image(image_name, img_mask):
+    image = cv2.imread(image_name)
 
-path.init()
+    row_limit_top, col_limit_top, row_limit_lower, col_limit_lower = brm.crop_point_for_black_color(img_mask,
+                                                                                                    percentage_limit=7)
 
-folder_name = path.dataset_path + "Malaria_Dataset_self/SHIF_images/"
-complete_image = folder_name + "IMG_4030.JPG"
-crop_image = folder_name + "croped_image.JPG"
-unBlur_image = folder_name + "unBlur_image.JPG"
+    # Find cut points of image.
+    row, col, ch = image.shape
 
-files = glob.glob(folder_name + '*')
+    # Crop image form calculated point of row and col.
+    cropped_image = image[int(row_limit_top * 1): row_limit_lower, int(col_limit_top * 1): col_limit_lower, :]
 
-for file in files:
-    print(file), get_blur_degree(file)
-    out_file = file + 'blur_map.JPG'
-    blur_map = get_blur_map(file)
-    blur_map_image = (1 - blur_map) * 255
-    plt.imshow(blur_map_image, cmap='gray', vmin=0, vmax=255)
-    cv2.imwrite(out_file, blur_map_image)
+    cv_iml.image_show(cropped_image)
+
+    return cropped_image
+
+
+from custom_classes import path
+from custom_classes import cv_iml, black_region_remove_class as brm
+
+result_folder = path.result_folder_path + "blur_detection/"
+#
+folder_name = path.dataset_path + "Malaria_Dataset_self/crop_images/Foldscope/p_falcipram_plux_foldscop/"
+image_name = result_folder + "0.jpg"
+# blur_degree = get_blur_degree(image_name)
+# blur_map = get_blur_map(image_name)
+# blur_map_image = (1 - blur_map) * 255
+# cv_iml.image_show(blur_map_image, cmap='gray')
+#
+# out_file = result_folder + '2_same_col_same_row_blur_map.jpg'
+# cv2.imwrite(out_file, blur_map_image)
+#
+
+blur_map_image = cv2.imread(result_folder + "1.JPG")
+cropped_image = get_crop_image(image_name, blur_map_image)
+
+crop_img_name = result_folder + "crop_img.jpg"
+cv2.imwrite(crop_img_name, cropped_image)
+
+# old code.
+# files = glob.glob(folder_name + '*')
+#
+# for file in files:
+#     print(file), get_blur_degree(file)
+#     out_file = file + 'blur_map.JPG'
+#     blur_map = get_blur_map(file)
+#     blur_map_image = (1 - blur_map) * 255
+#     plt.imshow(blur_map_image, cmap='gray', vmin=0, vmax=255)
+#     cv2.imwrite(out_file, blur_map_image)

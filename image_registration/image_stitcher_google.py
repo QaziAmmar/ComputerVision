@@ -65,7 +65,7 @@ def read_all_images_name(folder_path):
     # r=root, d=directories, f = files
     for r, d, f in os.walk(folder_path):
         for file in f:
-            if '.JPG' in file:
+            if '.jpg' in file:
                 all_images_name.append(r + file)
     return sorted(all_images_name)
 
@@ -76,7 +76,7 @@ def read_all_images_form(images_names):
     for image_name in images_names:
         print(image_name)
         img = cv2.imread(image_name)
-        img = image_sharpning(img)
+        # img = image_sharpning(img)
         # img = remove_black_region(img)
         # cv2.imwrite(image_name, img)
         all_images_array.append(img)
@@ -120,7 +120,7 @@ def matchKeyPointsBF(featuresA, featuresB, method):
     bf = createMatcher(method, crossCheck=True)
 
     # Match descriptors.
-    best_matches = bf.match(featuresA, featuresB)
+    best_matches = bf.match(featuresA[:10000], featuresB[:10000])
 
     # Sort the features in order of distance.
     # The points with small distance (more similarity) are ordered first in the vector
@@ -165,7 +165,7 @@ def getHomography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh):
         return None
 
 
-images_folder_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/panaroma_3/"
+images_folder_path = path.dataset_path + "Malaria_Dataset_self/p_vivax/sub_stitched/"
 
 time1 = time.time()
 print("[INFO] Reading Frames ...")
@@ -180,7 +180,7 @@ trainImg = images_array[1]
 trainImg_gray = cv2.cvtColor(trainImg, cv2.COLOR_BGR2GRAY)
 
 queryImg = images_array[0]
-queryImg = queryImg[0:1250, :, :]
+
 # Opencv defines the color channel in the order BGR.
 # Transform it to RGB to be compatible to matplotlib
 queryImg_gray = cv2.cvtColor(queryImg, cv2.COLOR_BGR2GRAY)
@@ -239,18 +239,33 @@ if M is None:
 print(H)
 time4 = time.time()
 
-# %%
 
+# %%
+# convert the keypoints to numpy arrays
+kpsA = np.float32([kp.pt for kp in kpsA])
+kpsB = np.float32([kp.pt for kp in kpsB])
+
+if len(matches) > 4:
+    print("matchers is running")
+    # construct the two sets of points
+    ptsA = np.float32([kpsA[m.queryIdx] for m in matches])
+    ptsB = np.float32([kpsB[m.trainIdx] for m in matches])
+
+    H = cv2.getAffineTransform(ptsA[0:3], ptsB[0:3])
+
+print(H)
+
+# %%
 # Apply panorama correction
 width = trainImg.shape[1] + queryImg.shape[1]
 height = trainImg.shape[0] + queryImg.shape[0]
 
-# result = cv2.warpAffine(trainImg, H, (width, height))
+result = cv2.warpAffine(trainImg, H, (width, height))
 
-result = cv2.warpPerspective(trainImg, H, (width, height))
+# result = cv2.warpPerspective(trainImg, H, (width, height))
 result[0:queryImg.shape[0], 0:queryImg.shape[1]] = queryImg
 
-plt.figure(figsize=(20, 10))
+plt.figure(figsize=(20,10))
 plt.imshow(result)
 
 plt.axis('off')

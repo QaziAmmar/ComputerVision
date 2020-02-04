@@ -1,313 +1,81 @@
+# This is a file where we fist test our code then implement it into other file
+from custom_classes import path
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-import imageio
-import imutils
-import time
-import os
-import path
 
-path.init()
-cv2.ocl.setUseOpenCL(False)
+
+def augment_image():
+    images_folder_path = path.dataset_path + "blur_clear_foldscope/clear_patch"
+    all_images_name = path.read_all_files_name_from(folder_path=images_folder_path, file_extension='.jpg')
+    f = open(path.dataset_path + "blur_clear_foldscope/clear_patches_annotation.txt", "a")
+    print("generating ...")
+    for image_name in all_images_name:
+        #         append images name in file "patches_locations.txt"
+        counter = 0
+        img = cv2.imread(images_folder_path + "/" + image_name)
+
+        # get image height, width
+        (h, w) = img.shape[:2]
+        # calculate the center of the image
+        center = (w / 2, h / 2)
+
+        angle90 = 90
+        angle180 = 180
+        angle270 = 270
+
+        scale = 1.0
+
+        # Perform the counter clockwise rotation holding at the center
+        # 90 degrees
+        M = cv2.getRotationMatrix2D(center, angle90, scale)
+        rotated90 = cv2.warpAffine(img, M, (h, w))
+        patch_image_save_name = image_name[:-4] + "_" + str(angle90) + ".jpg"
+        cv2.imwrite(path.dataset_path + "blur_clear_foldscope/clear_patch/" + patch_image_save_name, rotated90)
+        f.write(patch_image_save_name + " " + "0")
+        f.write('\n')
+
+        # 180 degrees
+        M = cv2.getRotationMatrix2D(center, angle180, scale)
+        rotated180 = cv2.warpAffine(img, M, (w, h))
+        patch_image_save_name = image_name[:-4] + "_" + str(angle180) + ".jpg"
+        cv2.imwrite(path.dataset_path + "blur_clear_foldscope/clear_patch/" + patch_image_save_name, rotated180)
+        f.write(patch_image_save_name + " " + "0")
+        f.write('\n')
+
+        # 270 degrees
+        M = cv2.getRotationMatrix2D(center, angle270, scale)
+        rotated270 = cv2.warpAffine(img, M, (h, w))
+        patch_image_save_name = image_name[:-4] + "_" + str(angle270) + ".jpg"
+        cv2.imwrite(path.dataset_path + "blur_clear_foldscope/clear_patch/" + patch_image_save_name, rotated270)
+        f.write(patch_image_save_name + " " + "0")
+        f.write('\n')
+
+    print(counter)
+    counter = counter + 1
+
+    f.close()
+
+
+def main():
+    images_folder_path = path.dataset_path + "foldscope_dataset/test_patch"
+    all_images_name = path.read_all_files_name_from(folder_path=images_folder_path, file_extension='.jpg')
+    f = open(path.dataset_path + "foldscope_dataset/patches_annotatin_test.txt", "a")
+    print("generating ...")
+    for image_name in all_images_name:
+        # append images name in file "patches_locations.txt"
+        if 'c' in image_name:
+            f.write(image_name + " " + "0")
+        else:
+            f.write(image_name + " " + "1")
+
+        f.write('\n')
+    f.close()
+
+
+
 
 # %%
 
-feature_extractor = 'sift'  # one of 'sift', 'surf', 'brisk', 'orb'
-feature_matching = 'bf'
 
+if __name__ == '__main__':
+    main()
 
-# %%
-
-def image_sharpning(image):
-    """
-
-    :param image: input image which is convolved with kernel_sharpening
-    :return: sharped images
-    """
-    # Create  shapening kernel, it must equal to one eventually
-    kernel_sharpening = np.array([[-1, -1, -1],
-                                  [-1, 9, -1],
-                                  [-1, -1, -1]])
-    # applying the sharpening kernel to the input image & displaying it.
-    sharpened = cv2.filter2D(image, -1, kernel_sharpening)
-    return sharpened
-
-
-def remove_black_region(result):
-    gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
-
-    # Finds contours from the binary image
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-
-    # get the maximum contour area
-    c = max(cnts, key=cv2.contourArea)
-
-    # get a bbox from the contour area
-    (x, y, w, h) = cv2.boundingRect(c)
-
-    # crop the image to the bbox coordinates
-    crop = result[y:y + h, x:x + w]
-
-    # return the cropped image
-    return crop
-
-
-def read_all_images_name(folder_path):
-    """
-
-    :param folder_path: this is the path of folder in which we pick all images.
-    :return: this function return sorted name of images with complete path
-    """
-    # Reading all images form file.
-    all_images_name = []
-    # r=root, d=directories, f = files
-    for r, d, f in os.walk(folder_path):
-        for file in f:
-            if '.JPG' in file:
-                all_images_name.append(r + file)
-    return sorted(all_images_name)
-
-
-def read_all_images_form(images_names):
-    # Reading all images form file.
-    all_images_array = []
-    for image_name in images_names:
-        print(image_name)
-        img = cv2.imread(image_name)
-        img = image_sharpning(img)
-        # img = remove_black_region(img)
-        # cv2.imwrite(image_name, img)
-        all_images_array.append(img)
-    return all_images_array
-
-
-def detectAndDescribe(image, method=None):
-    """
-    Compute key points and feature descriptors using an specific method
-    """
-
-    assert method is not None, "You need to define a feature detection method. Values are: 'sift', 'surf'"
-
-    # detect and extract features from the image
-    if method == 'sift':
-        descriptor = cv2.xfeatures2d.SIFT_create()
-    elif method == 'surf':
-        descriptor = cv2.xfeatures2d.SURF_create()
-    elif method == 'brisk':
-        descriptor = cv2.BRISK_create()
-    elif method == 'orb':
-        descriptor = cv2.ORB_create()
-
-    # get keypoints and descriptors
-    (kps, features) = descriptor.detectAndCompute(image, None)
-
-    return kps, features
-
-
-def createMatcher(method, crossCheck):
-    "Create and return a Matcher Object"
-
-    if method == 'sift' or method == 'surf':
-        bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=crossCheck)
-    elif method == 'orb' or method == 'brisk':
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=crossCheck)
-    return bf
-
-
-def matchKeyPointsBF(featuresA, featuresB, method):
-    bf = createMatcher(method, crossCheck=True)
-
-    # Match descriptors.
-    best_matches = bf.match(featuresA, featuresB)
-
-    # Sort the features in order of distance.
-    # The points with small distance (more similarity) are ordered first in the vector
-    rawMatches = sorted(best_matches, key=lambda x: x.distance)
-    print("Raw matches (Brute force):", len(rawMatches))
-    return rawMatches
-
-
-def matchKeyPointsKNN(featuresA, featuresB, ratio, method):
-    bf = createMatcher(method, crossCheck=False)
-    # compute the raw matches and initialize the list of actual matches
-    rawMatches = bf.knnMatch(featuresA, featuresB, 2)
-    print("Raw matches (knn):", len(rawMatches))
-    matches = []
-
-    # loop over the raw matches
-    for m, n in rawMatches:
-        # ensure the distance is within a certain ratio of each
-        # other (i.e. Lowe's ratio test)
-        if m.distance < n.distance * ratio:
-            matches.append(m)
-    return matches
-
-
-def getHomography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh):
-    # convert the keypoints to numpy arrays
-    kpsA = np.float32([kp.pt for kp in kpsA])
-    kpsB = np.float32([kp.pt for kp in kpsB])
-
-    if len(matches) > 4:
-
-        # construct the two sets of points
-        ptsA = np.float32([kpsA[m.queryIdx] for m in matches])
-        ptsB = np.float32([kpsB[m.trainIdx] for m in matches])
-
-        # estimate the homography between the sets of points
-        (H, status) = cv2.findHomography(ptsA, ptsB, cv2.RANSAC,
-                                         reprojThresh)
-
-        return matches, H, status
-    else:
-        return None
-
-
-def draw_matches_form_feature(matches, trainImg, kpsA, queryImg, kpsB, feature_matching):
-    print("Using: {} feature matcher".format(feature_matching))
-
-    fig = plt.figure(figsize=(20, 8))
-
-    if feature_matching == 'bf':
-        img = cv2.drawMatches(trainImg, kpsA, queryImg, kpsB, matches[:100],
-                              None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    elif feature_matching == 'knn':
-        img = cv2.drawMatches(trainImg, kpsA, queryImg, kpsB, np.random.choice(matches, 100),
-                              None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    plt.imshow(img)
-    plt.show()
-
-
-def stitch_two_images(queryImg, trainImg, feature_extractor, draw_matches=False):
-    # Convert Images to gray scale.
-    trainImg_gray = cv2.cvtColor(trainImg, cv2.COLOR_BGR2GRAY)
-    queryImg_gray = cv2.cvtColor(queryImg, cv2.COLOR_BGR2GRAY)
-    # Extract features for both images.
-    kpsA, featuresA = detectAndDescribe(trainImg_gray, method=feature_extractor)
-    kpsB, featuresB = detectAndDescribe(queryImg_gray, method=feature_extractor)
-    # Find matching between features.
-    if feature_matching == 'bf':
-        matches = matchKeyPointsBF(featuresA, featuresB, method=feature_extractor)
-    elif feature_matching == 'knn':
-        matches = matchKeyPointsKNN(featuresA, featuresB, ratio=0.75, method=feature_extractor)
-    # If you want to show the matches
-    if draw_matches:
-        draw_matches_form_feature(matches, trainImg, kpsA, queryImg, kpsB, feature_matching)
-    # Find homography matrix.
-    M = getHomography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh=4)
-
-    if M is None:
-        print("Error! In Homograpy Matrix.")
-    (matches, H, status) = M
-
-    # Apply panorama correction
-    width = trainImg.shape[1] + queryImg.shape[1]
-    height = trainImg.shape[0] + queryImg.shape[0]
-
-    result = cv2.warpPerspective(trainImg, H, (width, height))
-    result[0:queryImg.shape[0], 0:queryImg.shape[1]] = queryImg
-    crop_image = remove_black_region(result)
-    return crop_image
-
-
-def find_homography_in_all_frames_dr_moshin(images_array, feature_extractor, feature_matching='bf'):
-
-    homography_array = []
-
-    for i in range(0, len(images_array)):
-        print("")
-        # Read 2 consecutive frames.
-        temp_img1 = images_array[i]
-        temp_img2 = images_array[i + 1]
-        # Convert into gray
-        temp_img1_gray = cv2.cvtColor(temp_img1, cv2.COLOR_BGR2GRAY)
-        temp_img2_gray = cv2.cvtColor(temp_img2, cv2.COLOR_BGR2GRAY)
-
-        # Extract features for both images.
-        print("[INFO] Extracting Feature ...")
-        time1 = time.time()
-        kpsA, featuresA = detectAndDescribe(temp_img2_gray, method=feature_extractor)
-        kpsB, featuresB = detectAndDescribe(temp_img1_gray, method=feature_extractor)
-        time2 = time.time()
-        print('Feature Extraction Time:', time2 - time1, ' sec')
-
-        # Find matching between features.
-        print("[INFO] Feature Matching ...")
-
-        if feature_matching == 'bf':
-            matches = matchKeyPointsBF(featuresA, featuresB, method=feature_extractor)
-        elif feature_matching == 'knn':
-            matches = matchKeyPointsKNN(featuresA, featuresB, ratio=0.75, method=feature_extractor)
-
-        time3 = time.time()
-        print('Feature Matching Time:', time3 - time2, ' sec')
-
-        # Find homography matrix.
-        print("[INFO] Finding Homograpy matrix ...")
-        M = getHomography(kpsA, kpsB, featuresA, featuresB, matches, reprojThresh=4)
-
-        if M is None:
-            print("Error! In Homograpy Matrix.")
-
-        (matches, H, status) = M
-        homography_array.append(H)
-
-    return homography_array
-
-
-def stitch_images_by_dr_moshin(images_array, feature_extractor):
-
-    H_array = find_homography_in_all_frames_dr_moshin(images_array, feature_extractor)
-
-    queryImg = images_array[0]
-    trainImg = images_array[1]
-    # Apply panorama correction
-    width = trainImg.shape[1] + queryImg.shape[1]
-    height = trainImg.shape[0] + queryImg.shape[0]
-
-    result = cv2.warpPerspective(trainImg, H_array[0], (width, height))
-    result[0:queryImg.shape[0], 0:queryImg.shape[1]] = queryImg
-    crop_image = remove_black_region(result)
-
-
-
-
-images_folder_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/te/"
-
-time1 = time.time()
-print("[INFO] Reading Frames ...")
-images_name = read_all_images_name(images_folder_path)
-images_array = read_all_images_form(images_name)
-
-
-# %%
-queryImg = images_array[0]
-trainImg = images_array[1]
-stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
-
-# stitched_image = stitch_images_by_dr_moshin(images_array, feature_extractor)
-
-# if len(images_array) == 1:
-#     stitched_image = images_array[0]
-# elif len(images_array) == 2:
-#     queryImg = images_array[0]
-#     trainImg = images_array[1]
-#     stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
-#     stitched_image = remove_black_region(stitched_image)
-# elif len(images_array) > 2:
-#
-#     queryImg = images_array[0]
-#     trainImg = images_array[1]
-#     stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
-#     stitched_image = remove_black_region(stitched_image)
-#     for i in range(2, len(images_array)):
-#         queryImg = stitched_image
-#         trainImg = images_array[i]
-#         stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
-#         stitched_image = remove_black_region(stitched_image)
-
-#  Write stitched images.
-plt.imshow(stitched_image)
-plt.show()
