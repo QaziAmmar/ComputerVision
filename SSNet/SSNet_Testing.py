@@ -17,7 +17,7 @@ import scipy.io as sio
 from PIL import Image
 import scipy
 import pickle
-
+from custom_classes import cv_iml
 
 # %%
 
@@ -83,21 +83,24 @@ def create_model():
 
 # %%
 
+
 root_path = 'E:/ITU/Dr_Mohsen/houseCounting/'
-features_path = root_path + 'all_new_mix_feature_maps/dmaps'
-images_path = root_path + 'all_new_mix_data_no_annotations/'
-locations = open(root_path + 'sh_new_mix_all.txt', 'r').read().split('\n')
+# features_path = root_path + 'all_new_mix_feature_maps/dmaps'
+images_path = "/home/itu/Desktop/Qazi/foldscope_dataset/test_patch/"
+locations = open("/home/itu/Desktop/Qazi/foldscope_dataset/patches_annotatin_test.txt", 'r').read().split('\n')
 locations = [row.split(' ') for row in locations]
 
 save_overlays = True
-overlays_path = "{}/all_new_mix_feature_maps/overlays/".format(root_path)
+# overlays_path = "{}/all_new_mix_feature_maps/overlays/".format(root_path)
 
-image_extension = '.tiff'
+# image_extension = '.jpg'
 
 # %%
 
 model = create_model()
-model.load_weights('Models/base_weights.hdf5')
+# model.load_weights("/home/itu/Desktop/Qazi/SSNet_weigth/Busara_Vicinity_40_2.hdf5")
+model.load_weights("/home/itu/Desktop/Qazi/SSNet_weigth/base_weights.hdf5")
+
 
 img_h = 256
 img_w = 256
@@ -106,10 +109,11 @@ img_h = np.int(img_h)
 img_w = np.int(img_w)
 
 M = [108, 104, 94]  # mean values
+result_path = "/home/itu/Desktop/Qazi/results/"
 
 for idx, row in enumerate(locations):
     print(idx)
-    f = Image.open(images_path + row[0] + image_extension)
+    f = Image.open(images_path + row[0])
     image = np.asarray(f, dtype=np.float32)
     image = cv2.resize(image, (256, 256))
 
@@ -125,25 +129,28 @@ for idx, row in enumerate(locations):
     test_img = np.float32(test_img)
 
     output = model.predict(test_img)
+    # save the sample 0 with image name and
     sample0 = imresize(output[0, :, :, 0], [img_h, img_w], interp='bilinear', mode='F')
     sample1 = imresize(output[0, :, :, 1], [img_h, img_w], interp='bilinear', mode='F')
 
-    overlay[:, :, 0] = image[0, :, :]
-    overlay[:, :, 1] = image[1, :, :]
-    temp = image[2, :, :]
+    # overlay[:, :, 0] = image[0, :, :]
+    # overlay[:, :, 1] = image[1, :, :]
+    # temp = image[2, :, :]
+    #
+    # vis = (np.double(temp) * np.double(sample0)) + np.double(255 * (sample1))
+    # overlay[:, :, 2] = vis
+    #
 
-    vis = (np.double(temp) * np.double(sample0)) + np.double(255 * (sample1))
-    overlay[:, :, 2] = vis
-
-    filename = "{}/{}.mat".format(features_path, row[0])
-    sio.savemat(filename, {'prob': sample1})
-
-    #     filename = "{}/{}.npy".format(features_path, row[0])
-    #     np.save(open(filename, 'wb'), sample1)
-
-    if save_overlays:
-        overlay_path = "{}/{}.png".format(overlays_path, row[0])
-        imsave(overlay_path, overlay)
+    filename = "{}/{}".format(result_path, row[0])
+    cv2.imwrite(filename, sample0 * 255)
+    # sio.savemat(filename, {'prob': sample0})
+    #
+    # #     filename = "{}/{}.npy".format(features_path, row[0])
+    # #     np.save(open(filename, 'wb'), sample1)
+    #
+    # if save_overlays:
+    #     overlay_path = "{}/{}.png".format(overlays_path, row[0])
+    #     imsave(overlay_path, overlay)
 
 # %%
 

@@ -1,5 +1,4 @@
 # %%
-
 from keras.models import Sequential
 from keras.utils import plot_model
 import keras as k
@@ -105,7 +104,7 @@ def create_model():
 
     model.add(GlobalAveragePooling2D())
 
-    sgd = optimizers.SGD(lr=0.0001)
+    sgd = optimizers.SGD(lr=0.000001)
 
     model.compile(loss=softmax_cross_entropy, optimizer=sgd, metrics=['accuracy'])
 
@@ -115,7 +114,7 @@ def create_model():
 # %%
 
 model = create_model()
-model.load_weights(path.save_models_path + "SSNet/base_weights.hdf5")
+# model.load_weights("/home/itu/Desktop/Qazi/SSNet_weigth/base_weights.hdf5")
 
 # %%
 
@@ -137,6 +136,7 @@ def load_dataset(patches_path, counts_path):
         patches.append(image)
         label = np.asarray([0, 1])
         #         label = np.ones((25, 25))
+        # Clear image label.
         if row[1] == '0':
             label = np.asarray([1, 0])
         #             np.zeros((25, 25))
@@ -147,8 +147,9 @@ def load_dataset(patches_path, counts_path):
 
 # %%
 
-patches, labels = load_dataset(path.dataset_path + "foldscope_dataset/patches/",
-                               path.dataset_path + "foldscope_dataset/patches_annotation.txt")
+
+patches, labels = load_dataset("/home/itu/Desktop/Qazi/foldscope_dataset/patches/",
+                               "/home/itu/Desktop/Qazi/foldscope_dataset/patches_annotation.txt")
 train_data = np.zeros((len(patches), 256, 256, 3))
 train_labels = np.zeros((len(labels), 2))
 
@@ -160,7 +161,7 @@ print(train_data.shape, train_labels.shape)
 # %%
 
 time_0 = time.time()
-history = model.fit(x=train_data, y=train_labels, epochs=20, verbose=1, batch_size=32, shuffle=True,
+history = model.fit(x=train_data, y=train_labels, epochs=5, verbose=1, batch_size=32, shuffle=True,
                     validation_split=0.1)
 time_1 = time.time()
 print(time_1 - time_0)
@@ -187,4 +188,4 @@ plt.show()
 
 # %%
 
-model.save_weights(path.save_models_path + "SSNet/Busara_Vicinity_40_2.hdf5")
+model.save_weights("/home/itu/Desktop/Qazi/SSNet_weigth/Busara_Vicinity_40_2.hdf5")
