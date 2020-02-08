@@ -1,6 +1,7 @@
 # This is a file where we fist test our code then implement it into other file
 from custom_classes import path
 import cv2
+import psycopg2
 
 
 def augment_image():
@@ -56,19 +57,21 @@ def augment_image():
 
 
 def main():
-    images_folder_path = path.dataset_path + "foldscope_dataset/test_patch"
-    all_images_name = path.read_all_files_name_from(folder_path=images_folder_path, file_extension='.jpg')
-    f = open(path.dataset_path + "foldscope_dataset/patches_annotatin_test.txt", "a")
-    print("generating ...")
-    for image_name in all_images_name:
-        # append images name in file "patches_locations.txt"
-        if 'c' in image_name:
-            f.write(image_name + " " + "0")
-        else:
-            f.write(image_name + " " + "1")
+    conn = psycopg2.connect("host=127.0.0.1 user=postgres password=12345678")
 
-        f.write('\n')
-    f.close()
+    # images_folder_path = path.dataset_path + "foldscope_dataset/test_patch"
+    # all_images_name = path.read_all_files_name_from(folder_path=images_folder_path, file_extension='.jpg')
+    # f = open(path.dataset_path + "foldscope_dataset/patches_annotatin_test.txt", "a")
+    # print("generating ...")
+    # for image_name in all_images_name:
+    #     # append images name in file "patches_locations.txt"
+    #     if 'c' in image_name:
+    #         f.write(image_name + " " + "0")
+    #     else:
+    #         f.write(image_name + " " + "1")
+    #
+    #     f.write('\n')
+    # f.close()
 
 
 
