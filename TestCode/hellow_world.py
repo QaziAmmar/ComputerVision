@@ -1,5 +1,5 @@
 # This is a file where we fist test our code then implement it into other file
-from custom_classes import path
+from custom_classes import path, cv_iml
 import cv2
 import psycopg2
 
@@ -80,5 +80,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    image_path = "/Users/qaziammar/Downloads/IMG_4782.jpg"
+    image = cv2.imread(image_path)
+    image = cv_iml.removeBlackRegion(image)
+    cv2.imwrite(image_path, image)
 

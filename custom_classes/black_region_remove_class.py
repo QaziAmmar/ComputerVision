@@ -2,36 +2,6 @@ import cv2
 import numpy as np
 
 
-def removeBlackRegion(img):
-    """
-       This function remove the black region form image by cropping largest contours form the image.
-       :param img: input image
-       :return: image with removed black region but not removed black regions completely we need to apply some
-       thresholding to rows and col to completely remove the black region.
-       """
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    ret, thresh = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
-
-    # Find all contours form the gray image.
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    max_area = -1
-    best_cnt = None
-
-    # Find contours with largest area.
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > max_area:
-            max_area = area
-            best_cnt = cnt
-
-    # Get coordinate of largest contours
-    x, y, w, h = cv2.boundingRect(best_cnt)
-
-    # Crop original with coordinate of largest contour.
-    crop = img[y:y + h, x:x + w]
-    return crop
-
-
 def crop_points_for_black_color(img, percentage_limit=6):
     """
     :param img: Input image.

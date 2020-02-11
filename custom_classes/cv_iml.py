@@ -7,6 +7,7 @@ from custom_classes import path
 def image_show(img, cmap=None):
     """
 
+    :param cmap:
     :param binary:
     :param img: img to display.
     :return: None
@@ -16,6 +17,40 @@ def image_show(img, cmap=None):
     else:
         plt.imshow(img)
     plt.show()
+
+
+def show_multiple_image_with(row=1, col=1):
+    print("show  multiple image is running")
+
+
+def removeBlackRegion(img):
+    """
+       This function remove the black region form image by cropping largest contours form the image.
+       :param img: input image
+       :return: image with removed black region but not removed black regions completely we need to apply some
+       thresholding to rows and col to completely remove the black region.
+       """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
+
+    # Find all contours form the gray image.
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    max_area = -1
+    best_cnt = None
+
+    # Find contours with largest area.
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > max_area:
+            max_area = area
+            best_cnt = cnt
+
+    # Get coordinate of largest contours
+    x, y, w, h = cv2.boundingRect(best_cnt)
+
+    # Crop original with coordinate of largest contour.
+    crop = img[y:y + h, x:x + w]
+    return crop
 
 
 def generate_patches_of_image(input_folder_path="", out_folder_path="", annotation_file_path=None, patch_size=0,
