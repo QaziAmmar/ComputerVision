@@ -19,8 +19,31 @@ def image_show(img, cmap=None):
     plt.show()
 
 
-def show_multiple_image_with(row=1, col=1):
-    print("show  multiple image is running")
+def apply_sharpening_on(image):
+    # Create kernel
+    kernel = np.array([[0, -1, 0],
+                       [-1, 5, -1],
+                       [0, -1, 0]])
+
+    # Sharpen image
+    sharp_image = cv2.filter2D(image, -1, kernel)
+    return sharp_image
+
+
+def show_multiple_image_with(row=1, col=1, images=[], titles=[]):
+
+    fig, ax = plt.subplots(row, col, figsize=(10, 10), sharex=True, sharey=True)
+    image_counter = 0
+    for i in range(row):
+        for j in range(col):
+            ax[i, j].imshow(images[image_counter])
+            ax[i, j].set_title(titles[image_counter])
+
+    for a in ax.ravel():
+        a.set_axis_off()
+
+    plt.tight_layout()
+    plt.show()
 
 
 def removeBlackRegion(img):

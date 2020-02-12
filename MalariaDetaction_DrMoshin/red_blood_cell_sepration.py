@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from scipy import ndimage
 import matplotlib.pyplot as plt
-import path
+from custom_classes import path
 
 # Reading the image
 path.init()

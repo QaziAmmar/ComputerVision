@@ -2,6 +2,7 @@
 from custom_classes import path, cv_iml
 import cv2
 import psycopg2
+import numpy as np
 
 
 def augment_image():
@@ -54,34 +55,4 @@ def augment_image():
     counter = counter + 1
 
     f.close()
-
-
-def main():
-    conn = psycopg2.connect("host=127.0.0.1 user=postgres password=12345678")
-
-    # images_folder_path = path.dataset_path + "foldscope_dataset/test_patch"
-    # all_images_name = path.read_all_files_name_from(folder_path=images_folder_path, file_extension='.jpg')
-    # f = open(path.dataset_path + "foldscope_dataset/patches_annotatin_test.txt", "a")
-    # print("generating ...")
-    # for image_name in all_images_name:
-    #     # append images name in file "patches_locations.txt"
-    #     if 'c' in image_name:
-    #         f.write(image_name + " " + "0")
-    #     else:
-    #         f.write(image_name + " " + "1")
-    #
-    #     f.write('\n')
-    # f.close()
-
-
-
-
-# %%
-
-
-if __name__ == '__main__':
-    image_path = "/Users/qaziammar/Downloads/IMG_4782.jpg"
-    image = cv2.imread(image_path)
-    image = cv_iml.removeBlackRegion(image)
-    cv2.imwrite(image_path, image)
 
