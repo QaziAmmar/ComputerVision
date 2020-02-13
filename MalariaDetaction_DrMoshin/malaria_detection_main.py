@@ -57,6 +57,7 @@ import cv2
 from concurrent import futures
 import threading
 
+
 def get_img_shape_parallel(idx, img, total_imgs):
     if idx % 5000 == 0 or idx == (total_imgs - 1):
         print('{}:working on img num {}'.format(threading.current_thread().name, idx))
@@ -77,7 +78,7 @@ print('Average Dissension: ', np.mean(train_img_dims, axis=0))
 print('Median Dimensions:', np.median(train_img_dims, axis=0))
 print('Max Dimensions:', np.max(train_img_dims, axis=0))
 
-#%%
+# %%
 # Load image data and resize on 125, 125 pixel.
 IMG_DIMS = (125, 125)
 
@@ -105,21 +106,21 @@ train_data = np.array(list(train_data_map))
 
 print('\nLoading Validation Images:')
 val_data_map = ex.map(get_img_data_parallel,
-                        [record[0] for record in val_data_inp],
-                        [record[1] for record in val_data_inp],
-                        [record[2] for record in val_data_inp])
+                      [record[0] for record in val_data_inp],
+                      [record[1] for record in val_data_inp],
+                      [record[2] for record in val_data_inp])
 val_data = np.array(list(val_data_map))
 
 print('\nLoading Test Images:')
 test_data_map = ex.map(get_img_data_parallel,
-                        [record[0] for record in test_data_inp],
-                        [record[1] for record in test_data_inp],
-                        [record[2] for record in test_data_inp])
+                       [record[0] for record in test_data_inp],
+                       [record[1] for record in test_data_inp],
+                       [record[2] for record in test_data_inp])
 test_data = np.array(list(test_data_map))
 
 train_data.shape, val_data.shape, test_data.shape
 
-#%%
+# %%
 import matplotlib.pyplot as plt
 
 plt.figure(1, figsize=(8, 8))
@@ -134,7 +135,7 @@ for i in range(16):
     plt.title('{}'.format(train_labels[r[0]]))
     plt.xticks([]), plt.yticks([])
 plt.show()
-#%%
+# %%
 BATCH_SIZE = 64
 NUM_CLASSES = 2
 EPOCHS = 25
@@ -156,8 +157,9 @@ test_labels_enc = le.transform(test_labels)
 
 print(train_labels[:6], train_labels_enc[:6])
 
-#%%
+# %%
 import tensorflow as tf
+
 # Model 1: CNN from Scratch
 
 inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
@@ -182,14 +184,15 @@ model = tf.keras.Model(inputs=inp, outputs=out)
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.summary()
 
-#%%
+# %%
 # Model training
 import datetime
+
 logdir = os.path.join('/Users/qaziammar/Documents/Thesis/ComputerVision',
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                              patience=2, min_lr=0.000001)
+                                                 patience=2, min_lr=0.000001)
 callbacks = [reduce_lr, tensorboard_callback]
 
 history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
@@ -199,7 +202,7 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
                     callbacks=callbacks,
                     verbose=1)
 
-#%%
+# %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
 model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
@@ -208,12 +211,12 @@ print('Test accuracy:', score[1])
 # model.save('basic_cnn.h5')
 
 
-#%%
+# %%
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 t = f.suptitle('Basic CNN Performance', fontsize=12)
 f.subplots_adjust(top=0.85, wspace=0.3)
 
-max_epoch = len(history.history['accuracy'])+1
+max_epoch = len(history.history['accuracy']) + 1
 epoch_list = list(range(1, max_epoch))
 ax1.plot(epoch_list, history.history['accuracy'], label='Train Accuracy')
 ax1.plot(epoch_list, history.history['val_accuracy'], label='Validation Accuracy')
@@ -232,14 +235,13 @@ ax2.set_title('Loss')
 l2 = ax2.legend(loc="best")
 plt.show()
 
-#%%
+# %%
 # Model Performance Evaluation
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
-                                                  for pred in basic_cnn_preds.ravel()])
+                                               for pred in basic_cnn_preds.ravel()])
 
-
-#%%
+# %%
 # Using VGG-19 Network for transfer learning in malaria detection taks.
 
 vgg = tf.keras.applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=INPUT_SHAPE)
@@ -260,12 +262,7 @@ drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
 model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
 model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
-                loss='binary_crossentropy',
-                metrics=['accuracy'])
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
 
 model.summary()
-
-
-
-
-
