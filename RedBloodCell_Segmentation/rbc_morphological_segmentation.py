@@ -3,7 +3,7 @@ from custom_classes import path, cv_iml
 import cv2
 import numpy as np
 
-image_path = "/Users/qaziammar/Downloads/IMG_4452.JPG"
+image_path = '/Users/qaziammar/Downloads/original_image.jpg'
 # image_segments = 500
 rgb = cv2.imread(image_path)
 clone = rgb.copy()

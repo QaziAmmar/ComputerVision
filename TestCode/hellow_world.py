@@ -2,57 +2,64 @@
 from custom_classes import path, cv_iml
 import cv2
 import psycopg2
+import numpy
 import numpy as np
+from scipy.ndimage import label
 
 
-def augment_image():
-    images_folder_path = path.dataset_path + "blur_clear_foldscope/clear_patch"
-    all_images_name = path.read_all_files_name_from(folder_path=images_folder_path, file_extension='.jpg')
-    f = open(path.dataset_path + "blur_clear_foldscope/clear_patches_annotation.txt", "a")
-    print("generating ...")
-    for image_name in all_images_name:
-        #         append images name in file "patches_locations.txt"
-        counter = 0
-        img = cv2.imread(images_folder_path + "/" + image_name)
+def segment(im1, img):
+    # morphological transformations
+    border = cv2.dilate(img, None, iterations=10)
+    border = border - cv2.erode(border, None, iterations=1)
+    # invert the image so black becomes white, and vice versa
+    img = -img
+    # applies distance transform and shows visualization
+    dt = cv2.distanceTransform(img, 2, 3)
+    dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
+    # reapply contrast to strengthen boundaries
+    clache = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    dt = clache.apply(dt)
+    # rethreshold the image
+    _, dt = cv2.threshold(dt, 40, 255, cv2.THRESH_BINARY)
 
-        # get image height, width
-        (h, w) = img.shape[:2]
-        # calculate the center of the image
-        center = (w / 2, h / 2)
+    lbl, ncc = label(dt)
+    lbl = lbl * (255 / ncc)
+    # Complete the markers
+    lbl[border == 255] = 255
 
-        angle90 = 90
-        angle180 = 180
-        angle270 = 270
+    lbl = lbl.astype(numpy.int32)
+    # apply watershed
+    cv2.watershed(im1, lbl)
 
-        scale = 1.0
+    lbl[lbl == -1] = 0
+    lbl = lbl.astype(numpy.uint8)
+    # return the image as one list, and the labels as another.
+    return dt, lbl
 
-        # Perform the counter clockwise rotation holding at the center
-        # 90 degrees
-        M = cv2.getRotationMatrix2D(center, angle90, scale)
-        rotated90 = cv2.warpAffine(img, M, (h, w))
-        patch_image_save_name = image_name[:-4] + "_" + str(angle90) + ".jpg"
-        cv2.imwrite(path.dataset_path + "blur_clear_foldscope/clear_patch/" + patch_image_save_name, rotated90)
-        f.write(patch_image_save_name + " " + "0")
-        f.write('\n')
 
-        # 180 degrees
-        M = cv2.getRotationMatrix2D(center, angle180, scale)
-        rotated180 = cv2.warpAffine(img, M, (w, h))
-        patch_image_save_name = image_name[:-4] + "_" + str(angle180) + ".jpg"
-        cv2.imwrite(path.dataset_path + "blur_clear_foldscope/clear_patch/" + patch_image_save_name, rotated180)
-        f.write(patch_image_save_name + " " + "0")
-        f.write('\n')
+# load your image, I called mine 'rbc'
+img = cv2.imread('/Users/qaziammar/Downloads/original_image.jpg')
+rgb = img.copy()
+clone = img.copy()
+# keep resizing your image so it appropriately identifies the RBC's
+img = cv2.resize(img, (0, 0), fx=5, fy=5)
+# it's always easier if the image is copied for long pieces of code.
+# we're copying it twice for reasons you'll see soon enough.
+wol = img.copy()
+gg = img.copy()
+# convert to grayscale
+img_gray = cv2.cvtColor(gg, cv2.COLOR_BGR2GRAY)
+# enhance contrast (helps makes boundaries clearer)
+clache = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+img_gray = clache.apply(img_gray)
+# threshold the image and apply morphological transforms
+_, img_bin = cv2.threshold(img_gray, 50, 255,
+                           cv2.THRESH_OTSU)
+img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN,
+                           numpy.ones((3, 3), dtype=int))
+img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_DILATE,
+                           numpy.ones((3, 3), dtype=int), iterations=1)
+# call the 'segment' function (discussed soon)
+dt, result = segment(img, img_bin)
 
-        # 270 degrees
-        M = cv2.getRotationMatrix2D(center, angle270, scale)
-        rotated270 = cv2.warpAffine(img, M, (h, w))
-        patch_image_save_name = image_name[:-4] + "_" + str(angle270) + ".jpg"
-        cv2.imwrite(path.dataset_path + "blur_clear_foldscope/clear_patch/" + patch_image_save_name, rotated270)
-        f.write(patch_image_save_name + " " + "0")
-        f.write('\n')
-
-    print(counter)
-    counter = counter + 1
-
-    f.close()
-
+print("end of fucntion")
