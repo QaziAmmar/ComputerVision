@@ -11,8 +11,12 @@ INPUT_SHAPE = (125, 125, 3)
 IMG_DIMS = (125, 125)
 
 #  load test data.
-data_set_base_path = path.result_folder_path + "rbc"
-test_files = glob.glob(data_set_base_path + '/*.jpg')
+
+test_data_set_base_path = path.dataset_path + "IML_cell_images/test/"
+files_names = path.read_all_files_name_from(test_data_set_base_path, ".JPG")
+test_files = []
+for name in files_names:
+    test_files.append(test_data_set_base_path + name)
 
 
 def get_img_shape_parallel(idx, img, total_imgs):
@@ -78,7 +82,7 @@ model.summary()
 
 # %%
 
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn.h5"
+save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_IML_fineTune.h5"
 model.load_weights(save_weights_path)
 
 # %%
@@ -86,7 +90,7 @@ model.load_weights(save_weights_path)
 
 basic_cnn_preds = model.predict(test_imgs_scaled)
 
-basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
+basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.6 else 0
                                                for pred in basic_cnn_preds.ravel()])
 
 # %%
@@ -96,8 +100,86 @@ for i in range(len(basic_cnn_preds_labels)):
     label = basic_cnn_preds_labels[i]
     img = cv2.imread(test_files[i])
     if label == 'healthy':
-        image_save_path = path.result_folder_path + "prediction/healthy/" + str(i) + ".jpg"
+        image_save_path = path.result_folder_path + "IML_finetune_rbc_result/healthy/" + files_names[i]
         cv2.imwrite(image_save_path, img)
     else:
-        image_save_path = path.result_folder_path + "prediction/malaria/" + str(i) + ".jpg"
+        image_save_path = path.result_folder_path + "IML_finetune_rbc_result/malaria/" + files_names[i]
         cv2.imwrite(image_save_path, img)
+
+# end of testing code.
+
+# %%
+# Start calculating F1 score of our dataset.
+# import os
+#
+# f1_score_base_path = path.dataset_path + "IML_cell_images/test_f1/"
+#
+# base_dir = os.path.join(f1_score_base_path)
+# infected_dir = os.path.join(base_dir, "malaria")
+# healthy_dir = os.path.join(base_dir, "healthy")
+#
+# infected_files = glob.glob(infected_dir + '/*.JPG')
+# healthy_files = glob.glob(healthy_dir + '/*.JPG')
+#
+# print(len(infected_files), len(healthy_files))
+# # %%
+#
+# import numpy as np
+# import pandas as pd
+#
+# np.random.seed(42)
+#
+# files_df = pd.DataFrame({
+#     'filename': infected_files + healthy_files,
+#     'label': ['malaria'] * len(infected_files) + ['healthy'] * len(healthy_files)
+# }).sample(frac=1, random_state=42).reset_index(drop=True)
+#
+# files_df.head()
+#
+# test_files = files_df['filename'].values
+# test_labels = files_df['label'].values
+#
+# print(test_files.shape)
+#
+# # %%
+# ex = futures.ThreadPoolExecutor(max_workers=None)
+# data_inp = [(idx, img, len(test_files)) for idx, img in enumerate(test_files)]
+# test_data_map = ex.map(get_img_data_parallel,
+#                        [record[0] for record in data_inp],
+#                        [record[1] for record in data_inp],
+#                        [record[2] for record in data_inp])
+# test_data = np.array(list(test_data_map))
+#
+# # %%
+# # predict probabilities for test set
+# # train_labels = ["healthy", "malaria"]
+# le = LabelEncoder()
+# le.fit(test_labels)
+#
+# test_labels_enc = le.transform(test_labels)
+# test_imgs_scaled = test_data / 255.
+# basic_cnn_preds = model.predict(test_imgs_scaled)
+#
+# basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.6 else 0
+#                                                for pred in basic_cnn_preds.ravel()])
+#
+# # %%
+# # demonstration of calculating metrics for a neural network model using sklearn
+#
+# from sklearn.metrics import accuracy_score
+# from sklearn.metrics import precision_score
+# from sklearn.metrics import recall_score
+# from sklearn.metrics import f1_score
+#
+#
+# accuracy = accuracy_score(test_labels, basic_cnn_preds_labels)
+# print('Accuracy: %f' % accuracy)
+# # # precision tp / (tp + fp)
+# precision = precision_score(test_labels, basic_cnn_preds_labels, pos_label='malaria')
+# print('Precision: %f' % precision)
+# # recall: tp / (tp + fn)
+# recall = recall_score(test_labels, basic_cnn_preds_labels, pos_label='malaria')
+# print('Recall: %f' % recall)
+# # f1: 2 tp / (2 tp + fp + fn)
+# f1 = f1_score(test_labels, basic_cnn_preds_labels, pos_label='malaria')
+# print('F1 score: %f' % f1)

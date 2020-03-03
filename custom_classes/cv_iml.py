@@ -4,7 +4,7 @@ import numpy as np
 from custom_classes import path
 
 
-def image_show(img, cmap=None):
+def image_show(img, cmap=None, suptitle=""):
     """
 
     :param cmap:
@@ -12,6 +12,34 @@ def image_show(img, cmap=None):
     :param img: img to display.
     :return: None
     """
+    fig = plt.figure()
+    fig.suptitle(suptitle, fontsize=14, fontweight='bold')
+
+    # ax = fig.add_subplot(111)
+    # fig.subplots_adjust(top=0.85)
+    # ax.set_title('axes title')
+    #
+    # ax.set_xlabel('xlabel')
+    # ax.set_ylabel('ylabel')
+    #
+    # ax.text(3, 8, 'boxed italics text in data coords', style='italic',
+    #         bbox={'facecolor': 'red', 'alpha': 0.5, 'pad': 10})
+    #
+    # ax.text(2, 6, r'an equation: $E=mc^2$', fontsize=15)
+    #
+    # ax.text(3, 2, 'unicode: Institut für Festkörperphysik')
+    #
+    # ax.text(0.95, 0.01, 'colored text in axes coords',
+    #         verticalalignment='bottom', horizontalalignment='right',
+    #         transform=ax.transAxes,
+    #         color='green', fontsize=15)
+    #
+    # ax.plot([2], [1], 'o')
+    # ax.annotate('annotate', xy=(2, 1), xytext=(3, 4),
+    #             arrowprops=dict(facecolor='black', shrink=0.05))
+    #
+    # ax.axis([0, 10, 0, 10])
+
     if cmap == 'gray':
         plt.imshow(img, cmap='gray', vmin=0, vmax=255)
     else:
@@ -31,7 +59,14 @@ def apply_sharpening_on(image):
 
 
 def show_multiple_image_with(row=1, col=1, images=[], titles=[]):
-
+    """
+    This not stable function.
+    :param row:
+    :param col:
+    :param images:
+    :param titles:
+    :return:
+    """
     fig, ax = plt.subplots(row, col, figsize=(10, 10), sharex=True, sharey=True)
     image_counter = 0
     for i in range(row):
@@ -48,6 +83,7 @@ def show_multiple_image_with(row=1, col=1, images=[], titles=[]):
 
 def removeBlackRegion(img):
     """
+    This is a stable function.
        This function remove the black region form image by cropping largest contours form the image.
        :param img: input image
        :return: image with removed black region but not removed black regions completely we need to apply some
@@ -111,3 +147,36 @@ def generate_patches_of_image(input_folder_path="", out_folder_path="", annotati
                     f.write('\n')
     if annotation_file_path:
         f.close()
+
+
+def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping):
+    """
+    -> This is not stable function.
+    -> Need to through exception when overlapping is 100%
+    -> This function take a full image and make patches of that image save them into array and
+        return that arrray.
+    :param img: full image form where you want to get patches.
+    :param stepSize:
+    :param window_size:
+    :param overlapping: how much overlapping you need in you images.
+    :return: array of images extracted by sliding window.
+    """
+    # read the image and define the stepSize and window size
+    # (width,height)
+    if overlapping == 100:
+        return None
+    # generation step size for overlapping
+    overlapping = 100 - overlapping
+    stepSize = int(stepSize * (overlapping / 100))
+
+    patches = []
+    image = img  # your image path
+    tmp = image  # for drawing a rectangle
+    (w_width, w_height) = (window_size, window_size)  # window size
+    for x in range(0, image.shape[1] - w_width, stepSize):
+        for y in range(0, image.shape[0] - w_height, stepSize):
+            window = image[x:x + w_width, y:y + w_height, :]
+            # add window into your patches array.
+            patches.append(window)
+
+    return patches

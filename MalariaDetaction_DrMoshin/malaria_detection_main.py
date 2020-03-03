@@ -2,20 +2,23 @@
 
 import os
 import glob
+from custom_classes import path
 
-data_set_base_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/Dataset/cell_images/"
-save_weights_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/SavedModel/MalariaDetaction_DrMoshin/basic_cnn.h5"
+data_set_base_path = path.dataset_path + "IML_cell_images/train/"
+# Hard Negative mining. (HNM)
+save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_IML_fineTune.h5"
 
 base_dir = os.path.join(data_set_base_path)
-infected_dir = os.path.join(base_dir, "Parasitized")
-healthy_dir = os.path.join(base_dir, "Uninfected")
+infected_dir = os.path.join(base_dir, "malaria")
+healthy_dir = os.path.join(base_dir, "healthy")
 
-infected_files = glob.glob(infected_dir + '/*.png')
-healthy_files = glob.glob(healthy_dir + '/*.png')
+infected_files = glob.glob(infected_dir + '/*.JPG')
+healthy_files = glob.glob(healthy_dir + '/*.JPG')
 
 # %%
 # cell2
-print(len(healthy_files), len(healthy_files))
+print(len(infected_files), len(healthy_files))
+
 
 # %%
 # cell 3
@@ -41,7 +44,7 @@ from collections import Counter
 # Generating tanning and testing data.
 train_files, test_files, train_labels, test_labels = train_test_split(files_df['filename'].values,
                                                                       files_df['label'].values,
-                                                                      test_size=0.3,
+                                                                      test_size=0.1,
                                                                       random_state=42)
 # Generating validation data form tanning data.
 train_files, val_files, train_labels, val_labels = train_test_split(train_files,
@@ -74,14 +77,13 @@ train_img_dims_map = ex.map(get_img_shape_parallel,
 # this part of code is getting dimensions of all image and save in train_img_dims.
 train_img_dims = list(train_img_dims_map)
 print('Min Dimensions:', np.min(train_img_dims, axis=0))
-print('Average Dissension: ', np.mean(train_img_dims, axis=0))
+print('Average Dimensions: ', np.mean(train_img_dims, axis=0))
 print('Median Dimensions:', np.median(train_img_dims, axis=0))
 print('Max Dimensions:', np.max(train_img_dims, axis=0))
 
 # %%
 # Load image data and resize on 125, 125 pixel.
 IMG_DIMS = (125, 125)
-
 
 def get_img_data_parallel(idx, img, total_imgs):
     if idx % 5000 == 0 or idx == (total_imgs - 1):
@@ -188,12 +190,14 @@ model.summary()
 # Model training
 import datetime
 
-logdir = os.path.join('/Users/qaziammar/Documents/Thesis/ComputerVision',
+logdir = os.path.join('/home/itu/Desktop/Qazi/ComputerVision',
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                                  patience=2, min_lr=0.000001)
 callbacks = [reduce_lr, tensorboard_callback]
+
+model.load_weights(save_weights_path)
 
 history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
                     batch_size=BATCH_SIZE,
@@ -204,7 +208,7 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
-model.load_weights(save_weights_path)
+model.save(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -244,25 +248,25 @@ basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
 # %%
 # Using VGG-19 Network for transfer learning in malaria detection taks.
 
-vgg = tf.keras.applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=INPUT_SHAPE)
-vgg.trainable = False
-# Freeze the layers
-
-for layer in vgg.layers:
-    layer.trainable = False
-
-base_vgg = vgg
-base_out = base_vgg.output
-pool_out = tf.keras.layers.Flatten()(base_out)
-hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
-drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
-
-out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
-model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-
-model.summary()
+# vgg = tf.keras.applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=INPUT_SHAPE)
+# vgg.trainable = False
+# # Freeze the layers
+#
+# for layer in vgg.layers:
+#     layer.trainable = False
+#
+# base_vgg = vgg
+# base_out = base_vgg.output
+# pool_out = tf.keras.layers.Flatten()(base_out)
+# hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+# drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+# hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+# drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+#
+# out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
+# model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
+# model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
+#               loss='binary_crossentropy',
+#               metrics=['accuracy'])
+#
+# model.summary()

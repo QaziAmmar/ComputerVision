@@ -12,7 +12,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import path
+from custom_classes import path
 
 path.init()
 

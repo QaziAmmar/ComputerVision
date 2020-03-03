@@ -9,15 +9,15 @@ save_models_path = ""
 download_path = ""
 result_folder_path = ""
 
-if sys.platform == ("linux1" or "linux2"):
-    base_path = "/home/ali/Desktop/ammar/Thesis/Model_Result_Dataset/"
+if sys.platform == ("linux" or "linux1" or "linux2"):
+    base_path = "/home/itu/Desktop/Qazi/Model_Result_Dataset/"
 elif sys.platform == "darwin":
     base_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/"
 
 dataset_path = base_path + "Dataset/"
 save_models_path = base_path + "SavedModel/"
 download_path = "/Users/qaziammar/Downloads/"
-result_folder_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/Results/"
+result_folder_path = base_path + "Results/"
 
 
 def read_all_files_name_from(folder_path, file_extension):
