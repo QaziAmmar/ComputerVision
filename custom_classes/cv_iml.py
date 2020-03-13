@@ -3,10 +3,18 @@ import cv2
 import numpy as np
 from custom_classes import path
 
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_auc_score
+
 
 def image_show(img, cmap=None, suptitle=""):
     """
-
+    Version = 1.0
+    -> This function need to improve for multiple images.
     :param cmap:
     :param binary:
     :param img: img to display.
@@ -48,6 +56,12 @@ def image_show(img, cmap=None, suptitle=""):
 
 
 def apply_sharpening_on(image):
+    """
+    Version = 1.0
+    Apply sharpening kernel on image.
+    :param image:
+    :return:
+    """
     # Create kernel
     kernel = np.array([[0, -1, 0],
                        [-1, 5, -1],
@@ -60,6 +74,7 @@ def apply_sharpening_on(image):
 
 def show_multiple_image_with(row=1, col=1, images=[], titles=[]):
     """
+    Version = 1.0
     This not stable function.
     :param row:
     :param col:
@@ -83,6 +98,7 @@ def show_multiple_image_with(row=1, col=1, images=[], titles=[]):
 
 def removeBlackRegion(img):
     """
+    Version = 1.0
     This is a stable function.
        This function remove the black region form image by cropping largest contours form the image.
        :param img: input image
@@ -151,6 +167,7 @@ def generate_patches_of_image(input_folder_path="", out_folder_path="", annotati
 
 def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping):
     """
+    Version = 1.0
     -> This is not stable function.
     -> Need to through exception when overlapping is 100%
     -> This function take a full image and make patches of that image save them into array and
@@ -180,3 +197,34 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
             patches.append(window)
 
     return patches
+
+
+# demonstration of calculating metrics for a neural network model using sklearn
+
+def get_f1_score(test_labels, preds_labels, pos_label):
+    """
+    Version = 1.0
+    Calculate the F1 score of CNN prediction
+    :param test_labels: labels of testing images.
+    :param preds_labels: predicted labels by trained CNN
+    :param pos_label: positive label for calculating the precision and recall.
+    :return: this function only print the all accurcy matrix.
+    """
+    # demonstration of calculating metrics for a neural network model using sklearn
+    accuracy = accuracy_score(test_labels, preds_labels)
+    print('Accuracy: %f' % accuracy)
+    # # precision tp / (tp + fp)
+    precision = precision_score(test_labels, preds_labels, pos_label=pos_label)
+    print('Precision: %f' % precision)
+    # recall: tp / (tp + fn)
+    recall = recall_score(test_labels, preds_labels, pos_label=pos_label)
+    print('Recall: %f' % recall)
+    # f1: 2 tp / (2 tp + fp + fn)
+    f1 = f1_score(test_labels, preds_labels, pos_label=pos_label)
+    print('F1 score: %f' % f1)
+    # ROC AUC
+    # auc = roc_auc_score(test_labels, basic_cnn_preds_labels)
+    # print('ROC AUC: %f' % auc)
+    # confusion matrix
+    matrix = confusion_matrix(test_labels, preds_labels)
+    print(matrix)

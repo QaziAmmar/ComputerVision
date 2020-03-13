@@ -6,7 +6,7 @@ from custom_classes import path
 
 data_set_base_path = path.dataset_path + "IML_cell_images/train/"
 # Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_IML_fineTune.h5"
+save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn.h5.h5"
 
 base_dir = os.path.join(data_set_base_path)
 infected_dir = os.path.join(base_dir, "malaria")
@@ -44,7 +44,7 @@ from collections import Counter
 # Generating tanning and testing data.
 train_files, test_files, train_labels, test_labels = train_test_split(files_df['filename'].values,
                                                                       files_df['label'].values,
-                                                                      test_size=0.1,
+                                                                      test_size=0.01,
                                                                       random_state=42)
 # Generating validation data form tanning data.
 train_files, val_files, train_labels, val_labels = train_test_split(train_files,
@@ -197,7 +197,8 @@ reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                                  patience=2, min_lr=0.000001)
 callbacks = [reduce_lr, tensorboard_callback]
 
-model.load_weights(save_weights_path)
+# if os.path.isfile(save_weights_path):
+#     model.load_weights(save_weights_path)
 
 history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
                     batch_size=BATCH_SIZE,

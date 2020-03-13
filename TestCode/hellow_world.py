@@ -44,8 +44,8 @@ def segment(im1, img):
 
 # load your image, I called mine 'rbc'
 
-dataset_path = path.dataset_path + "/cell_images/train/malaria/"
-save_path = path.dataset_path + "/cell_images/train/malaria/"
+dataset_path = path.dataset_path + "IML_cell_images/train/malaria/"
+save_path = path.dataset_path + "IML_cell_images/train/malaria/"
 images_name = path.read_all_files_name_from(dataset_path, ".JPG")
 counter = 0
 # file_path = "/home/itu/Desktop/Qazi/Model_Result_Dataset/Dataset/cell_images/rgb_test.txt"
@@ -55,14 +55,15 @@ for image_name in images_name:
     flipVertical = cv2.flip(img, 0)
     flipHorizontal = cv2.flip(img, 1)
     flipBoth = cv2.flip(img, -1)
-    cv2.imwrite(save_path + image_name[:-4] + "fv.JPG", flipVertical)
-    cv2.imwrite(save_path + image_name[:-4] + "fh.JPG", flipHorizontal)
-    cv2.imwrite(save_path + image_name[:-4] + "fvh.JPG", flipBoth)
+    cv2.imwrite(save_path + image_name[:-4] + "_fv.JPG", flipVertical)
+    cv2.imwrite(save_path + image_name[:-4] + "_fh.JPG", flipHorizontal)
+    cv2.imwrite(save_path + image_name[:-4] + "_fvh.JPG", flipBoth)
 
+# seprate actual images form augmentateg images.
 # for image_name in images_name:
 #     img = cv2.imread(dataset_path + image_name)
-#     if (image_name.find('_90.JPG') == -1) and (image_name.find('_270.JPG') == -1) \
-#             and (image_name.find('_180.JPG') == -1):
+#     if (image_name.find('fv.JPG') == -1) and (image_name.find('fh.JPG') == -1) \
+#             and (image_name.find('fvh.JPG') == -1):
 #         cv2.imwrite(save_path + image_name, img)
 
 
