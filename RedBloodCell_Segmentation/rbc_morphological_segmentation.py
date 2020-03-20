@@ -1,11 +1,12 @@
 # This is a file where we fist test our code then implement it into other file
+# This code run on python 3.7
 from custom_classes import path, cv_iml
 import cv2
 import numpy as np
 
-dataset_path = path.dataset_path + "IML_new_microscope/p.v/100X_crop/"
-images_name = path.read_all_files_name_from(dataset_path, ".JPG")
-result_path = path.dataset_path + "new_microscope/p.v/clustered_rbc/"
+dataset_path = path.dataset_path + "/Malaria_dataset/malaria/"
+images_name = path.read_all_files_name_from(dataset_path, ".jpg")
+result_path = path.dataset_path + "/Malaria_dataset/rbc/"
 
 for image in images_name:
 
@@ -46,11 +47,11 @@ for image in images_name:
     for c in contours:
         (x, y, w, h) = cv2.boundingRect(c)
         crop_image = clone[y:y + h, x: x + w]
-        if (w > 180 and h > 180) and (w < 620 and h < 620):
-            cv2.imwrite(result_path + image[:-4] + "_" + str(x) + "_" + str(y)
-                        + "_" + str(h) + "_" + str(w) + ".JPG", crop_image)
-        # if (w > 70 and h > 70) and (w < 180 and h < 180):
-        #     red_blood_cells.append(crop_image)
+        # if (w > 180 and h > 180) and (w < 620 and h < 620):
+        #     cv2.imwrite(result_path + image[:-4] + "_" + str(x) + "_" + str(y)
+        #                 + "_" + str(h) + "_" + str(w) + ".JPG", crop_image)
+        if (w > 30 and h > 30) and (w < 70 and h < 70):
+            red_blood_cells.append(crop_image)
 
-    # for i in range(len(red_blood_cells)):
-    #     cv2.imwrite(result_path + image[:-4] + "_" + str(i) + ".JPG", red_blood_cells[i])
+    for i in range(len(red_blood_cells)):
+        cv2.imwrite(result_path + image[:-4] + "_" + str(i) + ".jpg", red_blood_cells[i])

@@ -4,16 +4,16 @@ import os
 import glob
 from custom_classes import path
 
-data_set_base_path = path.dataset_path + "IML_cell_images/train/"
+data_set_base_path = path.dataset_path + "cell_images/"
 # Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn.h5.h5"
+save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn.h5"
 
 base_dir = os.path.join(data_set_base_path)
-infected_dir = os.path.join(base_dir, "malaria")
-healthy_dir = os.path.join(base_dir, "healthy")
+infected_dir = os.path.join(base_dir, "Parasitized")
+healthy_dir = os.path.join(base_dir, "Uninfected")
 
-infected_files = glob.glob(infected_dir + '/*.JPG')
-healthy_files = glob.glob(healthy_dir + '/*.JPG')
+infected_files = glob.glob(infected_dir + '/*.png')
+healthy_files = glob.glob(healthy_dir + '/*.png')
 
 # %%
 # cell2
@@ -44,12 +44,12 @@ from collections import Counter
 # Generating tanning and testing data.
 train_files, test_files, train_labels, test_labels = train_test_split(files_df['filename'].values,
                                                                       files_df['label'].values,
-                                                                      test_size=0.01,
+                                                                      test_size=0.2,
                                                                       random_state=42)
 # Generating validation data form tanning data.
 train_files, val_files, train_labels, val_labels = train_test_split(train_files,
                                                                     train_labels,
-                                                                    test_size=0.1,
+                                                                    test_size=0.2,
                                                                     random_state=42)
 
 print(train_files.shape, val_files.shape, test_files.shape)
@@ -209,7 +209,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
-model.save(save_weights_path)
+# model.save(save_weights_path)
+model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -245,7 +246,6 @@ plt.show()
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
-
 # %%
 # Using VGG-19 Network for transfer learning in malaria detection taks.
 

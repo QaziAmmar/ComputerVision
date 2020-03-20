@@ -112,14 +112,14 @@ for i in range(len(basic_cnn_preds_labels)):
 # Start calculating F1 score of our dataset.
 import os
 
-f1_score_base_path = path.dataset_path + "IML_cell_images/test_f1/"
+f1_score_base_path = path.dataset_path + "cell_images/"
 
 base_dir = os.path.join(f1_score_base_path)
-infected_dir = os.path.join(base_dir, "malaria")
-healthy_dir = os.path.join(base_dir, "healthy")
+infected_dir = os.path.join(base_dir, "Parasitized")
+healthy_dir = os.path.join(base_dir, "Uninfected")
 
-infected_files = glob.glob(infected_dir + '/*.JPG')
-healthy_files = glob.glob(healthy_dir + '/*.JPG')
+infected_files = glob.glob(infected_dir + '/*.png')
+healthy_files = glob.glob(healthy_dir + '/*.png')
 
 print(len(infected_files), len(healthy_files))
 # %%
