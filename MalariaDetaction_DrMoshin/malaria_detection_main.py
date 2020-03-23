@@ -2,7 +2,8 @@
 
 import os
 import glob
-from custom_classes import path
+import tensorflow as tf
+from custom_classes import path, predefine_models
 
 data_set_base_path = path.dataset_path + "cell_images/"
 # Hard Negative mining. (HNM)
@@ -160,37 +161,17 @@ test_labels_enc = le.transform(test_labels)
 print(train_labels[:6], train_labels_enc[:6])
 
 # %%
-import tensorflow as tf
-
-# Model 1: CNN from Scratch
-
-inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
-
-conv1 = tf.keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(inp)
-pool1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv1)
-conv2 = tf.keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(pool1)
-pool2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv2)
-conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
-pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
-
-flat = tf.keras.layers.Flatten()(pool3)
-
-hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
-drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
-
-out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
-
-model = tf.keras.Model(inputs=inp, outputs=out)
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-model.summary()
-
+# load model according to your choice.
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
+# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
+# model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
+# model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
+model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
 # %%
 # Model training
 import datetime
 
-logdir = os.path.join('/home/itu/Desktop/Qazi/ComputerVision',
+logdir = os.path.join(path.base_path,
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
@@ -246,28 +227,3 @@ plt.show()
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
-# %%
-# Using VGG-19 Network for transfer learning in malaria detection taks.
-
-# vgg = tf.keras.applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=INPUT_SHAPE)
-# vgg.trainable = False
-# # Freeze the layers
-#
-# for layer in vgg.layers:
-#     layer.trainable = False
-#
-# base_vgg = vgg
-# base_out = base_vgg.output
-# pool_out = tf.keras.layers.Flatten()(base_out)
-# hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
-# drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-# hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-# drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
-#
-# out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
-# model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-# model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
-#               loss='binary_crossentropy',
-#               metrics=['accuracy'])
-#
-# model.summary()
