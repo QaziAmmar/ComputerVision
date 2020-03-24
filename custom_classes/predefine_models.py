@@ -144,7 +144,7 @@ def get_dennet121_transfer_learning(INPUT_SHAPE, save_weight_path=None):
         save_weight_path = path.save_models_path + "densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5"
 
     # Model
-    dn121 = tf.keras.applications.DenseNet121(weights="imagenet", include_top=False, input_shape=INPUT_SHAPE)
+    dn121 = tf.keras.applications.DenseNet121(weights=save_weight_path, include_top=False, input_shape=INPUT_SHAPE)
     dn121.trainable = False
 
     # Freeze the layers

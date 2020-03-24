@@ -3,11 +3,11 @@
 import os
 import glob
 import tensorflow as tf
-from custom_classes import path, predefine_models
+from custom_classes import path, predefine_models, cv_iml
 
 data_set_base_path = path.dataset_path + "cell_images/"
 # Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn.h5"
+save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/densNet_cell_images.h5"
 
 base_dir = os.path.join(data_set_base_path)
 infected_dir = os.path.join(base_dir, "Parasitized")
@@ -165,8 +165,8 @@ print(train_labels[:6], train_labels_enc[:6])
 # model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
-# model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
-model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
+model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
 # %%
 # Model training
 import datetime
@@ -190,8 +190,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
-# model.save(save_weights_path)
-model.load_weights(save_weights_path)
+model.save(save_weights_path)
+# model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -227,3 +227,4 @@ plt.show()
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
+cv_iml.get_f1_score(test_labels,basic_cnn_preds_labels, pos_label="malaria")
