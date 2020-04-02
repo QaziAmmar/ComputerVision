@@ -1,23 +1,17 @@
 import cv2
 import numpy as np
-import math
-import sys
-from matplotlib import pyplot as plt
 from custom_classes import cv_iml, path
 
-# 6a_001
-# 4a_001 paper1 image.
-# a85 paper2
+# Trying to implement this paper.
+# ADAPTIVE GRAY WORLD-BASED COLOR NORMALIZATION OF THIN BLOOD FILM IMAGES
+
 folder_path = "Malaria_dataset/malaria/4a_001.jpg"
 illumenation_image_path = path.dataset_path + "Malaria_dataset/4a_005.jpg"
 dataset_path = path.dataset_path + folder_path
 
 kernel = np.ones((60, 60), np.uint8)
 opening_kernal = np.ones((2, 2), np.uint8)
-
 img = cv2.imread(dataset_path)
-# img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-illum_img = cv2.imread(illumenation_image_path)
 cv_iml.image_show(img)
 # %%
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -44,12 +38,10 @@ ret, enhance_thresh = cv2.threshold(enhance_gray, 0, 255, cv2.THRESH_BINARY + cv
 enhance_thresh = np.invert(enhance_thresh)
 # After removing noise form image.
 enhance_thresh = cv2.morphologyEx(enhance_thresh, cv2.MORPH_OPEN, opening_kernal)
+# this give us the foreground pixels of image.
 cv_iml.image_show(enhance_thresh, 'gray')
 
-# %%
-# Currently, Working phase.
-# Trying to implement this paper.
-# ADAPTIVE GRAY WORLD-BASED COLOR NORMALIZATION OF THIN BLOOD FILM IMAGES
+#%%
 
 # After separating the input (Iui ) channels (i ∈ {r, g, b}),
 b, g, r = cv2.split(img)
@@ -162,46 +154,3 @@ replaced_index[:, :, 2] = index
 # replace only foreground indexes.
 I2[replaced_index] = I2_foreground[replaced_index]
 cv_iml.image_show(I2)
-
-# %%
-# tophat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, kernel)
-# enhance_image = gray + tophat + tophat
-# cv_iml.image_show(enhance_image, "gray")
-
-# %%
-# ret, thresh = cv2.threshold(enhance_image, 201, 255, cv2.THRESH_BINARY)
-# cv_iml.image_show(thresh, 'gray')
-#
-# # %%
-# save_folder_path = path.result_folder_path + "enhanceImages/"
-# folder_path = "Malaria_dataset/malaria/"
-# dataset_path = path.dataset_path + folder_path
-# images_name = path.read_all_files_name_from(dataset_path, '.jpg')
-#
-# closing_kernal = np.ones((190, 190), np.uint8)
-# for image_path in images_name:
-#     img = cv2.imread(dataset_path + image_path)
-#     illum_img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, closing_kernal)
-#     enhance_image = img - illum_img
-#     enhance_image = cv2.morphologyEx(enhance_image, cv2.MORPH_OPEN, opening_kernal)
-#     cv2.imwrite(save_folder_path + image_path, enhance_image)
-
-# cv_iml.image_show(img)
-# cv_iml.image_show(sharp_image)
-# gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-# clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-# image_clahe = clahe.apply(gray)
-# # cv_iml.image_show(image_clahe, cmap="gray")
-# image_clahe[image_clahe > 150] = 0
-# kernel = np.ones((5, 5), np.uint8)
-#
-# erosion = cv2.erode(image_clahe, kernel, iterations=1)
-# cv_iml.image_show(erosion, cmap="gray")
-#
-# kernel = np.ones((6, 6), np.uint8)
-# closing = cv2.morphologyEx(erosion, cv2.MORPH_CLOSE, kernel)
-# # erosion = cv2.erode(img, kernel, iterations=1)
-# cv_iml.image_show(closing, cmap="gray")
-
-# %%
-# This code normalizes the illumination of an image

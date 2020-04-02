@@ -162,10 +162,10 @@ print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
+model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
-model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
+# model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
 # model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
 # %%
 # Model training

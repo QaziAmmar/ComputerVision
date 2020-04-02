@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 from custom_classes import path
+import matplotlib.pyplot as plt
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
@@ -13,9 +13,10 @@ from sklearn.metrics import roc_auc_score
 
 def image_show(img, cmap=None, suptitle=""):
     """
-    Version = 1.0
-    -> This function need to improve for multiple images.
-    :param cmap:
+    Version = 1.1
+    This is a stable function.
+    This function take an image and how it by using matplot function.
+    :param cmap: 'Reds', 'Greens', 'Blues'
     :param binary:
     :param img: img to display.
     :return: None
@@ -23,41 +24,45 @@ def image_show(img, cmap=None, suptitle=""):
     fig = plt.figure()
     fig.suptitle(suptitle, fontsize=14, fontweight='bold')
 
-    # ax = fig.add_subplot(111)
-    # fig.subplots_adjust(top=0.85)
-    # ax.set_title('axes title')
-    #
-    # ax.set_xlabel('xlabel')
-    # ax.set_ylabel('ylabel')
-    #
-    # ax.text(3, 8, 'boxed italics text in data coords', style='italic',
-    #         bbox={'facecolor': 'red', 'alpha': 0.5, 'pad': 10})
-    #
-    # ax.text(2, 6, r'an equation: $E=mc^2$', fontsize=15)
-    #
-    # ax.text(3, 2, 'unicode: Institut für Festkörperphysik')
-    #
-    # ax.text(0.95, 0.01, 'colored text in axes coords',
-    #         verticalalignment='bottom', horizontalalignment='right',
-    #         transform=ax.transAxes,
-    #         color='green', fontsize=15)
-    #
-    # ax.plot([2], [1], 'o')
-    # ax.annotate('annotate', xy=(2, 1), xytext=(3, 4),
-    #             arrowprops=dict(facecolor='black', shrink=0.05))
-    #
-    # ax.axis([0, 10, 0, 10])
-
-    if cmap == 'gray':
-        plt.imshow(img, cmap='gray', vmin=0, vmax=255)
+    if cmap is not None:
+        plt.imshow(img, cmap=cmap, vmin=0, vmax=255)
     else:
         plt.imshow(img)
+    plt.show()
+
+
+def show_histogram(img, title=None):
+    """
+    version: 1.1
+    This is a stable function.
+    This function shows the histogram of image. It first check if image is gray scale or rgb and then
+    plot histogram according to it
+    :param img: input image of which histogram is need to plot
+    :param title: title of plot
+    :return: None
+    """
+    if len(img.shape) < 3:
+        histr = cv2.calcHist([img], [0], None, [256], [0, 256])
+
+        plt.plot(histr, 'black', label='gray')
+        plt.title("Grayscale Image Histogram")
+    elif len(img.shape) == 3:
+        color = ('b', 'g', 'r')
+        for i, col in enumerate(color):
+            histr = cv2.calcHist([img], [i], None, [256], [0, 256])
+            plt.plot(histr, color=col, label=col)
+            plt.xlim([0, 256])
+            plt.title("RGB Image Histogram")
+    plt.legend()
+    if title is not None:
+        plt.title(title)
     plt.show()
 
 
 def apply_sharpening_on(image):
     """
     Version = 1.0
+    This is a stable function.
     Apply sharpening kernel on image.
     :param image:
     :return:
@@ -76,6 +81,7 @@ def show_multiple_image_with(row=1, col=1, images=[], titles=[]):
     """
     Version = 1.0
     This not stable function.
+    We want to show multiple images side by side using this function.
     :param row:
     :param col:
     :param images:
@@ -100,7 +106,8 @@ def removeBlackRegion(img):
     """
     Version = 1.0
     This is a stable function.
-       This function remove the black region form image by cropping largest contours form the image.
+       This function remove the black region form image by cropping the largest contours form the image.
+       use this function to remove the black region in microscope images, that may cause problems.
        :param img: input image
        :return: image with removed black region but not removed black regions completely we need to apply some
        thresholding to rows and col to completely remove the black region.
@@ -171,7 +178,7 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
     -> This is not stable function.
     -> Need to through exception when overlapping is 100%
     -> This function take a full image and make patches of that image save them into array and
-        return that arrray.
+        return that array.
     :param img: full image form where you want to get patches.
     :param stepSize:
     :param window_size:
@@ -193,7 +200,7 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
     for x in range(0, image.shape[1] - w_width, stepSize):
         for y in range(0, image.shape[0] - w_height, stepSize):
             window = image[x:x + w_width, y:y + w_height, :]
-            # add window into your patches array.
+            # add the window into your patches array.
             patches.append(window)
 
     return patches
@@ -228,3 +235,48 @@ def get_f1_score(test_labels, preds_labels, pos_label):
     # confusion matrix
     matrix = confusion_matrix(test_labels, preds_labels)
     print(matrix)
+
+
+# color_constancy code Start.
+# Version 1.0
+# This is a simple color balancing algorithm that balance color in the image.
+# Link: https://gist.github.com/DavidYKay/9dad6c4ab0d8d7dbf3dc
+
+def apply_mask(matrix, mask, fill_value):
+    masked = np.ma.array(matrix, mask=mask, fill_value=fill_value)
+    return masked.filled()
+
+
+def apply_threshold(matrix, low_value, high_value):
+    low_mask = matrix < low_value
+    matrix = apply_mask(matrix, low_mask, low_value)
+
+    high_mask = matrix > high_value
+    matrix = apply_mask(matrix, high_mask, high_value)
+
+    return matrix
+
+
+def color_constancy(img, percent=1):
+    """
+
+    :param img:
+    :param percent:
+    :return: return image with consistent colors.
+    """
+    out_channels = []
+    cumstops = (
+        img.shape[0] * img.shape[1] * percent / 200.0,
+        img.shape[0] * img.shape[1] * (1 - percent / 200.0)
+    )
+    for channel in cv2.split(img):
+        cumhist = np.cumsum(cv2.calcHist([channel], [0], None, [256], (0, 256)))
+        low_cut, high_cut = np.searchsorted(cumhist, cumstops)
+        lut = np.concatenate((
+            np.zeros(low_cut),
+            np.around(np.linspace(0, 255, high_cut - low_cut + 1)),
+            255 * np.ones(255 - high_cut)
+        ))
+        out_channels.append(cv2.LUT(channel, lut.astype('uint8')))
+    return cv2.merge(out_channels)
+# color_constancy code End.

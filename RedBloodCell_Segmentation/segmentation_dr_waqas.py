@@ -1,18 +1,20 @@
 # This is a file where we fist test our code then implement it into other file
+# This Code run on python 3.6
 from custom_classes import path, cv_iml
 import cv2
 import os
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
+save_folder_path = path.result_folder_path + "enhanceImages/"
 
-folder_path = "Malaria_Dataset_self/crop_images/Microscope/p_falciprim_plus_450X/"
-dataset_path = path.dataset_path + folder_path
-
+# folder_path = "Malaria_dataset/malaria/"
+# dataset_path = path.dataset_path + folder_path
+dataset_path = save_folder_path
 images_name = path.read_all_files_name_from(dataset_path, ".jpg")
-result_path = path.result_folder_path + "morphological_drwaqas/"
-
-mean_rgb_path = path.dataset_path + "/Malaria_Dataset_self/crop_images/Microscope/mean_image_pf.png"
+# result_path = path.result_folder_path + "morphological_drwaqas_malaria_online/"
+result_path = save_folder_path
+mean_rgb_path = path.dataset_path + "/Malaria_dataset/mean_image_new_malaria.png"
 
 for image in images_name:
     # image_segments = 500
@@ -52,8 +54,8 @@ else:
         #  break
     # mean Image
     mean_gray = mean_gray / count
-    save_path = path.dataset_path + "/Malaria_Dataset_self/crop_images/Microscope/"
-    cv2.imwrite(save_path + "mean_image_pf.png", mean_gray)
+    save_path = path.dataset_path + "Malaria_dataset/"
+    cv2.imwrite(save_path + "mean_image_new_malaria.png", mean_gray)
 
 count = 0
 for image in images_name:
@@ -65,7 +67,7 @@ for image in images_name:
     rgb = cv2.imread(dataset_path + image)
 
     # Resize all images to be of the same size
-    rgb_resized = cv2.resize(rgb, (rgb_first.shape[1], rgb_first.shape[0]))
+    rgb_resized = cv2.resize(rgb, (mean_gray.shape[1], mean_gray.shape[0]))
 
     # Convert RGB to gray scale and improve contrast of the image
     gray = cv2.cvtColor(rgb_resized, cv2.COLOR_BGR2GRAY)
@@ -115,7 +117,7 @@ for image in images_name:
         #    continue
         # else:
         # cv2.rectangle(img=rgb_single_erode, pt1=(max(1,x-15), max(1,y-15) ), pt2=(x + w+25 , y + h+25), color=(255, 0, 225), thickness=5)
-        cv2.rectangle(img=rgb_single_erode, pt1=(x1, y1), pt2=(x2, y2), color=(255, 0, 225), thickness=5)
+        cv2.rectangle(img=rgb_single_erode, pt1=(x1, y1), pt2=(x2, y2), color=(255, 0, 225), thickness=2)
 
     # Plot results with double errosion
     rgb_double_erode = copy.deepcopy(rgb_resized)
@@ -130,7 +132,7 @@ for image in images_name:
         area_c = w * h
         if 2000 < area_c < 30000:
             # cv2.rectangle(img=rgb_double_erode,  pt1=(max(x-15,1), max(y-15,1) ), pt2=(x + w+25 , y + h+25), color=(255, 0, 225), thickness=5)
-            cv2.rectangle(img=rgb_double_erode, pt1=(x1, y1), pt2=(x2, y2), color=(255, 0, 225), thickness=5)
+            cv2.rectangle(img=rgb_double_erode, pt1=(x1, y1), pt2=(x2, y2), color=(255, 0, 225), thickness=2)
 
     for c in contours_double_erode:
         (x, y, w, h) = cv2.boundingRect(c)
@@ -143,13 +145,13 @@ for image in images_name:
         if area_c < 2000:
             continue
         else:
-            cv2.rectangle(img=rgb_double_erode, pt1=(x1, y1), pt2=(x2, y2), color=(0, 0, 225), thickness=5)
+            cv2.rectangle(img=rgb_double_erode, pt1=(x1, y1), pt2=(x2, y2), color=(0, 0, 225), thickness=2)
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
     ax1.imshow(rgb_resized)
     ax2.imshow(rgb_single_erode)
     ax3.imshow(rgb_double_erode)
-    plt.show()
+    # plt.show()
     ####################################
     cv2.imwrite(result_path + image, rgb_single_erode)
     # continue
