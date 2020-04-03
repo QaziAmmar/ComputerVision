@@ -4,6 +4,9 @@ from custom_classes import cv_iml, path
 
 # Trying to implement this paper.
 # ADAPTIVE GRAY WORLD-BASED COLOR NORMALIZATION OF THIN BLOOD FILM IMAGES
+# 6a_001
+# 4a_001 paper1 image.
+# a85 paper2
 
 folder_path = "Malaria_dataset/malaria/4a_001.jpg"
 illumenation_image_path = path.dataset_path + "Malaria_dataset/4a_005.jpg"
