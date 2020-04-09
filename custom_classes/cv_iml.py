@@ -279,4 +279,28 @@ def color_constancy(img, percent=1):
         ))
         out_channels.append(cv2.LUT(channel, lut.astype('uint8')))
     return cv2.merge(out_channels)
+
+
 # color_constancy code End.
+
+
+def move_images(required_images_names=[], from_folder_path="", to_folder_path=""
+                , file_extension=""):
+
+    """
+    Version = 1.0
+    -> This is not stable function. change required init. working fine.
+    :param required_images_names: these are the name of image that you want to find from the
+    required folder
+    :param from_folder_path: folder where you want to find the images.
+    :param to_folder_path: folder where you want to save your matched images.
+    :param file_extension: extension of file to be find.
+    :return: None
+    """
+    all_images_name = path.read_all_files_name_from(from_folder_path, file_extension)
+
+    for single_image_name in required_images_names:
+        res = [i for i in all_images_name if single_image_name in i]
+        index = all_images_name.index(res[0])
+        img = cv2.imread(from_folder_path + res[0])
+        cv2.imwrite(to_folder_path + res[0], img)

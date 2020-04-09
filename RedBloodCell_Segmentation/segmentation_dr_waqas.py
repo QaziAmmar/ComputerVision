@@ -6,15 +6,16 @@ import os
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
-save_folder_path = path.result_folder_path + "enhanceImages/"
+
+save_folder_path = path.result_folder_path + "color_consistency/stretch/"
 
 # folder_path = "Malaria_dataset/malaria/"
 # dataset_path = path.dataset_path + folder_path
 dataset_path = save_folder_path
 images_name = path.read_all_files_name_from(dataset_path, ".jpg")
 # result_path = path.result_folder_path + "morphological_drwaqas_malaria_online/"
-result_path = save_folder_path
-mean_rgb_path = path.dataset_path + "/Malaria_dataset/mean_image_new_malaria.png"
+# result_path = save_folder_path
+mean_rgb_path = save_folder_path + "mean_image.png"
 
 for image in images_name:
     # image_segments = 500
@@ -54,8 +55,8 @@ else:
         #  break
     # mean Image
     mean_gray = mean_gray / count
-    save_path = path.dataset_path + "Malaria_dataset/"
-    cv2.imwrite(save_path + "mean_image_new_malaria.png", mean_gray)
+    # save_path = path.dataset_path + "Malaria_dataset/"
+    cv2.imwrite(mean_rgb_path, mean_gray)
 
 count = 0
 for image in images_name:
@@ -147,11 +148,11 @@ for image in images_name:
         else:
             cv2.rectangle(img=rgb_double_erode, pt1=(x1, y1), pt2=(x2, y2), color=(0, 0, 225), thickness=2)
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
-    ax1.imshow(rgb_resized)
-    ax2.imshow(rgb_single_erode)
-    ax3.imshow(rgb_double_erode)
+    # fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+    # ax1.imshow(rgb_resized)
+    # ax2.imshow(rgb_single_erode)
+    # ax3.imshow(rgb_double_erode)
     # plt.show()
     ####################################
-    cv2.imwrite(result_path + image, rgb_single_erode)
+    cv2.imwrite(save_folder_path + image, rgb_single_erode)
     # continue

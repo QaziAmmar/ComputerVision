@@ -2,7 +2,7 @@ import cv2
 import itertools
 from custom_classes import path
 
-# Reading annotation file of dataset.
+# this Reading annotation file of dataset.
 # # %%
 
 dataset_path = path.dataset_path + "Malaria_dataset/malaria/"

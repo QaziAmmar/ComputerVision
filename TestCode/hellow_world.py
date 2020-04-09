@@ -1,100 +1,25 @@
-# This is a file where we fist test our code then implement it into other file
-from custom_classes import path, cv_iml
 import cv2
 import numpy
-import numpy as np
-import matplotlib.pyplot as plt
-
 from scipy.ndimage import label
-
-from skimage.draw import ellipse
-from skimage.measure import label, regionprops, regionprops_table, find_contours
-from skimage.transform import rotate
+from custom_classes import path, cv_iml
+import colorcorrect.algorithm as cca
 
 
-def segment(im1, img):
-    # morphological transformations
-    border = cv2.dilate(img, None, iterations=10)
-    border = border - cv2.erode(border, None, iterations=1)
-    # invert the image so black becomes white, and vice versa
-    img = -img
-    # applies distance transform and shows visualization
-    dt = cv2.distanceTransform(img, 2, 3)
-    dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
-    # reapply contrast to strengthen boundaries
-    clache = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    dt = clache.apply(dt)
-    # rethreshold the image
-    _, dt = cv2.threshold(dt, 40, 255, cv2.THRESH_BINARY)
+from_folder_path = path.dataset_path + "Malaria_dataset/malaria/"
 
-    lbl, ncc = label(dt)
-    lbl = lbl * (255 / ncc)
-    # Complete the markers
-    lbl[border == 255] = 255
+required_images = ['2a_001.jpg', '2a_014.jpg', '2a_036.jpg', '2a_038.jpg', '2a_072.jpg',
+                   '4a_002.jpg', '4a_045.jpg', '4a_093.jpg', '6a_001.jpg', '7b_004.jpg',
+                   '15b_001.jpg', 'a70.jpg', 'a80.jpg', 'a94.jpg', 'w31_001.jpg', 'w64_007.jpg',
+                   'w66_101.jpg']
 
-    lbl = lbl.astype(numpy.int32)
-    # apply watershed
-    cv2.watershed(im1, lbl)
+save_folder_path = path.dataset_path + "count_tester/"
 
-    lbl[lbl == -1] = 0
-    lbl = lbl.astype(numpy.uint8)
-    # return the image as one list, and the labels as another.
-    return dt, lbl
+for imageName in required_images:
+    img = cv2.imread(from_folder_path + imageName)
+    cv2.imwrite(save_folder_path + "stretch/" + "stretch_" + imageName, cca.stretch(img))
+    cv2.imwrite(save_folder_path + "grey_world/" + "gw_" + imageName, cca.grey_world(img))
+    cv2.imwrite(save_folder_path + "max_white/" + "mw_" + imageName, cca.max_white(img))
+    cv2.imwrite(save_folder_path + "retinex/" + "ret_" + imageName, cca.retinex(img))
+    cv2.imwrite(save_folder_path + "retinex_with_adjust/" + "rwa_" + imageName, cca.retinex_with_adjust(img))
+    cv2.imwrite(save_folder_path + "automatic_color_equalization/" + "acq_" + imageName, cca.automatic_color_equalization(img))
 
-
-# load your image, I called mine 'rbc'
-
-dataset_path = path.dataset_path + "IML_cell_images/train/malaria/"
-save_path = path.dataset_path + "IML_cell_images/train/malaria/"
-images_name = path.read_all_files_name_from(dataset_path, ".JPG")
-counter = 0
-# file_path = "/home/itu/Desktop/Qazi/Model_Result_Dataset/Dataset/cell_images/rgb_test.txt"
-# image_tag = "malaria"
-for image_name in images_name:
-    img = cv2.imread(dataset_path + image_name)
-    flipVertical = cv2.flip(img, 0)
-    flipHorizontal = cv2.flip(img, 1)
-    flipBoth = cv2.flip(img, -1)
-    cv2.imwrite(save_path + image_name[:-4] + "_fv.JPG", flipVertical)
-    cv2.imwrite(save_path + image_name[:-4] + "_fh.JPG", flipHorizontal)
-    cv2.imwrite(save_path + image_name[:-4] + "_fvh.JPG", flipBoth)
-
-# seprate actual images form augmentateg images.
-# for image_name in images_name:
-#     img = cv2.imread(dataset_path + image_name)
-#     if (image_name.find('fv.JPG') == -1) and (image_name.find('fh.JPG') == -1) \
-#             and (image_name.find('fvh.JPG') == -1):
-#         cv2.imwrite(save_path + image_name, img)
-
-
-# i = 0
-# for image in images_name:
-#     img = cv2.imread(dataset_path + image)
-#     rgb = img.copy()
-#     clone = img.copy()
-#     # keep resizing your image so it appropriately identifies the RBC's
-#     img = cv2.resize(img, (0, 0), fx=5, fy=5)
-#     # it's always easier if the image is copied for long pieces of code.
-#     # we're copying it twice for reasons you'll see soon enough.
-#     wol = img.copy()
-#     gg = img.copy()
-#     # convert to grayscale
-#     img_gray = cv2.cvtColor(gg, cv2.COLOR_BGR2GRAY)
-#     # enhance contrast (helps makes boundaries clearer)
-#     clache = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-#     img_gray = clache.apply(img_gray)
-#     # threshold the image and apply morphological transforms
-#     _, img_bin = cv2.threshold(img_gray, 50, 255,
-#                                cv2.THRESH_OTSU)
-#     img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN,
-#                                numpy.ones((3, 3), dtype=int))
-#     img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_DILATE,
-#                                numpy.ones((3, 3), dtype=int), iterations=1)
-#     # call the 'segment' function (discussed soon)
-#     # dt, result = segment(img, img_bin)
-#
-#     cv2.imwrite(save_path + image, img_bin)
-#     if i % 20 == 0:
-#         print(i)
-#     i = i + 1
-#   save image into other folder.
