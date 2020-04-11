@@ -13,11 +13,11 @@ from dataset_annotations.pvivax_model import Annotation_Model
 # folder name can be healthy or malaria.
 folder_name = "healthy/"
 # defining path for all images.
-dataset_path = path.dataset_path + "malaria/"
+dataset_path = path.dataset_path + "malaria_bounding_boxes/"
 images_path = dataset_path + folder_name + "images/"
 train_image_annotation_path = dataset_path + folder_name + "training.json"
 test_image_annotation_path = dataset_path + folder_name + "test.json"
-save_crop_images_path = path.result_folder_path + "pvivax_malaria_rbc/" + folder_name
+save_crop_images_path = path.result_folder_path + "pvivax_malaria_rbc/"
 
 # Reading training json annotation path
 with open(train_image_annotation_path) as train_image_annotation_path:
@@ -37,25 +37,41 @@ for annotation in train_annotation:
 for annotation in test_annotation:
     python_annotations.append(Annotation_Model(annotation))
 
+
 # %%
 # Crop red blood cells from image form image according to annotation and save them in
 # required folder.
 
-for image in python_annotations:
-    # we need to split image path because it has also folder namd apped with it.
-    image_name = image.image.path_name.split('/')[2]
-    # '', 'images', '8d02117d-6c71-4e47-b50a-6cc8d5eb1d55.png']
-    img = cv2.imread(images_path + image_name)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # counter variable to append with image name to uniquely save the image name.
-    count = 0
-    for object in image.objects:
-        x1 = object.bounding_box.x1
-        y1 = object.bounding_box.y1
-        x2 = object.bounding_box.x2
-        y2 = object.bounding_box.y2
+def separate_rbs(image_with_annotation, save_images_path):
+    # these are two folders in which we save our image on the base of categories.
+    healthy = "healthy/"
+    malaria = "malaria/"
 
-        crop_image = img[y1:y2, x1:x2, :]
-        save_name = save_crop_images_path + str(count) + "_" + image_name
-        cv2.imwrite(save_name, crop_image)
-        count += 1
+    for image in image_with_annotation:
+        # we need to split image path because it has also folder namd apped with it.
+        image_name = image.image.path_name.split('/')[2]
+        # '', 'images', '8d02117d-6c71-4e47-b50a-6cc8d5eb1d55.png']
+        img = cv2.imread(images_path + image_name)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # counter variable to append with image name to uniquely save the image name.
+        count = 0
+        for object in image.objects:
+            # separating x and y coordinate for crop image.
+            x1 = object.bounding_box.x1
+            y1 = object.bounding_box.y1
+            x2 = object.bounding_box.x2
+            y2 = object.bounding_box.y2
+            # Crop image form give point.
+            crop_image = img[y1:y2, x1:x2, :]
+            # if object category is red blood cell then does save it into a healthy folder.
+            # if object category is not red blood cell then save it into malaria folder.
+            if object.category == "red blood cell":
+                save_name = save_images_path + healthy + str(count) + "_" + image_name
+            else:
+                save_name = save_images_path + malaria + str(count) + "_" + image_name
+
+            cv2.imwrite(save_name, crop_image)
+            count += 1
+
+
+separate_rbs(python_annotations, save_crop_images_path)
