@@ -1,38 +1,61 @@
 from custom_classes import path, cv_iml
 import json
 import cv2
-
 from dataset_annotations.pvivax_model import Annotation_Model
 
-healthy_path = path.dataset_path + "malaria/"
-healthy_train_annotation_path = healthy_path + "training.json"
-healthy_test_annotation_path = healthy_path + "test.json"
+# Link of dataset: https://www.kaggle.com/kmader/malaria-bounding-boxes
 
-infected_folder_path = healthy_path + "malaria/"
-infected_train_annotation_path = infected_folder_path + "training.json"
-infected_test_annotation_path = infected_folder_path + "test.json"
+######################### Description: #########################
+# This code separate the red blood cell form the whole sample slide
+# according to the annotation and save them into a relevant folder.
 
-with open(healthy_train_annotation_path) as healthy_train_annotation_file:
-    healthy_train_annotation = json.load(healthy_train_annotation_file)
+
+# folder name can be healthy or malaria.
+folder_name = "healthy/"
+# defining path for all images.
+dataset_path = path.dataset_path + "malaria/"
+images_path = dataset_path + folder_name + "images/"
+train_image_annotation_path = dataset_path + folder_name + "training.json"
+test_image_annotation_path = dataset_path + folder_name + "test.json"
+save_crop_images_path = path.result_folder_path + "pvivax_malaria_rbc/" + folder_name
+
+# Reading training json annotation path
+with open(train_image_annotation_path) as train_image_annotation_path:
+    train_annotation = json.load(train_image_annotation_path)
+# Reading test json annotation path
+with open(test_image_annotation_path) as test_image_annotation_path:
+    test_annotation = json.load(test_image_annotation_path)
 
 # %%
+# Parsing JSON data into python object for easy use. combine both test and train
+# images together, and the crop red blood cell from whole image.
+python_annotations = []
 
-python_annotataiton = []
+for annotation in train_annotation:
+    python_annotations.append(Annotation_Model(annotation))
 
-# annotation = healthy_train_annotation[1]
-for annotation in healthy_train_annotation:
-    python_annotataiton.append(Annotation_Model(annotation))
+for annotation in test_annotation:
+    python_annotations.append(Annotation_Model(annotation))
 
 # %%
+# Crop red blood cells from image form image according to annotation and save them in
+# required folder.
 
-test_plot = python_annotataiton[50]
-img = cv2.imread(healthy_path + test_plot.image.path_name)
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+for image in python_annotations:
+    # we need to split image path because it has also folder namd apped with it.
+    image_name = image.image.path_name.split('/')[2]
+    # '', 'images', '8d02117d-6c71-4e47-b50a-6cc8d5eb1d55.png']
+    img = cv2.imread(images_path + image_name)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # counter variable to append with image name to uniquely save the image name.
+    count = 0
+    for object in image.objects:
+        x1 = object.bounding_box.x1
+        y1 = object.bounding_box.y1
+        x2 = object.bounding_box.x2
+        y2 = object.bounding_box.y2
 
-for object in test_plot.objects:
-    pt1 = (object.bounding_box.x1, object.bounding_box.y1)
-    pt2 = (object.bounding_box.x2, object.bounding_box.y2)
-    img = cv2.rectangle(img, pt2, pt1, (36, 255, 12), 2)
-    # cv2.putText(img, object.category, (int(pt1[0]), int(pt1[1])-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
-
-cv_iml.image_show(img)
+        crop_image = img[y1:y2, x1:x2, :]
+        save_name = save_crop_images_path + str(count) + "_" + image_name
+        cv2.imwrite(save_name, crop_image)
+        count += 1
