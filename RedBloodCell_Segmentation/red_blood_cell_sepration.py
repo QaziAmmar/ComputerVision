@@ -1,3 +1,6 @@
+# //  Created by Qazi Ammar Arshad on 01/02/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+
 import cv2
 import numpy as np
 from scipy import ndimage

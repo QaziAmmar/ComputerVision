@@ -1,40 +1,74 @@
-# %%
+# //  Created by Qazi Ammar Arshad on 01/10/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
-import os
-import glob
+# import the necessary packages
 import tensorflow as tf
-from custom_classes import path, predefine_models, cv_iml
-
-data_set_base_path = path.dataset_path + "cell_images/"
-# Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/densNet_cell_images.h5"
-
-base_dir = os.path.join(data_set_base_path)
-infected_dir = os.path.join(base_dir, "Parasitized")
-healthy_dir = os.path.join(base_dir, "Uninfected")
-
-infected_files = glob.glob(infected_dir + '/*.png')
-healthy_files = glob.glob(healthy_dir + '/*.png')
-
-# %%
-# cell2
-print(len(infected_files), len(healthy_files))
-
-
-# %%
-# cell 3
-# Let’s build a dataframe from this which will be of use to us shortly as
-# we start building our dataset
-
 import numpy as np
 import pandas as pd
+import glob
+import pathlib
+from custom_classes import path, cv_iml
+from keras.utils import to_categorical
+import os
 
+AUTOTUNE = tf.data.experimental.AUTOTUNE
+
+
+# %%
+
+def get_model(INPUT_SHAPE):
+    inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
+
+    conv1 = tf.keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(inp)
+    pool1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv1)
+    conv2 = tf.keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(pool1)
+    pool2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv2)
+    conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
+    pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
+
+    flat = tf.keras.layers.Flatten()(pool3)
+
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(6, activation='softmax')(drop2)
+
+    model = tf.keras.Model(inputs=inp, outputs=out)
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.summary()
+    return model
+
+
+# %%
+# Directory data
+data_dir = path.result_folder_path + "pvivax_malaria_cells/"
+data_dir = pathlib.Path(data_dir)
+# image_count = len(list(data_dir.glob('*/*.png')))
+#
+# print(image_count)
+
+# CLASS_NAMES = np.array([item.name for item in data_dir.glob('*') if item.name != ".DS_Store"])
+# print(CLASS_NAMES)
+
+# %%
+files_df = None
 np.random.seed(42)
+# number_of_classes
+number_of_classes = len(data_dir.glob('*'))
+for folder_name in data_dir.glob('*'):
+    files_in_folder = glob.glob(str(folder_name) + '/*.png')
+    df2 = pd.DataFrame({
+        'filename': files_in_folder,
+        'label': [folder_name.name] * len(files_in_folder)
+    })
+    if files_df is None:
+        files_df = df2
+    else:
+        files_df = files_df.append(df2, ignore_index=True)
 
-files_df = pd.DataFrame({
-    'filename': infected_files + healthy_files,
-    'label': ['malaria'] * len(infected_files) + ['healthy'] * len(healthy_files)
-}).sample(frac=1, random_state=42).reset_index(drop=True)
+files_df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 files_df.head()
 
@@ -85,6 +119,7 @@ print('Max Dimensions:', np.max(train_img_dims, axis=0))
 # %%
 # Load image data and resize on 125, 125 pixel.
 IMG_DIMS = (125, 125)
+
 
 def get_img_data_parallel(idx, img, total_imgs):
     if idx % 5000 == 0 or idx == (total_imgs - 1):
@@ -158,20 +193,22 @@ train_labels_enc = le.transform(train_labels)
 val_labels_enc = le.transform(val_labels)
 test_labels_enc = le.transform(test_labels)
 
+train_labels_enc = to_categorical(train_labels_enc, num_classes=6)
+val_labels_enc = to_categorical(val_labels_enc, num_classes=6)
+test_labels_enc = to_categorical(test_labels_enc, num_classes=6)
+
 print(train_labels[:6], train_labels_enc[:6])
 
 # %%
-# load model according to your choice.
-model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
-# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
-# model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
-# model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
-# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
+
+model = get_model(INPUT_SHAPE)
+
 # %%
+
 # Model training
 import datetime
 
-logdir = os.path.join(path.base_path,
+logdir = os.path.join(path.save_models_path,
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
@@ -189,16 +226,15 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
                     verbose=1)
 
 # %%
-# This cell shows the accuracy and loss graph and save the model for next time usage.
-model.save(save_weights_path)
+# model.save(save_weights_path)
 # model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 # model.save('basic_cnn.h5')
 
-
 # %%
+
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 t = f.suptitle('Basic CNN Performance', fontsize=12)
 f.subplots_adjust(top=0.85, wspace=0.3)
@@ -223,8 +259,9 @@ l2 = ax2.legend(loc="best")
 plt.show()
 
 # %%
+# This portion need to be updated accoruding to multiclass
 # Model Performance Evaluation
-basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
-basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
-                                               for pred in basic_cnn_preds.ravel()])
-cv_iml.get_f1_score(test_labels,basic_cnn_preds_labels, pos_label="malaria")
+# basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
+# basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
+#                                                for pred in basic_cnn_preds.ravel()])
+# cv_iml.get_f1_score(test_labels,basic_cnn_preds_labels, pos_label="malaria")

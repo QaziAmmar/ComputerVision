@@ -16,7 +16,7 @@ import os
 
 data_set_base_path = path.dataset_path + "IML_cell_images/"
 # Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_IML_fineTune.h5"
+save_weights_path = path.save_models_path + "malaria_binaryclass_DrMoshin/basic_cnn_IML_fineTune.h5"
 
 base_dir = os.path.join(data_set_base_path)
 infected_dir = os.path.join(base_dir, "malaria")

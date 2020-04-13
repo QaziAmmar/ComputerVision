@@ -82,7 +82,7 @@ model.summary()
 
 # %%
 
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_finetune_IMLdata.h5"
+save_weights_path = path.save_models_path + "malaria_binaryclass_DrMoshin/basic_cnn_finetune_IMLdata.h5"
 model.load_weights(save_weights_path)
 
 # %%

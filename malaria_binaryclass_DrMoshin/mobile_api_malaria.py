@@ -1,3 +1,5 @@
+# //  Created by Qazi Ammar Arshad on 01/02/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 # This is a file where we fist test our code then implement it into other file
 from custom_classes import path, cv_iml
 import cv2
@@ -124,7 +126,7 @@ model.summary()
 
 # %%
 
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/best_resutls/multi_finetune_basic_cnn.h5"
+save_weights_path = path.save_models_path + "malaria_binaryclass_DrMoshin/best_resutls/multi_finetune_basic_cnn.h5"
 model.load_weights(save_weights_path)
 
 # %%
