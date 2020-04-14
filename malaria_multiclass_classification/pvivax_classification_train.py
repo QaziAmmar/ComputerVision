@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import glob
 import pathlib
-from custom_classes import path, cv_iml
+from custom_classes import path, cv_iml, predefine_models
 from keras.utils import to_categorical
 import os
 
@@ -201,8 +201,9 @@ print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 
-model = get_model(INPUT_SHAPE)
 
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
+model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
 # %%
 
 # Model training
