@@ -174,11 +174,11 @@ def generate_patches_of_image(input_folder_path="", out_folder_path="", annotati
 
 def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping):
     """
-    Version = 1.0
     -> This is not stable function.
     -> Need to through exception when overlapping is 100%
     -> This function take a full image and make patches of that image save them into array and
         return that array.
+    Version = 1.0
     :param img: full image form where you want to get patches.
     :param stepSize:
     :param window_size:
@@ -208,32 +208,33 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
 
 # demonstration of calculating metrics for a neural network model using sklearn
 
-def get_f1_score(test_labels, preds_labels, pos_label):
+def get_f1_score(actual_labels, preds_labels, pos_label=1):
     """
-    Version = 1.0
     Calculate the F1 score of CNN prediction
-    :param test_labels: labels of testing images.
+    Version = 1.0
+    :param actual_labels: labels of testing images.
     :param preds_labels: predicted labels by trained CNN
-    :param pos_label: positive label for calculating the precision and recall.
-    :return: this function only print the all accurcy matrix.
+    :param pos_label: The positive label for calculating the precision and recall. For
+    the multiclass problem this label is set to 1.
+    :return: this function only print the all accuracy matrix.
     """
     # demonstration of calculating metrics for a neural network model using sklearn
-    accuracy = accuracy_score(test_labels, preds_labels)
+    accuracy = accuracy_score(actual_labels, preds_labels)
     print('Accuracy: %f' % accuracy)
     # # precision tp / (tp + fp)
-    precision = precision_score(test_labels, preds_labels, pos_label=pos_label)
+    precision = precision_score(actual_labels, preds_labels, pos_label=pos_label)
     print('Precision: %f' % precision)
     # recall: tp / (tp + fn)
-    recall = recall_score(test_labels, preds_labels, pos_label=pos_label)
+    recall = recall_score(actual_labels, preds_labels, pos_label=pos_label)
     print('Recall: %f' % recall)
     # f1: 2 tp / (2 tp + fp + fn)
-    f1 = f1_score(test_labels, preds_labels, pos_label=pos_label)
+    f1 = f1_score(actual_labels, preds_labels, pos_label=pos_label)
     print('F1 score: %f' % f1)
     # ROC AUC
     # auc = roc_auc_score(test_labels, basic_cnn_preds_labels)
     # print('ROC AUC: %f' % auc)
     # confusion matrix
-    matrix = confusion_matrix(test_labels, preds_labels)
+    matrix = confusion_matrix(actual_labels, preds_labels)
     print(matrix)
 
 
@@ -280,27 +281,4 @@ def color_constancy(img, percent=1):
         out_channels.append(cv2.LUT(channel, lut.astype('uint8')))
     return cv2.merge(out_channels)
 
-
 # color_constancy code End.
-
-
-def move_images(required_images_names=[], from_folder_path="", to_folder_path=""
-                , file_extension=""):
-
-    """
-    Version = 1.0
-    -> This is not stable function. change required init. working fine.
-    :param required_images_names: these are the name of image that you want to find from the
-    required folder
-    :param from_folder_path: folder where you want to find the images.
-    :param to_folder_path: folder where you want to save your matched images.
-    :param file_extension: extension of file to be find.
-    :return: None
-    """
-    all_images_name = path.read_all_files_name_from(from_folder_path, file_extension)
-
-    for single_image_name in required_images_names:
-        res = [i for i in all_images_name if single_image_name in i]
-        index = all_images_name.index(res[0])
-        img = cv2.imread(from_folder_path + res[0])
-        cv2.imwrite(to_folder_path + res[0], img)

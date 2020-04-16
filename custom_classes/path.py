@@ -1,6 +1,7 @@
 # This file contain the paths to all required dataset, saved model and other reults
 import sys
 import os
+import cv2
 from glob import glob
 
 base_path = ""
@@ -39,3 +40,27 @@ def read_all_files_name_from(folder_path, file_extension):
                 all_images_name.append(file)
     # return sorted(all_images_name, key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
     return sorted(all_images_name)
+
+
+def move_images(required_images_names=[], from_folder_path="", to_folder_path=""
+                , file_extension=""):
+
+    """
+    This function move selected images form one folder to other. your have to mention images name in
+    required_images_names = []. this folder find that imags and move them into your required folder.
+    Version = 1.0
+    -> This is not stable function. change required init. working fine.
+    :param required_images_names: these are the name of image that you want to find from the
+    required folder
+    :param from_folder_path: folder where you want to find the images.
+    :param to_folder_path: folder where you want to save your matched images.
+    :param file_extension: extension of file to be find.
+    :return: None
+    """
+    all_images_name = read_all_files_name_from(from_folder_path, file_extension)
+
+    for single_image_name in required_images_names:
+        res = [i for i in all_images_name if single_image_name in i]
+        index = all_images_name.index(res[0])
+        img = cv2.imread(from_folder_path + res[0])
+        cv2.imwrite(to_folder_path + res[0], img)

@@ -45,6 +45,7 @@ def get_model(INPUT_SHAPE):
 # Directory data
 data_dir = path.result_folder_path + "pvivax_malaria_cells/"
 data_dir = pathlib.Path(data_dir)
+save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "basic_cnn_MC_TL.h5"
 # image_count = len(list(data_dir.glob('*/*.png')))
 #
 # print(image_count)
@@ -56,13 +57,14 @@ data_dir = pathlib.Path(data_dir)
 files_df = None
 np.random.seed(42)
 # number_of_classes
-number_of_classes = len(data_dir.glob('*'))
+number_of_classes = 0
 for folder_name in data_dir.glob('*'):
     files_in_folder = glob.glob(str(folder_name) + '/*.png')
     df2 = pd.DataFrame({
         'filename': files_in_folder,
         'label': [folder_name.name] * len(files_in_folder)
     })
+    number_of_classes += 1
     if files_df is None:
         files_df = df2
     else:
@@ -202,8 +204,8 @@ print(train_labels[:6], train_labels_enc[:6])
 # %%
 
 
-# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
-model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
+model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
 # %%
 
 # Model training
@@ -227,7 +229,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
                     verbose=1)
 
 # %%
-# model.save(save_weights_path)
+
+model.save(save_weights_path)
 # model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
@@ -260,9 +263,13 @@ l2 = ax2.legend(loc="best")
 plt.show()
 
 # %%
+from sklearn.metrics import precision_score
 # This portion need to be updated accoruding to multiclass
 # Model Performance Evaluation
-# basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
-# basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
-#                                                for pred in basic_cnn_preds.ravel()])
-# cv_iml.get_f1_score(test_labels,basic_cnn_preds_labels, pos_label="malaria")
+basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
+# Making prediction lables for multiclass
+basic_cnn_preds = basic_cnn_preds.argmax(1)
+prediction_labels = le.inverse_transform(basic_cnn_preds)
+# cv_iml.get_f1_score(test_labels, prediction_labels)
+precision = precision_score(test_labels, prediction_labels, pos_label=1, average= None)
+print('Precision: %f' % precision)
