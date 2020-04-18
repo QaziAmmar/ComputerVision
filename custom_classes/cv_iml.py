@@ -104,10 +104,11 @@ def show_multiple_image_with(row=1, col=1, images=[], titles=[]):
 
 def removeBlackRegion(img):
     """
-    Version = 1.0
     This is a stable function.
-       This function remove the black region form image by cropping the largest contours form the image.
-       use this function to remove the black region in microscope images, that may cause problems.
+    This function remove the black region form image by cropping the largest contours form the image.
+    use this function to remove the black region in microscope images, that may cause problems.
+    Version = 1.0
+    # Link: ?
        :param img: input image
        :return: image with removed black region but not removed black regions completely we need to apply some
        thresholding to rows and col to completely remove the black region.
@@ -178,6 +179,7 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
     -> Need to through exception when overlapping is 100%
     -> This function take a full image and make patches of that image save them into array and
         return that array.
+        # Link: ?
     Version = 1.0
     :param img: full image form where you want to get patches.
     :param stepSize:
@@ -208,34 +210,71 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
 
 # demonstration of calculating metrics for a neural network model using sklearn
 
-def get_f1_score(actual_labels, preds_labels, pos_label=1):
+def get_f1_score(actual_labels, preds_labels, pos_label=1, plot_confusion_matrix=False):
     """
-    Calculate the F1 score of CNN prediction
-    Version = 1.0
-    :param actual_labels: labels of testing images.
+    Calculate the F1 score of CNN prediction.
+    This method works for both binary class and multiclass. For binary class you have to
+    mention pos_label and for multiclass pass pos_label =1
+    # Link: ?
+    Version = 1.1
+    :param actual_labels: labels of testing images. Y_label
     :param preds_labels: predicted labels by trained CNN
     :param pos_label: The positive label for calculating the precision and recall. For
     the multiclass problem this label is set to 1.
-    :return: this function only print the all accuracy matrix.
+    :return: this function return confusion matrix.
     """
     # demonstration of calculating metrics for a neural network model using sklearn
-    accuracy = accuracy_score(actual_labels, preds_labels)
-    print('Accuracy: %f' % accuracy)
-    # # precision tp / (tp + fp)
-    precision = precision_score(actual_labels, preds_labels, pos_label=pos_label)
-    print('Precision: %f' % precision)
-    # recall: tp / (tp + fn)
-    recall = recall_score(actual_labels, preds_labels, pos_label=pos_label)
-    print('Recall: %f' % recall)
-    # f1: 2 tp / (2 tp + fp + fn)
-    f1 = f1_score(actual_labels, preds_labels, pos_label=pos_label)
-    print('F1 score: %f' % f1)
+    if pos_label == 1:
+        # For multiclass classification.
+        accuracy = accuracy_score(actual_labels, preds_labels)
+        precision = precision_score(actual_labels, preds_labels, pos_label=pos_label, average="weighted")
+        recall = recall_score(actual_labels, preds_labels, pos_label=pos_label, average="weighted")
+        f1 = f1_score(actual_labels, preds_labels, pos_label=pos_label, average="weighted")
+        print('Accuracy: %f' % accuracy)
+        print('Precision: %f' % precision)
+        print('Recall: %f' % recall)
+        print('F1 score: %f' % f1)
+    else:
+        accuracy = accuracy_score(actual_labels, preds_labels)
+        print('Accuracy: %f' % accuracy)
+        # # precision tp / (tp + fp)
+        precision = precision_score(actual_labels, preds_labels, pos_label=pos_label)
+        print('Precision: %f' % precision)
+        # recall: tp / (tp + fn)
+        recall = recall_score(actual_labels, preds_labels, pos_label=pos_label)
+        print('Recall: %f' % recall)
+        # f1: 2 tp / (2 tp + fp + fn)
+        f1 = f1_score(actual_labels, preds_labels, pos_label=pos_label)
+        print('F1 score: %f' % f1)
     # ROC AUC
     # auc = roc_auc_score(test_labels, basic_cnn_preds_labels)
     # print('ROC AUC: %f' % auc)
     # confusion matrix
     matrix = confusion_matrix(actual_labels, preds_labels)
     print(matrix)
+    if plot_confusion_matrix:
+        show_confusion_matrix(matrix)
+
+
+def show_confusion_matrix(matrix, labels: None):
+    """
+    This function plot the confusion matrix on.
+    Version = 1.1
+    :param matrix: matrix which we have to show
+    :param labels: labels of classes
+    :return: None
+    """
+    cm = matrix
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(cm)
+    plt.title('Confusion matrix of the classifier')
+    fig.colorbar(cax)
+    # ax.set_xticklabels([''] + labels)
+    # ax.set_yticklabels([''] + labels)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.show()
 
 
 # color_constancy code Start.

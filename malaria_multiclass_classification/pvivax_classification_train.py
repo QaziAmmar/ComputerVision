@@ -14,32 +14,6 @@ import os
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
-# %%
-
-def get_model(INPUT_SHAPE):
-    inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
-
-    conv1 = tf.keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(inp)
-    pool1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv1)
-    conv2 = tf.keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(pool1)
-    pool2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv2)
-    conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
-    pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
-
-    flat = tf.keras.layers.Flatten()(pool3)
-
-    hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
-    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
-
-    out = tf.keras.layers.Dense(6, activation='softmax')(drop2)
-
-    model = tf.keras.Model(inputs=inp, outputs=out)
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    model.summary()
-    return model
-
 
 # %%
 # Directory data
@@ -56,9 +30,11 @@ save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "bas
 # %%
 files_df = None
 np.random.seed(42)
-# number_of_classes
 number_of_classes = 0
 for folder_name in data_dir.glob('*'):
+    # '.DS_Store' file is automatically created by mac which we need to exclude form your code.
+    if '.DS_Store' == str(folder_name).split('/')[-1]:
+        continue
     files_in_folder = glob.glob(str(folder_name) + '/*.png')
     df2 = pd.DataFrame({
         'filename': files_in_folder,
@@ -230,8 +206,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 
-model.save(save_weights_path)
-# model.load_weights(save_weights_path)
+# model.save(save_weights_path)
+model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -263,13 +239,11 @@ l2 = ax2.legend(loc="best")
 plt.show()
 
 # %%
-from sklearn.metrics import precision_score
+from sklearn.metrics import confusion_matrix
 # This portion need to be updated accoruding to multiclass
 # Model Performance Evaluation
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
-# cv_iml.get_f1_score(test_labels, prediction_labels)
-precision = precision_score(test_labels, prediction_labels, pos_label=1, average= None)
-print('Precision: %f' % precision)
+cv_iml.get_f1_score(test_labels, prediction_labels, plot_confusion_matrix=True)
