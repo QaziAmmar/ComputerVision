@@ -1,8 +1,11 @@
-# This file contain the paths to all required dataset, saved model and other reults
+# //  Created by Qazi Ammar Arshad on 21/10/2019.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+
 import sys
 import os
 import cv2
 from glob import glob
+# This file contains the paths to all required dataset, saved model and other results.
 
 base_path = ""
 dataset_path = ""

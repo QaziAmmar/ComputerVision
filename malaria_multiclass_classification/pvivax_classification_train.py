@@ -19,7 +19,7 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 # Directory data
 data_dir = path.result_folder_path + "pvivax_malaria_cells/"
 data_dir = pathlib.Path(data_dir)
-save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "basic_cnn_MC_TL.h5"
+save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "densnet121_MC_TL.h5"
 # image_count = len(list(data_dir.glob('*/*.png')))
 #
 # print(image_count)
@@ -180,8 +180,10 @@ print(train_labels[:6], train_labels_enc[:6])
 # %%
 
 
-model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
-# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
+# classes=number_of_classes)
+model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False,
+                                                         classes=number_of_classes)
 # %%
 
 # Model training

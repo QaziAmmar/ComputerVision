@@ -1,4 +1,7 @@
-from custom_classes import path, cv_iml
+# //  Created by Qazi Ammar Arshad on 20/03/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+
+from custom_classes import path
 import json
 import cv2
 import os

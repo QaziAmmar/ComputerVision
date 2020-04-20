@@ -1,3 +1,6 @@
+# //  Created by Qazi Ammar Arshad on 21/10/2019.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+
 import cv2
 import numpy as np
 from custom_classes import path
@@ -217,6 +220,7 @@ def get_f1_score(actual_labels, preds_labels, pos_label=1, plot_confusion_matrix
     mention pos_label and for multiclass pass pos_label =1
     # Link: ?
     Version = 1.1
+    :param plot_confusion_matrix:
     :param actual_labels: labels of testing images. Y_label
     :param preds_labels: predicted labels by trained CNN
     :param pos_label: The positive label for calculating the precision and recall. For
@@ -253,7 +257,7 @@ def get_f1_score(actual_labels, preds_labels, pos_label=1, plot_confusion_matrix
     matrix = confusion_matrix(actual_labels, preds_labels)
     print(matrix)
     if plot_confusion_matrix:
-        show_confusion_matrix(matrix)
+        show_confusion_matrix(matrix=matrix, labels=None)
 
 
 def show_confusion_matrix(matrix, labels: None):
@@ -320,4 +324,54 @@ def color_constancy(img, percent=1):
         out_channels.append(cv2.LUT(channel, lut.astype('uint8')))
     return cv2.merge(out_channels)
 
+
 # color_constancy code End.
+
+def augment_image(images_folder_path, file_extension):
+    """
+    Function rotate images in target folder at 90, 180 and 270 and save them into same folder.
+    This function can be enhanced for saving augmented images into some other folder.
+    Version = 1.0
+    :param images_folder_path: path of folder where you read and write images.
+    :param file_extension: extension of image
+    :return: None
+    """
+    all_images_name = path.read_all_files_name_from(folder_path=images_folder_path,
+                                                    file_extension=file_extension)
+    counter = 0
+    for image_name in all_images_name:
+        #         append images name in file "patches_locations.txt"
+        img = cv2.imread(images_folder_path + image_name)
+        # get image height, width
+        (h, w) = img.shape[:2]
+        # calculate the center of the image
+        center = (w / 2, h / 2)
+
+        angle90 = 90
+        angle180 = 180
+        angle270 = 270
+
+        scale = 1.0
+
+        # Perform the counter clockwise rotation holding at the center
+        # 90 degrees
+        M = cv2.getRotationMatrix2D(center, angle90, scale)
+        rotated90 = cv2.warpAffine(img, M, (h, w))
+        rotated90_image_name = str(angle90) + "_" + image_name + file_extension
+        cv2.imwrite(images_folder_path + rotated90_image_name, rotated90)
+
+        # 180 degrees
+        M = cv2.getRotationMatrix2D(center, angle180, scale)
+        rotated180 = cv2.warpAffine(img, M, (w, h))
+        rotated180_image_name = str(angle180) + "_" + image_name + file_extension
+        cv2.imwrite(images_folder_path + rotated180_image_name, rotated180)
+
+        # 270 degrees
+        M = cv2.getRotationMatrix2D(center, angle270, scale)
+        rotated270 = cv2.warpAffine(img, M, (h, w))
+        rotated270_image_name = str(angle270) + "_" + image_name + file_extension
+        cv2.imwrite(images_folder_path + rotated270_image_name, rotated270)
+
+        if counter % 50 == 0:
+            print(counter)
+        counter = counter + 1

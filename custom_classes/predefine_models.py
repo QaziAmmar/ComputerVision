@@ -1,8 +1,9 @@
-# This file contained all models that are working perfectly.
+# //  Created by Qazi Ammar Arshad on 21/01/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
 import tensorflow as tf
 from custom_classes import path
-
+# This file contained all models that are working perfectly.
 
 # def get_basic_CNN_for_malaria(INPUT_SHAPE, save_weight_path=None, binary_classification=True, classes=2):
 def get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=True, classes=1):
@@ -195,6 +196,6 @@ def get_dennet121_transfer_learning(INPUT_SHAPE, save_weight_path=None, binary_c
                       metrics=['accuracy'])
 
     model.summary()
-    model.load_weights(save_weight_path)
+    # model.load_weights(save_weight_path)
     return model
 

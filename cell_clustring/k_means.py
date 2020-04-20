@@ -1,3 +1,6 @@
+# //  Created by Qazi Ammar Arshad on 01/04/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+
 from custom_classes import path
 import tensorflow as tf
 import cv2

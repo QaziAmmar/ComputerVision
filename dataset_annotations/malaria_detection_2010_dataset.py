@@ -1,3 +1,6 @@
+# //  Created by Qazi Ammar Arshad on 2/03/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+
 import cv2
 import itertools
 from custom_classes import path
