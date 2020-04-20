@@ -4,6 +4,7 @@
       <w>ammar</w>
       <w>arshad</w>
       <w>gametocyte</w>
+      <w>hflip</w>
       <w>keypoints</w>
       <w>matplot</w>
       <w>otsu</w>
@@ -15,6 +16,7 @@
       <w>stitcher</w>
       <w>thresholding</w>
       <w>trophozoite</w>
+      <w>vflip</w>
     </words>
   </dictionary>
 </component>

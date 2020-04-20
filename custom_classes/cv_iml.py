@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from custom_classes import path
 import matplotlib.pyplot as plt
+import imutils
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
@@ -262,7 +263,7 @@ def get_f1_score(actual_labels, preds_labels, pos_label=1, plot_confusion_matrix
 
 def show_confusion_matrix(matrix, labels: None):
     """
-    This function plot the confusion matrix on.
+    This function plot the confusion matrix on plt show().
     Version = 1.1
     :param matrix: matrix which we have to show
     :param labels: labels of classes
@@ -327,50 +328,63 @@ def color_constancy(img, percent=1):
 
 # color_constancy code End.
 
-def augment_image(images_folder_path, file_extension):
+
+def augment_image(images_folder_path, file_extension, rotation=True, flipping=True):
     """
-    Function rotate images in target folder at 90, 180 and 270 and save them into same folder.
+    Function rotate images in target folder at 90, 180 and 270 and flip image at vertically and
+    horizontally on base of condition save them into same folder.
     This function can be enhanced for saving augmented images into some other folder.
-    Version = 1.0
+    Version = 1.2
+    :param flipping: if you want to flip images
+    :param rotation: if you want to rotate images.
     :param images_folder_path: path of folder where you read and write images.
     :param file_extension: extension of image
     :return: None
     """
+
+    def rotate(image_name, angle=90):
+        """
+        Rotate the image
+        :param image_name:
+        :param angle: Rotation angle in degrees. Positive values mean
+        counter-clockwise rotation (the coordinate origin is assumed to be the top-left corner).
+        """
+        img = cv2.imread(images_folder_path + image_name)
+        rotated = imutils.rotate_bound(img, angle)
+        rotated_image_name = str(angle) + "_" + image_name + file_extension
+        cv2.imwrite(images_folder_path + rotated_image_name, rotated)
+
+    def flip(image_name, vflip=False, hflip=False):
+        """
+        Flip the image
+        :param image_name:
+        :param vflip: whether to flip the image vertically
+        :param hflip: whether to flip the image horizontally
+        """
+        img = cv2.imread(images_folder_path + image_name)
+        if hflip or vflip:
+            if hflip and vflip:
+                c = -1
+            else:
+                c = 0 if vflip else 1
+            flip_image = cv2.flip(img, flipCode=c)
+
+        rotated_image_name = "flip_hv" + "_" + image_name + file_extension
+        cv2.imwrite(images_folder_path + rotated_image_name, flip_image)
+
     all_images_name = path.read_all_files_name_from(folder_path=images_folder_path,
                                                     file_extension=file_extension)
     counter = 0
     for image_name in all_images_name:
-        #         append images name in file "patches_locations.txt"
-        img = cv2.imread(images_folder_path + image_name)
-        # get image height, width
-        (h, w) = img.shape[:2]
-        # calculate the center of the image
-        center = (w / 2, h / 2)
-
-        angle90 = 90
-        angle180 = 180
-        angle270 = 270
-
-        scale = 1.0
-
         # Perform the counter clockwise rotation holding at the center
         # 90 degrees
-        M = cv2.getRotationMatrix2D(center, angle90, scale)
-        rotated90 = cv2.warpAffine(img, M, (h, w))
-        rotated90_image_name = str(angle90) + "_" + image_name + file_extension
-        cv2.imwrite(images_folder_path + rotated90_image_name, rotated90)
+        if rotation:
+            rotate(image_name, angle=90)
+            rotate(image_name, angle=180)
+            rotate(image_name, angle=270)
 
-        # 180 degrees
-        M = cv2.getRotationMatrix2D(center, angle180, scale)
-        rotated180 = cv2.warpAffine(img, M, (w, h))
-        rotated180_image_name = str(angle180) + "_" + image_name + file_extension
-        cv2.imwrite(images_folder_path + rotated180_image_name, rotated180)
-
-        # 270 degrees
-        M = cv2.getRotationMatrix2D(center, angle270, scale)
-        rotated270 = cv2.warpAffine(img, M, (h, w))
-        rotated270_image_name = str(angle270) + "_" + image_name + file_extension
-        cv2.imwrite(images_folder_path + rotated270_image_name, rotated270)
+        if flipping:
+            flip(image_name, vflip=True, hflip=True)
 
         if counter % 50 == 0:
             print(counter)
