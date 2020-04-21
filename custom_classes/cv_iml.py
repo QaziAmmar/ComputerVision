@@ -258,7 +258,7 @@ def get_f1_score(actual_labels, preds_labels, pos_label=1, plot_confusion_matrix
     matrix = confusion_matrix(actual_labels, preds_labels)
     print(matrix)
     if plot_confusion_matrix:
-        show_confusion_matrix(matrix=matrix, labels=None)
+        show_confusion_matrix(matrix=matrix, labels=np.unique(actual_labels))
 
 
 def show_confusion_matrix(matrix, labels: None):
@@ -275,8 +275,9 @@ def show_confusion_matrix(matrix, labels: None):
     cax = ax.matshow(cm)
     plt.title('Confusion matrix of the classifier')
     fig.colorbar(cax)
-    # ax.set_xticklabels([''] + labels)
-    # ax.set_yticklabels([''] + labels)
+    if labels is not None:
+        ax.set_xticklabels([''] + labels)
+        ax.set_yticklabels([''] + labels)
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.show()

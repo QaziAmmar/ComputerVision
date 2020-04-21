@@ -13,13 +13,11 @@ import os
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-
-
 # %%
 # Directory data
 data_dir = path.result_folder_path + "pvivax_malaria_cells/"
 data_dir = pathlib.Path(data_dir)
-save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "densnet121_MC_TL.h5"
+save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "basic_cnn_MC_TL.h5"
 # image_count = len(list(data_dir.glob('*/*.png')))
 #
 # print(image_count)
@@ -171,19 +169,19 @@ train_labels_enc = le.transform(train_labels)
 val_labels_enc = le.transform(val_labels)
 test_labels_enc = le.transform(test_labels)
 
-train_labels_enc = to_categorical(train_labels_enc, num_classes=6)
-val_labels_enc = to_categorical(val_labels_enc, num_classes=6)
-test_labels_enc = to_categorical(test_labels_enc, num_classes=6)
+train_labels_enc = to_categorical(train_labels_enc, num_classes=number_of_classes)
+val_labels_enc = to_categorical(val_labels_enc, num_classes=number_of_classes)
+test_labels_enc = to_categorical(test_labels_enc, num_classes=number_of_classes)
 
 print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 
 
-# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
-# classes=number_of_classes)
-model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False,
-                                                         classes=number_of_classes)
+model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
+                                                   classes=number_of_classes)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False,
+#                                                          classes=number_of_classes)
 # %%
 
 # Model training
@@ -242,9 +240,11 @@ plt.show()
 
 # %%
 from sklearn.metrics import confusion_matrix
+
 # This portion need to be updated accoruding to multiclass
 # Model Performance Evaluation
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
+# %%
 # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
