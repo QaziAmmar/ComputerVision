@@ -12,13 +12,14 @@ from skimage.morphology import watershed
 from custom_classes import path, cv_iml
 
 #########################################################################
-directory = path.dataset_path + "foldscope_test/foldsocpe_all_sample/"
+directory = path.dataset_path + "foldscope_test/foldsocpe_all_sample/original/"
 all_images_name = path.read_all_files_name_from(directory, '.jpg')
 image_name = "pv_20200108_171022.jpg"
 image = cv2.imread(directory + image_name)
 
 # image = cv2.pyrMeanShiftFiltering(image, 10, 10)
 img_copy = image.copy()
+erod_img_copy = image.copy()
 # convert image to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 # improve the contrast of our images
@@ -59,7 +60,6 @@ for temp_row in range(0, row_range, r_step):
         # combining image.
         newimg[temp_row: temp_row + r_step, temp_col: temp_col + c_step] = invert_thresh
 
-
 # %%
 # find contours of newimg
 contours, hierarchy = cv2.findContours(newimg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -83,7 +83,7 @@ localMax = peak_local_max(D, indices=False, min_distance=10,
 markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
 labels = watershed(-D, markers, mask=newimg)
 # %%
-
+clotted_cell_image = newimg.copy()
 # loop over the unique labels returned by the Watershed algorithm
 num = 0
 for label in np.unique(labels):
@@ -107,13 +107,55 @@ for label in np.unique(labels):
         continue
     cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 0, 0), 2)
     roi = image[y:y + h, x:x + w]
+    clotted_cell_image[y:y + h, x:x + w] = 0
     # cv2.imwrite(directory + "/cell{}.png".format(num), roi)
     num = num + 1
 
     # save an image where every cell is segmented by rectangles.
-cv2.imwrite(directory + "segmented_" + image_name, img_copy)
+# cv2.imwrite(directory + "segmented_" + image_name, img_copy)
+clotted_cell_image = clotted_cell_image * 255
+# %%
+# Apply erosion on the image so that large cell can also be seprated
 
-# #%% Morphological opening
-# kernel = np.ones((2, 2), np.uint8)
-# opening = cv2.morphologyEx(newimg, cv2.MORPH_OPEN, kernel)
-# # cv_iml.image_show(opening, 'gray')
+kernel = np.ones((10, 10), np.uint8)
+single_erode_image = cv2.erode(clotted_cell_image, kernel)
+cv_iml.image_show(single_erode_image, 'gray')
+cv2.imwrite(directory + "mask_" + image_name, single_erode_image)
+
+
+#%%
+D = ndimage.distance_transform_edt(single_erode_image)
+localMax = peak_local_max(D, indices=False, min_distance=10,
+                          labels=single_erode_image)
+
+# perform a connected component analysis on the local peaks,
+# using 8-connectivity, then appy the Watershed algorithm
+markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
+labels = watershed(-D, markers, mask=single_erode_image)
+# %%
+# loop over the unique labels returned by the Watershed algorithm
+num = 0
+for label in np.unique(labels):
+    # if the label is zero, we are examining the 'background'
+    if label == 0:
+        continue
+
+    # otherwise, allocate memory for the label region and draw
+    # it on the mask
+    mask = np.zeros(gray.shape, dtype="uint8")
+    mask[labels == label] = 255
+
+    # detect contours in the mask and grab the largest one
+    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                            cv2.CHAIN_APPROX_SIMPLE)[-2]
+    c = max(cnts, key=cv2.contourArea)
+
+    # saving every single cell as a rectangular image.
+    x, y, w, h = cv2.boundingRect(c)
+    cv2.rectangle(erod_img_copy, (x, y), (x + w, y + h), (0, 0, 0), 2)
+    roi = image[y:y + h, x:x + w]
+    # cv2.imwrite(directory + "/cell{}.png".format(num), roi)
+    num = num + 1
+
+    # save an image where every cell is segmented by rectangles.
+# cv2.imwrite(directory + "erod_" + image_name, erod_img_copy)

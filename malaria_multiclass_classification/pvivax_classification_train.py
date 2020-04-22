@@ -244,7 +244,6 @@ from sklearn.metrics import confusion_matrix
 # This portion need to be updated accoruding to multiclass
 # Model Performance Evaluation
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
-# %%
 # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)

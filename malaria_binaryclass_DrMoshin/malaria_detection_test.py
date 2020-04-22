@@ -4,7 +4,7 @@ import threading
 import numpy as np
 from concurrent import futures
 import glob
-from custom_classes import path, cv_iml
+from custom_classes import path, cv_iml, predefine_models
 from sklearn.preprocessing import LabelEncoder
 
 INPUT_SHAPE = (125, 125, 3)
@@ -58,27 +58,7 @@ train_labels_enc = le.transform(train_labels)
 # %%
 # Model 1: CNN from Scratch
 
-inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
-
-conv1 = tf.keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(inp)
-pool1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv1)
-conv2 = tf.keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(pool1)
-pool2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv2)
-conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
-pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
-
-flat = tf.keras.layers.Flatten()(pool3)
-
-hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
-drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
-
-out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
-
-model = tf.keras.Model(inputs=inp, outputs=out)
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-model.summary()
+model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 
 # %%
 
