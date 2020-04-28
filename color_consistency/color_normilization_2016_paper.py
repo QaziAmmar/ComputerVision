@@ -8,8 +8,8 @@ from custom_classes import cv_iml, path
 # 4a_001 paper1 image.
 # a85 paper2
 
-folder_path = "Malaria_dataset/malaria/4a_001.jpg"
-illumenation_image_path = path.dataset_path + "Malaria_dataset/4a_005.jpg"
+folder_path = "Malaria_2010_dataset/malaria/4a_001.jpg"
+illumenation_image_path = path.dataset_path + "Malaria_2010_dataset/4a_005.jpg"
 dataset_path = path.dataset_path + folder_path
 
 kernel = np.ones((60, 60), np.uint8)
@@ -96,6 +96,10 @@ M_background = np.array([
 temp_blue = m_background_blue * b
 temp_green = m_background_green * g
 temp_red = m_background_red * r
+
+# Merge images after apply mean image.
+# image_background_unknown = cv2.merge((temp_blue, temp_green,
+#                                       temp_red))
 
 # 2. Transform the whole image: I1 = Mb * Iu
 I1 = cv2.filter2D(img, -1, M_background)

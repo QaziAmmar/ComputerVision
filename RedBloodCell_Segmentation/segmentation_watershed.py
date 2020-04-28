@@ -12,150 +12,113 @@ from skimage.morphology import watershed
 from custom_classes import path, cv_iml
 
 #########################################################################
-directory = path.dataset_path + "foldscope_test/foldsocpe_all_sample/original/"
-all_images_name = path.read_all_files_name_from(directory, '.jpg')
-image_name = "pv_20200108_171022.jpg"
-image = cv2.imread(directory + image_name)
+load_directory = path.dataset_path + "foldscope_test/foldsocpe_all_sample/original/"
+save_directory = path.dataset_path + "foldscope_test/foldsocpe_all_sample/with_parts_erosion/"
+cell_directory = save_directory + "cell/"
+mask_directory = save_directory + "mask/"
 
-# image = cv2.pyrMeanShiftFiltering(image, 10, 10)
-img_copy = image.copy()
-erod_img_copy = image.copy()
-# convert image to grayscale
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-# improve the contrast of our images
-darker = cv2.equalizeHist(gray)
+all_images_name = path.read_all_files_name_from(load_directory, '.jpg')
 
-# %%
-# divide image into 10 equal parts.
-img_clone = darker.copy()
-image_parts = 8
+for single_image_name in all_images_name:
 
-r, c = darker.shape
-r_step = int(r / image_parts)
-c_step = int(c / image_parts)
+    image = cv2.imread(load_directory + single_image_name)
 
-crop_images = []
-newimg = np.zeros((r, c), np.uint8)
+    # image = cv2.pyrMeanShiftFiltering(image, 10, 10)
+    img_copy = image.copy()
+    erod_img_copy = image.copy()
+    # convert image to grayscale
+    image = cv_iml.apply_sharpening_on(image)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # improve the contrast of our images
+    darker = cv2.equalizeHist(gray)
 
-#  divide image into 10 small parts and then compute background and foreground threshold for these
-#  image and then combine these images.
-if r % image_parts == 0:
-    row_range = (r - r_step) + 1
-else:
-    row_range = (r - r_step)
+    # %%
+    # divide image into 10 equal parts.
+    img_clone = darker.copy()
+    image_parts = 8
 
-if c % image_parts == 0:
-    col_range = (c - c_step) + 1
-else:
-    col_range = (c - c_step)
+    r, c = darker.shape
+    r_step = int(r / image_parts)
+    c_step = int(c / image_parts)
 
-for temp_row in range(0, row_range, r_step):
-    for temp_col in range(0, col_range, c_step):
-        # separating image part for complete image.
-        temp_imge = img_clone[temp_row: temp_row + r_step, temp_col: temp_col + c_step]
-        # Otsu's threshold
-        ret, thresh = cv2.threshold(temp_imge, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        # invert
-        invert_thresh = cv2.bitwise_not(thresh)
-        # combining image.
-        newimg[temp_row: temp_row + r_step, temp_col: temp_col + c_step] = invert_thresh
+    crop_images = []
+    newimg = np.zeros((r, c), np.uint8)
 
-# %%
-# find contours of newimg
-contours, hierarchy = cv2.findContours(newimg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-print(len(contours))
+    #  divide image into 10 small parts and then compute background and foreground threshold for these
+    #  image and then combine these images.
+    if r % image_parts == 0:
+        row_range = (r - r_step) + 1
+    else:
+        row_range = (r - r_step)
 
-# %%
-# filling the "holes" of the cells
-for cnt in contours:
-    cv2.drawContours(newimg, [cnt], 0, 255, -1)
+    if c % image_parts == 0:
+        col_range = (c - c_step) + 1
+    else:
+        col_range = (c - c_step)
 
-# %%
-# compute the exact Euclidean distance from every binary
-# pixel to the nearest zero pixel, then find peaks in this
-# distance map
-D = ndimage.distance_transform_edt(newimg)
-localMax = peak_local_max(D, indices=False, min_distance=10,
-                          labels=newimg)
-
-# perform a connected component analysis on the local peaks,
-# using 8-connectivity, then appy the Watershed algorithm
-markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
-labels = watershed(-D, markers, mask=newimg)
-# %%
-clotted_cell_image = newimg.copy()
-# loop over the unique labels returned by the Watershed algorithm
-num = 0
-for label in np.unique(labels):
-    # if the label is zero, we are examining the 'background'
-    if label == 0:
-        continue
-
-    # otherwise, allocate memory for the label region and draw
-    # it on the mask
-    mask = np.zeros(gray.shape, dtype="uint8")
-    mask[labels == label] = 255
-
-    # detect contours in the mask and grab the largest one
-    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                            cv2.CHAIN_APPROX_SIMPLE)[-2]
-    c = max(cnts, key=cv2.contourArea)
-
-    # saving every single cell as a rectangular image.
-    x, y, w, h = cv2.boundingRect(c)
-    if (w < 8 or h < 8) or (w > 30 or h > 30):
-        continue
-    cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 0, 0), 2)
-    roi = image[y:y + h, x:x + w]
-    clotted_cell_image[y:y + h, x:x + w] = 0
-    # cv2.imwrite(directory + "/cell{}.png".format(num), roi)
-    num = num + 1
-
-    # save an image where every cell is segmented by rectangles.
-# cv2.imwrite(directory + "segmented_" + image_name, img_copy)
-clotted_cell_image = clotted_cell_image * 255
-# %%
-# Apply erosion on the image so that large cell can also be seprated
-
-kernel = np.ones((10, 10), np.uint8)
-single_erode_image = cv2.erode(clotted_cell_image, kernel)
-cv_iml.image_show(single_erode_image, 'gray')
-cv2.imwrite(directory + "mask_" + image_name, single_erode_image)
+    for temp_row in range(0, row_range, r_step):
+        for temp_col in range(0, col_range, c_step):
+            # separating image part for complete image.
+            temp_imge = img_clone[temp_row: temp_row + r_step, temp_col: temp_col + c_step]
+            # Otsu's threshold
+            ret, thresh = cv2.threshold(temp_imge, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            # invert
+            invert_thresh = cv2.bitwise_not(thresh)
+            # combining image.
+            newimg[temp_row: temp_row + r_step, temp_col: temp_col + c_step] = invert_thresh
 
 
 #%%
-D = ndimage.distance_transform_edt(single_erode_image)
-localMax = peak_local_max(D, indices=False, min_distance=10,
-                          labels=single_erode_image)
+    # find contours of newimg
+    contours, hierarchy = cv2.findContours(newimg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    print(len(contours))
 
-# perform a connected component analysis on the local peaks,
-# using 8-connectivity, then appy the Watershed algorithm
-markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
-labels = watershed(-D, markers, mask=single_erode_image)
-# %%
-# loop over the unique labels returned by the Watershed algorithm
-num = 0
-for label in np.unique(labels):
-    # if the label is zero, we are examining the 'background'
-    if label == 0:
-        continue
+    # %%
+    # filling the "holes" of the cells
+    for cnt in contours:
+        cv2.drawContours(newimg, [cnt], 0, 255, -1)
 
-    # otherwise, allocate memory for the label region and draw
-    # it on the mask
-    mask = np.zeros(gray.shape, dtype="uint8")
-    mask[labels == label] = 255
+    # %%
+    # compute the exact Euclidean distance from every binary
+    # pixel to the nearest zero pixel, then find peaks in this
+    # distance map
+    D = ndimage.distance_transform_edt(newimg)
+    localMax = peak_local_max(D, indices=False, min_distance=10,
+                              labels=newimg)
 
-    # detect contours in the mask and grab the largest one
-    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                            cv2.CHAIN_APPROX_SIMPLE)[-2]
-    c = max(cnts, key=cv2.contourArea)
+    # perform a connected component analysis on the local peaks,
+    # using 8-connectivity, then appy the Watershed algorithm
+    markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
+    labels = watershed(-D, markers, mask=newimg)
+    # %%
+    clotted_cell_image = newimg.copy()
+    # loop over the unique labels returned by the Watershed algorithm
+    num = 0
+    for label in np.unique(labels):
+        # if the label is zero, we are examining the 'background'
+        if label == 0:
+            continue
 
-    # saving every single cell as a rectangular image.
-    x, y, w, h = cv2.boundingRect(c)
-    cv2.rectangle(erod_img_copy, (x, y), (x + w, y + h), (0, 0, 0), 2)
-    roi = image[y:y + h, x:x + w]
-    # cv2.imwrite(directory + "/cell{}.png".format(num), roi)
-    num = num + 1
+        # otherwise, allocate memory for the label region and draw
+        # it on the mask
+        mask = np.zeros(gray.shape, dtype="uint8")
+        mask[labels == label] = 255
 
-    # save an image where every cell is segmented by rectangles.
-# cv2.imwrite(directory + "erod_" + image_name, erod_img_copy)
+        # detect contours in the mask and grab the largest one
+        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                                cv2.CHAIN_APPROX_SIMPLE)[-2]
+        c = max(cnts, key=cv2.contourArea)
+
+        # saving every single cell as a rectangular image.
+        x, y, w, h = cv2.boundingRect(c)
+        if (w < 8 or h < 8) or (w > 30 or h > 30):
+            continue
+        cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 0, 0), 2)
+        roi = image[y:y + h, x:x + w]
+        clotted_cell_image[y:y + h, x:x + w] = 0
+        # cv2.imwrite(directory + "/cell{}.png".format(num), roi)
+        num = num + 1
+
+        # save an image where every cell is segmented by rectangles.
+    cv2.imwrite(cell_directory + single_image_name, img_copy)
+    cv2.imwrite(mask_directory + single_image_name, labels)

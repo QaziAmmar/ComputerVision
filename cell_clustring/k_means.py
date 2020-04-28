@@ -22,6 +22,10 @@ for folder_name in data_dir.glob('*'):
 targetdir = path.result_folder_path + "kmeans_clustrin_pvivax_malaria/"
 # image_list = path.read_all_files_name_from(dataset_path, file_extension='jpg')
 
+# save_weight_path = path.save_models_path + "densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5"
+# dn121 = tf.keras.applications.DenseNet121(weights=save_weight_path, include_top=False,)
+
+
 save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
 vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
                                         weights=save_weight_path)
@@ -53,12 +57,13 @@ for i, m in enumerate(kmeans.labels_):
     cv2.imwrite(targetdir + str(m) + "/" + image_name, img)
 
 # %%
-path1 = path.result_folder_path + "pvivax_malaria_cells/difficult"
-path2 = path.result_folder_path + "kmeans_clustrin_pvivax_malaria/5"
-
-path1_files = path.read_all_files_name_from(path1, '.png')
-path2_files = path.read_all_files_name_from(path2, '.png')
-print("Different = " + str(len(set(path1_files).union(set(path2_files)))))
-print("Matching = " + str(len((set(path1_files).intersection(set(path2_files))))))
+# Find number of matching images
+# path1 = path.result_folder_path + "pvivax_malaria_cells/difficult"
+# path2 = path.result_folder_path + "kmeans_clustrin_pvivax_malaria/5"
+#
+# path1_files = path.read_all_files_name_from(path1, '.png')
+# path2_files = path.read_all_files_name_from(path2, '.png')
+# print("Different = " + str(len(set(path1_files).union(set(path2_files)))))
+# print("Matching = " + str(len((set(path1_files).intersection(set(path2_files))))))
 
 #%%
