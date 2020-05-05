@@ -142,7 +142,7 @@ for image_name in all_images_name:
 
     # Subtract the Background (mean) image
     mean_subtracted = imge_clahe - mean_gray_resized[:, :, 0]
-    clone = mean_subtracted.copy()
+    # clone = mean_subtracted.copy()
 
     # Remove the pixels which are very close to the mean. 60 is selected after watching a few images
     mean_subtracted[mean_subtracted < 60] = 0

@@ -1,9 +1,5 @@
 # //  Created by Qazi Ammar Arshad on 15/04/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
-# Code Link: https://github.com/LumRamabaja/Red_Blood_Cell_Segmentation
-# Helping Links:
-# https://www.pyimagesearch.com/2015/11/02/watershed-opencv/
-# Also this author has classification code.
 # This code required python 3.7.
 
 """
@@ -11,7 +7,7 @@ Description:
 This is the 3rd version of cell segmentation code. This code use watershed algorithm to extract each single
 cell from complete blood slide. It saves each cell separate cell and complete annotation of blood slide in
 separate folder. It also saves the coordinate of each cell in separate .txt file.
-Currently, we are using this code for classification of blood cells form chughati labs.
+This a stable code.
 """
 
 import cv2
@@ -158,6 +154,9 @@ save_individual_cell_path = folder_base_path + "rbc/"
 make_folder_with(save_individual_cell_path)
 # path of annotation file that save the coordinate of each individual cell.
 annotation_file_path = folder_base_path + "cells.json"
+# append all json object for writing in json file.
+json_dictionary = []
+
 # read all images form a foler.
 all_images_name = path.read_all_files_name_from(directory, '.JPG')
 
@@ -200,49 +199,15 @@ for image_name in all_images_name:
     annotated_img, clotted_cell_image, json_object = save_cells_annotation(annotated_img,
                                                                            forground_background_mask,
                                                                            labels, image_name)
-    dictionary = {
+    json_dictionary.append({
         "image_name": image_name,
         "objects": json_object
-    }
+    })
     # save annotation of each image into json file.
-    with open(annotation_file_path, "a") as outfile:
-        json.dump(dictionary, outfile)
+
     # save annotated_img in separate folder.
     cv2.imwrite(save_annotated_image_path + image_name, annotated_img)
 
-exit(0)
-# The code belwo this part is under testing phase.
-# %%
-# Iterate through the image until no cell left behind
-kernel = np.ones((3, 3), np.uint8)
-counter = 0
+with open(annotation_file_path, "a") as outfile:
+    json.dump(json_dictionary, outfile)
 
-while counter < 10:
-    # Apply erosion on the image so that large cell can also be seprated
-    clotted_cell_image = cv2.resize(clotted_cell_image, image.shape[1::-1])
-    remaining_image = cv2.bitwise_and(image, image, mask=clotted_cell_image)
-    remaining_image_sharp = cv_iml.apply_sharpening_on(remaining_image)
-
-    gray = cv2.cvtColor(remaining_image_sharp, cv2.COLOR_BGR2GRAY)
-    # improve the contrast of our images
-    darker = cv2.equalizeHist(gray)
-
-    ret, thresh = cv2.threshold(darker, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    forground_background_mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel=kernel)
-
-    labels = watershed(forground_background_mask)
-    prev_count = total_cell_count
-
-    annotated_img, clotted_cell_image, total_cell_count = plot_labels_on(annotated_img,
-                                                                         labels, total_cell_count)
-    counter += 1
-    # this condition terminates the loop if no new cells are found.
-    print(total_cell_count)
-
-    if is_new_cell_segments_found(total_cell_count, prev_count):
-        continue
-    else:
-        print("code is terminated because no new cells found")
-        break
-
-print(counter)
