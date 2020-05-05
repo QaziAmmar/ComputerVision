@@ -1,12 +1,23 @@
 # This is a file where we fist test our code then implement it into other file
 # This code run on python 3.7
+"""
+Description:
+This is very first code that we used to extract individual RBC from our dataset. This method
+segments sufficient number of red blood cells form blood slides. Till 05-05-2020 We perform all experiments
+on red blood cell by using this segmentation code.
+We then compare this code with watershed algorithm which performs much better than this code and
+new segmentation code almost extract each cell form complete slide image that is captured at 1000X or
+450X.
+"""
+
 from custom_classes import path, cv_iml
 import cv2
 import numpy as np
 
-dataset_path = path.dataset_path + "/Malaria_dataset/malaria/"
-images_name = path.read_all_files_name_from(dataset_path, ".jpg")
-result_path = path.dataset_path + "/Malaria_dataset/rbc/"
+dataset_path = path.result_folder_path + "microscope_test/sample_images/"
+images_name = path.read_all_files_name_from(dataset_path, '.JPG')
+result_path = path.result_folder_path + "microscope_test/morphological/"
+
 
 for image in images_name:
 
@@ -40,7 +51,7 @@ for image in images_name:
     # Draw rectangle on detected contours.
     for c in contours:
         (x, y, w, h) = cv2.boundingRect(c)
-        cv2.rectangle(img=mask, pt1=(x, y), pt2=(x + w, y + h), color=(255, 255, 255), thickness=-1)
+        cv2.rectangle(clone, (x, y), (x + w, y + h), (0, 0, 0), 2)
 
     red_blood_cells = []
 

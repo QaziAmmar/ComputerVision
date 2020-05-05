@@ -1,18 +1,29 @@
 # This is a file where we fist test our code then implement it into other file
 # This Code run on python 3.6
+# //  Created by Dr. Waqas Sultani on 13/03/2020.
+# //  Copyright © Dr. Waqas Sultani. All rights reserved.
+"""
+Description:
+This is the second version of blood cell segmentation code written by Dr. Waqas Sultani. This code
+extracts each individual cell from blood slide image. This code work for both 1000X and 450X resolution.
+Segmentation results of this code are also very good, and it almost extracts all RBC from cell.
+"""
+
 from custom_classes import path, cv_iml
 import cv2
 import os
 import numpy as np
 import copy
+
+
 import matplotlib.pyplot as plt
 
-save_folder_path = path.result_folder_path + "color_consistency/stretch/"
+save_folder_path = path.result_folder_path + "microscope_test/drwaqas/"
 
 # folder_path = "Malaria_dataset/malaria/"
 # dataset_path = path.dataset_path + folder_path
-dataset_path = save_folder_path
-images_name = path.read_all_files_name_from(dataset_path, ".jpg")
+dataset_path = path.result_folder_path + "microscope_test/sample_images/"
+images_name = path.read_all_files_name_from(dataset_path, ".JPG")
 # result_path = path.result_folder_path + "morphological_drwaqas_malaria_online/"
 # result_path = save_folder_path
 mean_rgb_path = save_folder_path + "mean_image.png"
@@ -87,7 +98,7 @@ for image in images_name:
     mean_subtracted_erode = cv2.erode(mean_subtracted, kernel)
     kernel = np.ones((7, 7), np.uint8)
     closing = cv2.morphologyEx(mean_subtracted_erode, cv2.MORPH_CLOSE, kernel)
-    _, contours_single_erode, hierarchy = cv2.findContours(closing, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours_single_erode, hierarchy = cv2.findContours(closing, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Select the regions which are still large and strongle collected and apply errosion again only to those regions
     mean_subtracted_erode_forLarge = copy.deepcopy(mean_subtracted_erode)
@@ -101,8 +112,8 @@ for image in images_name:
     kernel = np.ones((20, 20), np.uint8)
     mean_subtracted_doubleerode_forLarge = cv2.erode(mean_subtracted_erode_forLarge, kernel)
 
-    closing = cv2.morphologyEx(mean_subtracted_doubleerode_forLarge, cv2.MORPH_CLOSE, kernel)
-    _, contours_double_erode, hierarchy = cv2.findContours(closing, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    contours_double_erode, hierarchy = cv2.findContours(closing, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Plot results with single errosion
     rgb_single_erode = copy.deepcopy(rgb_resized)
@@ -154,5 +165,5 @@ for image in images_name:
     # ax3.imshow(rgb_double_erode)
     # plt.show()
     ####################################
-    cv2.imwrite(save_folder_path + image, rgb_single_erode)
+    cv2.imwrite(save_folder_path + image, rgb_double_erode)
     # continue

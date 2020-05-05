@@ -62,12 +62,12 @@ def watershed_labels(binary_mask):
     # perform a connected component analysis on the local peaks,
     # using 8-connectivity, then appy the Watershed algorithm
     markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
-    labels = watershed(-D, markers, mask=forground_background_mask)
+    labels = watershed(-D, markers, mask=binary_mask)
 
     return labels
 
 
-def plot_labels_on(annotated_img, labels, cell_count):
+def plot_labels_on(annotated_img, forground_background_mask, labels, cell_count):
     clotted_cell_image = forground_background_mask.copy()
     # loop over the unique labels returned by the Watershed algorithm
     num = 0
@@ -115,7 +115,7 @@ def is_new_cell_segments_found(new_count, pre_count):
 #########################################################################
 directory = path.dataset_path + "foldscope_test/foldsocpe_all_sample/original/"
 all_images_name = path.read_all_files_name_from(directory, '.jpg')
-image_name = "pv_20200108_171022.jpg"
+image_name = "20200108_171011.jpg"
 
 image = cv2.imread(directory + image_name)
 
@@ -146,7 +146,7 @@ labels = watershed_labels(forground_background_mask)
 
 # %%
 # plot annotation on image
-annotated_img, clotted_cell_image, total_cell_count = plot_labels_on(annotated_img,
+annotated_img, clotted_cell_image, total_cell_count = plot_labels_on(annotated_img, forground_background_mask,
                                                                      labels, total_cell_count)
 
 # %%
@@ -155,7 +155,7 @@ kernel = np.ones((3, 3), np.uint8)
 counter = 0
 
 
-while counter < 3:
+while counter < 10:
     # Apply erosion on the image so that large cell can also be seprated
     clotted_cell_image = cv2.resize(clotted_cell_image, image.shape[1::-1])
     remaining_image = cv2.bitwise_and(image, image, mask=clotted_cell_image)
@@ -171,12 +171,16 @@ while counter < 3:
     labels = watershed(forground_background_mask)
     prev_count = total_cell_count
 
-    annotated_img, clotted_cell_image, total_cell_count = plot_labels_on(annotated_img,
+    annotated_img, clotted_cell_image, total_cell_count = plot_labels_on(annotated_img, forground_background_mask,
                                                                          labels, total_cell_count)
     counter += 1
     # this condition terminates the loop if no new cells are found.
+    print(total_cell_count)
+
     if is_new_cell_segments_found(total_cell_count, prev_count):
         continue
     else:
+        print("code is terminated because no new cells found")
         break
 
+print(counter)
