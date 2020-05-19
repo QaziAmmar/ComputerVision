@@ -8,9 +8,10 @@ from custom_classes import cv_iml, path
 # 4a_001 paper1 image.
 # a85 paper2
 
-folder_path = "Malaria_2010_dataset/malaria/4a_001.jpg"
-illumenation_image_path = path.dataset_path + "Malaria_2010_dataset/4a_005.jpg"
-dataset_path = path.dataset_path + folder_path
+
+folder_path = "p_vivax_malaria_bounding_boxes/original_images/1d9d4dac-66f9-4c87-b714-d723d5b15fa9.png"
+# illumenation_image_path = path.dataset_path + "Malaria_2010_dataset/4a_005.jpg"
+dataset_path = path.result_folder_path + folder_path
 
 kernel = np.ones((60, 60), np.uint8)
 opening_kernal = np.ones((2, 2), np.uint8)

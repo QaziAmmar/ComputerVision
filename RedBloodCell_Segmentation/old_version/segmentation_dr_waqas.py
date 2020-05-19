@@ -18,12 +18,12 @@ import copy
 
 import matplotlib.pyplot as plt
 
-save_folder_path = path.result_folder_path + "microscope_test/drwaqas/"
+save_folder_path = path.result_folder_path + "Malaria_2010_dataset/annotated_img/"
 
 # folder_path = "Malaria_dataset/malaria/"
 # dataset_path = path.dataset_path + folder_path
-dataset_path = path.result_folder_path + "microscope_test/sample_images/"
-images_name = path.read_all_files_name_from(dataset_path, ".JPG")
+dataset_path = path.result_folder_path + "Malaria_2010_dataset/original_images/"
+images_name = path.read_all_files_name_from(dataset_path, ".jpg")
 # result_path = path.result_folder_path + "morphological_drwaqas_malaria_online/"
 # result_path = save_folder_path
 mean_rgb_path = save_folder_path + "mean_image.png"
@@ -165,5 +165,5 @@ for image in images_name:
     # ax3.imshow(rgb_double_erode)
     # plt.show()
     ####################################
-    cv2.imwrite(save_folder_path + image, rgb_double_erode)
+    cv2.imwrite(save_folder_path + image, rgb_single_erode)
     # continue

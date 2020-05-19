@@ -97,7 +97,7 @@ def save_cells_annotation(annotated_img, mask, labels, image_name):
 
         # saving every single cell as a rectangular image.
         x, y, w, h = cv2.boundingRect(c)
-        if (w < 80 or h < 80) or (w > 150 or h > 150):
+        if (w < 20 or h < 20) or (w > 70 or h > 70):
             continue
         cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 0), 2)
         roi = image[y:y + h, x:x + w]
@@ -140,9 +140,9 @@ def make_folder_with(folder_name):
 # saved.
 
 # base path of folder where you save all related annotation.
-folder_base_path = path.result_folder_path + "microscope_test/"
+folder_base_path = path.result_folder_path + "Malaria_2010_dataset/"
 # where you want to read images. Microscopic captured images.
-directory = folder_base_path + "sample_images/"
+directory = folder_base_path + "original_images/"
 
 
 # path where you want to save images on which rectangles are drawn.
@@ -158,7 +158,7 @@ annotation_file_path = folder_base_path + "cells.json"
 json_dictionary = []
 
 # read all images form a foler.
-all_images_name = path.read_all_files_name_from(directory, '.JPG')
+all_images_name = path.read_all_files_name_from(directory, '.jpg')
 
 if all_images_name is None:
     print("No images are found!")

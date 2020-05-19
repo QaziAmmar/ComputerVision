@@ -6,7 +6,6 @@ class Annotation_Model(object):
             self.objects.append(Objects(json_object))
 
 
-
 class Image(object):
     def __init__(self, image):
         self.checksum = image["checksum"]

@@ -34,8 +34,8 @@ def preprocess_image(image, mean_gray):
     # clone = mean_subtracted.copy()
 
     # Remove the pixels which are very close to the mean. 60 is selected after watching a few images
-    mean_subtracted[mean_subtracted < 60] = 0
-
+    # mean_subtracted[mean_subtracted < 60] = 0
+    mean_subtracted[mean_subtracted < mean_subtracted.mean()] = 0
     # to remove noise data form the image.
     kernel = np.ones((12, 12), np.uint8)
     mean_subtracted_open = cv2.morphologyEx(mean_subtracted, cv2.MORPH_OPEN, kernel)
@@ -52,6 +52,9 @@ def image_thresh_with_divide(image, num_of_parts):
     # and return binary mask.
     # divide image into 10 equal parts.
     img_clone = image
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    darker = cv2.equalizeHist(gray)
+
     image_parts = num_of_parts
 
     r, c = darker.shape
@@ -132,7 +135,7 @@ def save_cells_annotation(annotated_img, mask, labels, image_name):
         h = h + 15
         if (w < 70 or h < 70) or (w > 200 or h > 200):
             continue
-        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 0), 2)
+        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
         roi = image[y:y + h, x:x + w]
         clotted_cell_image[y:y + h, x:x + w] = 0
         cell_save_name = image_name[:-4] + "_" + str(cell_count) + ".JPG"
@@ -146,7 +149,7 @@ def save_cells_annotation(annotated_img, mask, labels, image_name):
             "w": str(w),
             "category": "red blood cell"
         })
-        cv2.imwrite(save_individual_cell_path + cell_save_name, roi)
+        # cv2.imwrite(save_individual_cell_path + cell_save_name, roi)
         cell_count += 1
 
     clotted_cell_image = clotted_cell_image * 255
@@ -171,7 +174,7 @@ def make_folder_with(folder_name):
 def get_mean_gray_image(directory, images_name):
     # This function check if mean gray image is found in file then get this image otherwise compute
     # Mean image
-
+    print("Computing mean Image ...")
     mean_rgb_path = directory + "mean_image.png"
     # this loop is use to get diminsion of mean_gray_image
     for image in images_name:
@@ -209,13 +212,15 @@ def get_mean_gray_image(directory, images_name):
 
 
 #########################################################################
-# You need to only specify these 2 parameters. folder_base_path, directory where your original images are
-# saved.
+# You need to only specify these 2 parameters.
+# 1.folder_base_path,
+# 2.directory
+# where your original images are saved.
 
 # base path of folder where you save all related annotation.
-folder_base_path = path.result_folder_path + "microscope_test/"
+folder_base_path = path.result_folder_path + "p_vivax_malaria_bounding_boxes/"
 # where you want to read images. Microscopic captured images.
-directory = folder_base_path + "sample_images/"
+directory = folder_base_path + "original_images/"
 
 # path where you want to save images on which rectangles are drawn.
 save_annotated_image_path = folder_base_path + "annotated_img/"
@@ -230,7 +235,7 @@ annotation_file_path = folder_base_path + "cells.json"
 json_dictionary = []
 
 # read all images form a foler.
-all_images_name = path.read_all_files_name_from(directory, '.JPG')
+all_images_name = path.read_all_files_name_from(directory, '.png')
 
 if all_images_name is None:
     print("No images are found!")
