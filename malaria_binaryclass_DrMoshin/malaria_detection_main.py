@@ -5,11 +5,11 @@
 import os
 import glob
 import tensorflow as tf
-from custom_classes import path, predefine_models, cv_iml
+from custom_classes import path, predefine_models, cv_iml, testing_models
 
 data_set_base_path = path.dataset_path + "cell_images/"
 # Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "malaria_binaryclass_DrMoshin/densNet_cell_images.h5"
+save_weights_path = path.save_models_path + "malaria_binaryclass_DrMoshin/2-CNN.h5"
 
 base_dir = os.path.join(data_set_base_path)
 infected_dir = os.path.join(base_dir, "Parasitized")
@@ -21,7 +21,6 @@ healthy_files = glob.glob(healthy_dir + '/*.png')
 # %%
 # cell2
 print(len(infected_files), len(healthy_files))
-
 
 # %%
 # cell 3
@@ -87,6 +86,7 @@ print('Max Dimensions:', np.max(train_img_dims, axis=0))
 # %%
 # Load image data and resize on 125, 125 pixel.
 IMG_DIMS = (125, 125)
+
 
 def get_img_data_parallel(idx, img, total_imgs):
     if idx % 5000 == 0 or idx == (total_imgs - 1):
@@ -164,7 +164,8 @@ print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
+model = testing_models.get_2_CNN(INPUT_SHAPE)
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
 # model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
@@ -229,4 +230,4 @@ plt.show()
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
-cv_iml.get_f1_score(test_labels,basic_cnn_preds_labels, pos_label="malaria")
+cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels, pos_label="malaria")

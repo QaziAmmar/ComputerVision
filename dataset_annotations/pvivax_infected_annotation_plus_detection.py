@@ -1,24 +1,69 @@
-# //  Created by Qazi Ammar Arshad on 06/05/2020.
+# //  Created by Qazi Ammar Arshad on 20/03/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
-# This code required python 3.7.
 
-"""
-Description:
-This is the 4rd version of cell segmentation code. This code is a combination of dr waqas code plus
-watershed algorithm to extract each single cell from complete blood slide.
-It saves each cell separate cell and complete annotation
-of blood slide in separate folder. It also saves the coordinate of each cell in separate .txt file.
-Currently, we are using this code for classification of blood cells form chughati labs.
-"""
-
-import cv2
+from custom_classes import path
 import json
+import cv2
+import os
 import os.path
 import numpy as np
 from scipy import ndimage
 from skimage.feature import peak_local_max
 from skimage.morphology import watershed
 from custom_classes import path, cv_iml
+
+from dataset_annotations.pvivax_model import Annotation_Model, Objects, Bounding_box
+
+
+# Link of dataset: https://www.kaggle.com/kmader/malaria-bounding-boxes
+
+######################### Description: #########################
+# This code is used to check the accuracy of segmentaion code on pvivax dataset taken for kaggel.
+# this code draws both detection results and ground truth on an image.
+
+
+def draw_annotation(ground_truth_annotation, annotated_images_save_path):
+    # This function draw rectangles on images.
+    # this counter break the loop according to requirements.
+    count = 0
+
+    for image in ground_truth_annotation:
+        if count == 50:
+            break
+        # we need to split image path because it has also folder namd apped with it.
+        image_name = image.image.path_name.split('/')[2]
+        # '', 'images', '8d02117d-6c71-4e47-b50a-6cc8d5eb1d55.png']
+        # img = cv2.imread(images_path + image_name)
+        detected_cell_img = get_detected_segmentaion(image_name, images_path)
+        img = detected_cell_img
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # counter variable to append with image name to uniquely save the image name.
+
+        for object in image.objects:
+            # separating x and y coordinate for crop image.
+
+            x1 = object.bounding_box.x1
+            y1 = object.bounding_box.y1
+            x2 = object.bounding_box.x2
+            y2 = object.bounding_box.y2
+            # Crop image form give point.
+            # draw green box on images according to annotation.
+            img = cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        # for object in detected_segmentations.objects:
+        #     # separating x and y coordinate for crop image.
+        #
+        #     x1 = object.bounding_box.x1
+        #     y1 = object.bounding_box.y1
+        #     x2 = object.bounding_box.x2
+        #     y2 = object.bounding_box.y2
+        #     # Crop image form give point.
+        #     # draw green box on images according to annotation.
+        #     img = cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 5)
+
+        cv2.imwrite(annotated_images_save_path + image_name, img)
+        count += 1
+        print(count)
 
 
 def preprocess_image(image, mean_gray):
@@ -107,6 +152,7 @@ def watershed_labels(binary_mask):
 
 def save_cells_annotation(annotated_img, mask, labels, image_name):
     clotted_cell_image = mask.copy()
+    image = annotated_img.copy()
     json_object = []
     # loop over the unique labels returned by the Watershed algorithm
     cell_count = 0
@@ -136,20 +182,17 @@ def save_cells_annotation(annotated_img, mask, labels, image_name):
         if (w < 70 or h < 70) or (w > 200 or h > 200):
             continue
         cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        roi = image[y:y + h, x:x + w]
         clotted_cell_image[y:y + h, x:x + w] = 0
-        cell_save_name = image_name[:-4] + "_" + str(cell_count) + ".JPG"
 
         #  Make JSON object to save annotation file.
         json_object.append({
-            "cell_name": cell_save_name,
+            "cell_name": "",
             "x": str(x),
             "y": str(y),
             "h": str(h),
             "w": str(w),
             "category": "red blood cell"
         })
-        # cv2.imwrite(save_individual_cell_path + cell_save_name, roi)
         cell_count += 1
 
     clotted_cell_image = clotted_cell_image * 255
@@ -211,111 +254,83 @@ def get_mean_gray_image(directory, images_name):
         return mean_gray
 
 
-#########################################################################
-# You need to only specify these 2 parameters.
-# 1.folder_base_path,
-# 2.directory
-# where your original images are saved.
-
-# base path of folder where you save all related annotation.
-folder_base_path = path.result_folder_path + "p_vivax_malaria_bounding_boxes/"
-# where you want to read images. Microscopic captured images.
-directory = folder_base_path + "original_images/"
-
-# path where you want to save images on which rectangles are drawn.
-save_annotated_image_path = folder_base_path + "annotated_img/"
-make_folder_with(save_annotated_image_path)
-
-# path of folder where each individual cell is save.
-save_individual_cell_path = folder_base_path + "rbc/"
-make_folder_with(save_individual_cell_path)
-# path of annotation file that save the coordinate of each individual cell.
-annotation_file_path = folder_base_path + "cells.json"
-# append all json object for writing in json file.
-json_dictionary = []
-
-# read all images form a foler.
-all_images_name = path.read_all_files_name_from(directory, '.png')
-
-if all_images_name is None:
-    print("No images are found!")
-
-mean_gray = get_mean_gray_image(directory, all_images_name)
-
-for image_name in all_images_name:
+def get_detected_segmentaion(image_name, directory):
+    # This function take a single image and detect is segmented regions.
     print(image_name)
+
     image = cv2.imread(directory + image_name)
 
     annotated_img = image.copy()
 
     forground_background_mask = preprocess_image(image.copy(), mean_gray)
 
-    # %%
     # find contours of newimg
     contours, hierarchy = cv2.findContours(forground_background_mask, cv2.RETR_TREE,
                                            cv2.CHAIN_APPROX_SIMPLE)
     print(len(contours))
 
-    # %%
     # filling the "holes" of the cells
     for cnt in contours:
         cv2.drawContours(forground_background_mask, [cnt], 0, 255, -1)
 
-    cv2.imwrite(save_annotated_image_path + "mask" + image_name, forground_background_mask)
-    # %%
     # get labels with watershed algorithms.
     labels = watershed_labels(forground_background_mask)
 
-    # %%
     # plot annotation on image
     annotated_img, clotted_cell_image, json_object = save_cells_annotation(annotated_img,
                                                                            forground_background_mask,
                                                                            labels, image_name)
-    json_dictionary.append({
-        "image_name": image_name,
-        "objects": json_object
-    })
-    # save annotation of each image into json file.
 
-    # save annotated_img in separate folder.
-    cv2.imwrite(save_annotated_image_path + image_name, annotated_img)
+    # detecte_segments = Annotation_Model()
+    # detecte_segments.image.path_name = image_name
+    # for temp_json in json_object:
+    #     temp_annotation = Objects()
+    #     temp_annotation.category = temp_json["category"]
+    #     temp_box = Bounding_box()
+    #     # (x, y), (x + w, y + h)
+    #     temp_box.x1 = temp_json['x']
+    #     temp_box.y1 = temp_json['y']
+    #     temp_box.x2 = temp_json['x'] + temp_json['w']
+    #     temp_box.y2 = temp_json['y'] + temp_json['h']
+    #     temp_annotation.bounding_box = temp_box
+    #     detecte_segments.objects.append(temp_annotation)
 
-with open(annotation_file_path, "a") as outfile:
-    json.dump(json_dictionary, outfile)
+    return annotated_img
 
-exit(0)
-# The code belwo this part is under testing phase.
+    # return annotation Object as ground truth object.
+
+
 # %%
-# Iterate through the image until no cell left behind
-kernel = np.ones((3, 3), np.uint8)
-counter = 0
 
-while counter < 10:
-    # Apply erosion on the image so that large cell can also be seprated
-    clotted_cell_image = cv2.resize(clotted_cell_image, image.shape[1::-1])
-    remaining_image = cv2.bitwise_and(image, image, mask=clotted_cell_image)
-    remaining_image_sharp = cv_iml.apply_sharpening_on(remaining_image)
+# folder name can be healthy or malaria.
+folder_name = "healthy/"
+# defining path for all images.
+dataset_path = path.dataset_path + "p_vivax_malaria_bounding_boxes/"
+images_path = dataset_path + folder_name + "images/"
+train_image_annotation_path = dataset_path + folder_name + "training.json"
+test_image_annotation_path = dataset_path + folder_name + "test.json"
+save_crop_images_path = path.result_folder_path + "p_vivax_malaria_bounding_boxes/ground_truth/"
 
-    gray = cv2.cvtColor(remaining_image_sharp, cv2.COLOR_BGR2GRAY)
-    # improve the contrast of our images
-    darker = cv2.equalizeHist(gray)
+mean_gray = cv2.imread(images_path + "mean_image.png")
+# Reading training json annotation path
+with open(train_image_annotation_path) as train_image_annotation_path:
+    train_annotation = json.load(train_image_annotation_path)
+# Reading test json annotation path
+# with open(test_image_annotation_path) as test_image_annotation_path:
+#     test_annotation = json.load(test_image_annotation_path)
 
-    ret, thresh = cv2.threshold(darker, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    forground_background_mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel=kernel)
+# %%
+# Parsing JSON data into python object for easy use. combine both test and train
+# images together, and the crop red blood cell from a whole image.
+groundtruth_annotations = []
 
-    labels = watershed(forground_background_mask)
-    prev_count = total_cell_count
+for annotation in train_annotation:
+    groundtruth_annotations.append(Annotation_Model(annotation))
 
-    annotated_img, clotted_cell_image, total_cell_count = save_cells_annotation(annotated_img,
-                                                                                labels, total_cell_count, image_name)
-    counter += 1
-    # this condition terminates the loop if no new cells are found.
-    print(total_cell_count)
+# for annotation in test_annotation:
+#     groundtruth_annotations.append(Annotation_Model(annotation))
 
-    if is_new_cell_segments_found(total_cell_count, prev_count):
-        continue
-    else:
-        print("code is terminated because no new cells found")
-        break
+#  Get detected cell annotaion array.
 
-print(counter)
+
+draw_annotation(groundtruth_annotations, save_crop_images_path)
