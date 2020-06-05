@@ -3,6 +3,8 @@
 
 import tensorflow as tf
 from custom_classes import path
+
+
 # This file contained all models that are working perfectly.
 
 # def get_basic_CNN_for_malaria(INPUT_SHAPE, save_weight_path=None, binary_classification=True, classes=2):
@@ -198,4 +200,3 @@ def get_dennet121_transfer_learning(INPUT_SHAPE, save_weight_path=None, binary_c
     model.summary()
     # model.load_weights(save_weight_path)
     return model
-

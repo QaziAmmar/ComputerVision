@@ -218,7 +218,7 @@ def get_mean_gray_image(directory, images_name):
 # where your original images are saved.
 
 # base path of folder where you save all related annotation.
-folder_base_path = path.result_folder_path + "p_vivax_malaria_bounding_boxes/"
+folder_base_path = path.result_folder_path + "microscope_test/"
 # where you want to read images. Microscopic captured images.
 directory = folder_base_path + "original_images/"
 
@@ -235,7 +235,7 @@ annotation_file_path = folder_base_path + "cells.json"
 json_dictionary = []
 
 # read all images form a foler.
-all_images_name = path.read_all_files_name_from(directory, '.png')
+all_images_name = path.read_all_files_name_from(directory, '.JPG')
 
 if all_images_name is None:
     print("No images are found!")

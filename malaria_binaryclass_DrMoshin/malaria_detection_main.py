@@ -9,7 +9,7 @@ from custom_classes import path, predefine_models, cv_iml, testing_models
 
 data_set_base_path = path.dataset_path + "cell_images/"
 # Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "malaria_binaryclass_DrMoshin/2-CNN.h5"
+save_weights_path = path.save_models_path + "binary_classification_test_CNN/2_CNN.h5"
 
 base_dir = os.path.join(data_set_base_path)
 infected_dir = os.path.join(base_dir, "Parasitized")
@@ -164,7 +164,7 @@ print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-model = testing_models.get_2_CNN(INPUT_SHAPE)
+model = testing_models.get_1_CNN(INPUT_SHAPE)
 # model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
