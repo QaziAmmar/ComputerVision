@@ -129,10 +129,16 @@ def save_cells_annotation(annotated_img, mask, labels, image_name):
         # saving every single cell as a rectangular image.
         x, y, w, h = cv2.boundingRect(c)
         # Change these coordinate according to microscope resolution.
+
         x = x - 10
         y = y - 10
+        if x < 0:
+            x = 0
+        if y < 0:
+            y = 0
         w = w + 15
         h = h + 15
+        # need to fix these parametes automatically
         if (w < 70 or h < 70) or (w > 200 or h > 200):
             continue
         cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)

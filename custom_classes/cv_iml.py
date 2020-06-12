@@ -390,3 +390,5 @@ def augment_image(images_folder_path, file_extension, rotation=True, flipping=Tr
         if counter % 50 == 0:
             print(counter)
         counter = counter + 1
+
+

@@ -5,6 +5,7 @@ import sys
 import os
 import cv2
 from glob import glob
+
 # This file contains the paths to all required dataset, saved model and other results.
 
 base_path = ""
@@ -22,6 +23,12 @@ dataset_path = base_path + "Dataset/"
 save_models_path = base_path + "SavedModel/"
 download_path = "/Users/qaziammar/Downloads/"
 result_folder_path = base_path + "Results/"
+
+
+def make_folder_with(folder_name):
+    # this function make a folder with folder name if does not exist.
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
 
 
 def read_all_files_name_from(folder_path, file_extension):
@@ -47,7 +54,6 @@ def read_all_files_name_from(folder_path, file_extension):
 
 def move_images(required_images_names=[], from_folder_path="", to_folder_path=""
                 , file_extension=""):
-
     """
     This function move selected images form one folder to other. your have to mention images name in
     required_images_names = []. this folder find that imags and move them into your required folder.

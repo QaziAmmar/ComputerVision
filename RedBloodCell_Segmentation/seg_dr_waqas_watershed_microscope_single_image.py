@@ -4,27 +4,15 @@
 
 """
 Description:
-This a testing code for segmentaion of single image. this code will be added into API.
-"""
-# //  Created by Qazi Ammar Arshad on 06/05/2020.
-# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
-# This code required python 3.7.
-
-"""
-Description:
-This a testing code for segmentation of single image. this code will be added into API.
+This is the 4rd version of cell segmentation code. This code is a combination of dr waqas code plus
+watershed algorithm to extract each single cell from complete blood slide.
+It saves each cell separate cell and complete annotation
+of blood slide in separate folder. It also saves the coordinate of each cell in separate .txt file.
+Currently, we are using this code for classification of blood cells form chughati labs.
 """
 
 import cv2
-import os.path
-import numpy as np
-from scipy import ndimage
-from skimage.feature import peak_local_max
-from skimage.morphology import watershed
-from custom_classes import path, cv_iml
-
-
-import cv2
+import json
 import os.path
 import numpy as np
 from scipy import ndimage
@@ -155,7 +143,7 @@ def save_cells_annotation(annotated_img, labels):
         h = h + 15
         if (w < 70 or h < 70) or (w > 200 or h > 200):
             continue
-        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         roi = original_image[y:y + h, x:x + w, :]
 
         #  Make JSON object to save annotation file.
@@ -176,19 +164,44 @@ def save_cells_annotation(annotated_img, labels):
     return annotated_img, individual_cell_images, json_object
 
 
-def is_new_cell_segments_found(new_count, pre_count):
-    # this function terminates the loop when new generated cell are less than 10
-    new_cells = new_count - pre_count
-    if new_cells > 10:
-        return True
-    else:
-        return False
-
-
-def make_folder_with(folder_name):
-    if not os.path.exists(folder_name):
-        os.makedirs(folder_name)
-
+# def get_mean_gray_image(directory, images_name):
+#     # This function check if mean gray image is found in file then get this image otherwise compute
+#     # Mean image
+#     print("Computing mean Image ...")
+#     mean_rgb_path = directory + "mean_image.png"
+#     # this loop is use to get diminsion of mean_gray_image
+#     for image in images_name:
+#         rgb_first = cv2.imread(directory + image)
+#         break
+#
+#     if os.path.exists(mean_rgb_path):
+#         mean_gray = cv2.imread(mean_rgb_path)
+#         return mean_gray
+#     else:
+#
+#         # Compute Mean Image
+#         mean_gray = np.zeros((rgb_first.shape[0], rgb_first.shape[1]))
+#         count = 0
+#         for image in images_name:
+#             count = count + 1
+#
+#             rgb = cv2.imread(directory + image)
+#             # Resize all images to be of the same size
+#             rgb1 = cv2.resize(rgb, (rgb_first.shape[1], rgb_first.shape[0]))
+#
+#             # Convert RGB to gray scale and improve contrast of the image
+#             gray = cv2.cvtColor(rgb1, cv2.COLOR_BGR2GRAY)
+#             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+#             imge_clahe = clahe.apply(gray)
+#
+#             mean_gray = mean_gray + imge_clahe
+#
+#         mean_gray = mean_gray / count
+#         cv2.imwrite(mean_rgb_path, mean_gray)
+#         # This code gives error if use this image directaly so we have to first save that image and then
+#         # load that image again so error does not occure in our code.
+#         mean_gray = cv2.imread(mean_rgb_path)
+#         return mean_gray
 
 def get_mean_gray_image(img):
     # This function convert image into gray and the by applying opening morphological operation computer the mean image.
@@ -200,12 +213,8 @@ def get_mean_gray_image(img):
 
 
 #########################################################################
-# You need to only specify these 2 parameters.
-# 1.folder_base_path,
-# 2.directory
-# where your original images are saved.
-# this is the main fucntion of this class that calls all other functions.
-def cell_segmentation(image_name):
+
+def get_detected_segmentaion(image_name):
     # base path of folder where you save all related annotation.
     # folder_base_path = path.result_folder_path + "microscope_test/"
     #
@@ -222,26 +231,21 @@ def cell_segmentation(image_name):
     forground_background_mask = preprocess_image(image.copy(), mean_gray)
 
     # find contours of newimg
-    _, contours, hierarchy = cv2.findContours(forground_background_mask, cv2.RETR_TREE,
-                                           cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(forground_background_mask, cv2.RETR_TREE,
+                                              cv2.CHAIN_APPROX_SIMPLE)
 
-
+    # %%
     # filling the "holes" of the cells
     for cnt in contours:
         cv2.drawContours(forground_background_mask, [cnt], 0, 255, -1)
 
+    # %%
     # get labels with watershed algorithms.
     labels = watershed_labels(forground_background_mask)
 
+    # %%
     # plot annotation on image
     annotated_img, individual_cell_images, json_object = save_cells_annotation(annotated_img,
                                                                                labels)
 
     return annotated_img, individual_cell_images, json_object
-
-
-
-image_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/Dataset/IML_dataset/new_microcsope" \
-             "/p.v/100X_crop/IMG_4657.JPG"
-
-cell_segmentation(image_path)

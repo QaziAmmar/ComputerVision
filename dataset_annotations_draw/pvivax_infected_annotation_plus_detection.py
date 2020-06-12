@@ -12,7 +12,7 @@ from skimage.feature import peak_local_max
 from skimage.morphology import watershed
 from custom_classes import path, cv_iml
 
-from dataset_annotations.pvivax_model import Annotation_Model, Objects, Bounding_box
+from dataset_annotations_draw.pvivax_model import Annotation_Model, Objects, Bounding_box
 
 
 # Link of dataset: https://www.kaggle.com/kmader/malaria-bounding-boxes
