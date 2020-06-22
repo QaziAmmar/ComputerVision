@@ -5,10 +5,10 @@ import imageio
 import imutils
 import time
 import os
-import path
+from custom_classes import path, cv_iml
 
-path.init()
 cv2.ocl.setUseOpenCL(False)
+
 
 def image_sharpning(image):
     """
@@ -57,7 +57,7 @@ def read_all_images_name(folder_path):
     # r=root, d=directories, f = files
     for r, d, f in os.walk(folder_path):
         for file in f:
-            if '.JPG' in file:
+            if '.jpg' in file:
                 all_images_name.append(r + file)
     return sorted(all_images_name)
 
@@ -91,7 +91,6 @@ def detectAndDescribe(image, method=None):
         descriptor = cv2.BRISK_create()
     elif method == 'orb':
         descriptor = cv2.ORB_create()
-
 
     # get keypoints and descriptors
     (kps, features) = descriptor.detectAndCompute(image, None)
@@ -167,6 +166,9 @@ def stitch_two_images(queryImg, trainImg, feature_extractor):
     kpsA, featuresA = detectAndDescribe(trainImg_gray, method=feature_extractor)
     kpsB, featuresB = detectAndDescribe(queryImg_gray, method=feature_extractor)
     # Find matching between features.
+    featuresA = featuresA[:int(len(featuresA) * 0.3)]
+    featuresB = featuresB[:int(len(featuresB) * 0.3)]
+    print("[INFO] Find matching between features ...")
     if feature_matching == 'bf':
         matches = matchKeyPointsBF(featuresA, featuresB, method=feature_extractor)
     elif feature_matching == 'knn':
@@ -189,21 +191,25 @@ def stitch_two_images(queryImg, trainImg, feature_extractor):
     return crop_image
 
 
-feature_extractor = 'brisk'  # one of 'sift', 'surf', 'brisk', 'orb'
+feature_extractor = 'surf'  # one of 'sift', 'surf', 'brisk', 'orb'
 feature_matching = 'bf'
 
-images_folder_path = path.dataset_path + "Malaria_Dataset_self/SHIF_images/panaroma_3/"
+images_folder_path = "/Users/qaziammar/Downloads/EXTRACTS/4/"
 
 time1 = time.time()
 print("[INFO] Reading Frames ...")
+# images_name = path.read_all_files_name_from(images_folder_path, '.jpg')
 images_name = read_all_images_name(images_folder_path)
 images_array = read_all_images_form(images_name)
-
+stitched_image = images_array[0]
 
 if len(images_array) == 1:
     print("Perform no Stitching")
 elif len(images_array) == 2:
     print("stitch only 2 images.")
+    queryImg = images_array[0]
+    trainImg = images_array[1]
+    stitched_image = stitch_two_images(queryImg, trainImg, feature_extractor)
 elif len(images_array) > 2:
 
     queryImg = images_array[0]

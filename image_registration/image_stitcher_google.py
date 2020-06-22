@@ -1,13 +1,10 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
 import imutils
 import time
 import os
-import path
 
-path.init()
 cv2.ocl.setUseOpenCL(False)
 
 # %%
