@@ -8,45 +8,6 @@ from dataset_annotations_draw.labelbox_annotation.labelbox_annotation_model impo
 import json
 import cv2
 
-image_name = "IMG_4536.JPG"
-folder_base_path = path.dataset_path + "LabelBox_annotation_test_label_box/"
-img = cv2.imread(folder_base_path + image_name)
-
-label_box_annotation_path = folder_base_path + "labelBox_IMG_4536.json"
-code_annotation_path = folder_base_path + "IMG_4536.json"
-
-with open(label_box_annotation_path) as annotation_path:
-    label_box_json_annotation = json.load(annotation_path)
-
-with open(code_annotation_path) as annotation_path:
-    code_json_annotation = json.load(annotation_path)
-
-# %%
-code_detected_points = []
-labelbox_points = []
-# convert Json object into python object
-label_box_result_python_object = welcome_from_dict(label_box_json_annotation)
-code_annotaion_python_object = code_json_annotation
-
-for point in code_annotaion_python_object:
-    x = point['x']
-    y = point['y']
-    h = point['h']
-    w = point['w']
-    # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-    code_detected_points.append([x, y, w, h])
-# draw annotation points on the image
-for point in label_box_result_python_object[0].label.objects:
-    # getting points form the folder and draw it on the image
-    x = point.bbox.left
-    y = point.bbox.top
-    h = point.bbox.height
-    w = point.bbox.width
-    # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    labelbox_points.append([x, y, w, h])
-
-
-# %%
 
 def intersection_over_union(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
@@ -82,54 +43,117 @@ def getBoxpoints(points1, points2):
     return box1, box2
 
 
-# %%
-matched_pointes_in_lablebox_bounding_boxes = []
-matched_pointes_in_code_detected_bounding_boxes = []
-# compute the iOU of all the points and remove the points that very much overlaping.
-for temp_bounding_boxes_lablebox in labelbox_points:
-    for code_temp_point in code_detected_points:
-        # finding the matched boxes form both points and then remove these points form both arrays.
-        box1, box2 = getBoxpoints(temp_bounding_boxes_lablebox, code_temp_point)
-        iou = intersection_over_union(box1, box2)
-        if iou > 0.93:
-            # append both bounding boxes into annotaion files
-            print(iou)
-            matched_pointes_in_lablebox_bounding_boxes.append(temp_bounding_boxes_lablebox)
-            matched_pointes_in_code_detected_bounding_boxes.append(code_temp_point)
+def check_point_in_array(point, array):
+    for temp_point in array:
+        if point == temp_point:
+            return True
+    return False
+
+
+# image_name = "IMG_4536.JPG"
+folder_base_path = path.dataset_path + "LabelBox_annotation_test_label_box/"
+# img = cv2.imread(folder_base_path + image_name)
+
+label_box_annotation_path = folder_base_path + "LabelBoxannotations.json"
+code_annotation_path = folder_base_path + "code_annotation_file/"
+
+json_dictionary = []
+
+with open(label_box_annotation_path) as annotation_path:
+    label_box_json_annotation = json.load(annotation_path)
+
+label_box_result_python_object_array = welcome_from_dict(label_box_json_annotation)
 
 # %%
-unique_bounding_boxes_array = []
-#  Remove matched points from both annotations
-for temp_bounding_boxes_lablebox in labelbox_points:
-    for temp_matched in matched_pointes_in_lablebox_bounding_boxes:
-        if temp_bounding_boxes_lablebox != temp_matched:
-            unique_bounding_boxes_array.append(temp_bounding_boxes_lablebox)
 
-for temp_bounding_boxes_code in code_detected_points:
-    for temp_matched in matched_pointes_in_code_detected_bounding_boxes:
-        if temp_bounding_boxes_code != temp_matched:
-            unique_bounding_boxes_array.append(temp_bounding_boxes_code)
+for label_box_result_python_object in label_box_result_python_object_array:
+
+    print(label_box_result_python_object.external_id)
+    # load image for testing either annotation are combining in correct way
+    img = cv2.imread(folder_base_path + "original_images/" + label_box_result_python_object.external_id)
+    code_detected_points = []
+    labelbox_points = []
+    # convert Json object into python object
+    code_annotation_jsonfile_path = code_annotation_path + \
+                                    label_box_result_python_object.external_id.split('.')[0] + ".json"
+    with open(code_annotation_jsonfile_path) as annotation_path:
+        code_annotaion_python_object = json.load(annotation_path)
+
+    for point in code_annotaion_python_object:
+        x = point['x']
+        y = point['y']
+        h = point['h']
+        w = point['w']
+        # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        code_detected_points.append([x, y, w, h])
+    # draw annotation points on the image
+
+    for point in label_box_result_python_object.label.objects:
+        # getting points form the folder and draw it on the image
+        x = point.bbox.left
+        y = point.bbox.top
+        h = point.bbox.height
+        w = point.bbox.width
+        # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        labelbox_points.append([x, y, w, h])
+
+    # %%
+    matched_pointes_in_lablebox_bounding_boxes = []
+    matched_pointes_in_code_detected_bounding_boxes = []
+    # compute the iOU of all the points and remove the points that very much overlaping.
+    for temp_labelBox_point in labelbox_points:
+        for code_temp_point in code_detected_points:
+            # finding the matched boxes form both points and then remove these points form both arrays.
+            box1, box2 = getBoxpoints(temp_labelBox_point, code_temp_point)
+            iou = intersection_over_union(box1, box2)
+            if iou > 0.90:
+                # append both bounding boxes into annotaion files
+                print(iou)
+                matched_pointes_in_lablebox_bounding_boxes.append(temp_labelBox_point)
+                matched_pointes_in_code_detected_bounding_boxes.append(code_temp_point)
+
+    # %%
+
+    unique_bounding_boxes_array = []
+    #  Remove matched points from both annotations
+    for temp_labelBox_point in labelbox_points:
+        if check_point_in_array(temp_labelBox_point, matched_pointes_in_lablebox_bounding_boxes):
+            None
+        else:
+            unique_bounding_boxes_array.append(temp_labelBox_point)
+
+    for temp_code_annotation_point in code_detected_points:
+        if check_point_in_array(temp_code_annotation_point, matched_pointes_in_code_detected_bounding_boxes):
+            None
+        else:
+            unique_bounding_boxes_array.append(temp_code_annotation_point)
+
+    # %%
+    json_object = []
+
+    for temp_final_points in unique_bounding_boxes_array:
+        x = temp_final_points[0]
+        y = temp_final_points[1]
+        w = temp_final_points[2]
+        h = temp_final_points[3]
+
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        json_object.append({
+            "x": str(x),
+            "y": str(y),
+            "h": str(h),
+            "w": str(w),
+        })
+
+    json_dictionary.append({
+        "image_name": label_box_result_python_object.external_id,
+        "objects": json_object
+    })
+    cv2.imwrite(folder_base_path + label_box_result_python_object.external_id, img)
 
 # %%
-json_object = []
+save_json_image_path = folder_base_path + "CodePlusLabelBox_annotation.json"
+with open(save_json_image_path, "w") as outfile:
+    json.dump(json_dictionary, outfile)
 
-for temp_final_points in unique_bounding_boxes_array:
-    x = temp_final_points[0]
-    y = temp_final_points[1]
-    w = temp_final_points[2]
-    h = temp_final_points[3]
-
-    cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-    json_object.append({"x": x, "y": y, "h": h, "w": w})
-
-save_json_image_path = folder_base_path + "final_annotation.json"
-
-cv2.imwrite(folder_base_path + "final_annotaion.jpg", img)
-
-with open(save_json_image_path, "a") as outfile:
-    json.dump(json_object, outfile)
-# %%
-# json_dictionary = [{
-#     "image_name": image_name,
-#     "objects": json_object
-# }]
+print("Code end")
