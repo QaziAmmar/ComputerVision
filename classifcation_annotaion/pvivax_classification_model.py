@@ -1,6 +1,6 @@
-from enum import Enum
 from dataclasses import dataclass
-from typing import Any, Optional, List, TypeVar, Type, cast, Callable
+from typing import Any, List, TypeVar, Type, cast, Callable
+from enum import Enum
 from datetime import datetime
 import dateutil.parser
 
@@ -34,20 +34,6 @@ def from_list(f: Callable[[Any], T], x: Any) -> List[T]:
     return [f(y) for y in x]
 
 
-def from_none(x: Any) -> Any:
-    assert x is None
-    return x
-
-
-def from_union(fs, x):
-    for f in fs:
-        try:
-            return f(x)
-        except:
-            pass
-    assert False
-
-
 def from_datetime(x: Any) -> datetime:
     return dateutil.parser.parse(x)
 
@@ -57,20 +43,14 @@ def from_float(x: Any) -> float:
     return float(x)
 
 
-def to_float(x: Any) -> float:
-    assert isinstance(x, float)
+def from_none(x: Any) -> Any:
+    assert x is None
     return x
 
 
-class CreatedBy(Enum):
-    MSCS18006_ITU_EDU_PK = "mscs18006@itu.edu.pk"
-    MSCS18031_ITU_EDU_PK = "mscs18031@itu.edu.pk"
-    NADEEM_YOUSAF_ITU_EDU_PK = "nadeem.yousaf@itu.edu.pk"
-    WASEEM_ASHRAF_ITU_EDU_PK = "waseem.ashraf@itu.edu.pk"
-
-
-class DatasetName(Enum):
-    P_VIVAX_100_X_CROP = "P.Vivax_100x_crop"
+def to_float(x: Any) -> float:
+    assert isinstance(x, float)
+    return x
 
 
 @dataclass
@@ -99,23 +79,19 @@ class Bbox:
 
 
 class Color(Enum):
-    FF0000 = "#FF0000"
     FF8000 = "#FF8000"
 
 
 class SchemaID(Enum):
-    CKBKL1_G750_O670_Y6_D9_Z2_G5952 = "ckbkl1g750o670y6d9z2g5952"
-    CKBKL1_G750_O680_Y6_D6_SXTBT97 = "ckbkl1g750o680y6d6sxtbt97"
+    CKBYLRB8_E120_V0_Z5_R2_TXR4_SXM = "ckbylrb8e120v0z5r2txr4sxm"
 
 
 class Title(Enum):
-    MALARIA_RING = "Malaria - Ring"
-    RED_BLOOD_CELL_HEALTHY = "Red Blood Cell - Healthy"
+    MALARIA = "Malaria"
 
 
 class Value(Enum):
-    MALARIA_RING = "malaria_-_ring"
-    RED_BLOOD_CELL_HEALTHY = "red_blood_cell_-_healthy"
+    MALARIA = "malaria"
 
 
 @dataclass
@@ -154,25 +130,21 @@ class Object:
 
 @dataclass
 class Label:
-    objects: Optional[List[Object]] = None
-    classifications: Optional[List[Any]] = None
+    objects: List[Object]
+    classifications: List[Any]
 
     @staticmethod
     def from_dict(obj: Any) -> 'Label':
         assert isinstance(obj, dict)
-        objects = from_union([lambda x: from_list(Object.from_dict, x), from_none], obj.get("objects"))
-        classifications = from_union([lambda x: from_list(lambda x: x, x), from_none], obj.get("classifications"))
+        objects = from_list(Object.from_dict, obj.get("objects"))
+        classifications = from_list(lambda x: x, obj.get("classifications"))
         return Label(objects, classifications)
 
     def to_dict(self) -> dict:
         result: dict = {}
-        result["objects"] = from_union([lambda x: from_list(lambda x: to_class(Object, x), x), from_none], self.objects)
-        result["classifications"] = from_union([lambda x: from_list(lambda x: x, x), from_none], self.classifications)
+        result["objects"] = from_list(lambda x: to_class(Object, x), self.objects)
+        result["classifications"] = from_list(lambda x: x, self.classifications)
         return result
-
-
-class ProjectName(Enum):
-    P_VIVAX_100_X_CROP = "P.vivax_100xCrop"
 
 
 @dataclass
@@ -181,8 +153,8 @@ class WelcomeElement:
     data_row_id: str
     labeled_data: str
     label: Label
-    created_by: CreatedBy
-    project_name: ProjectName
+    created_by: str
+    project_name: str
     created_at: datetime
     updated_at: datetime
     seconds_to_label: float
@@ -190,7 +162,7 @@ class WelcomeElement:
     agreement: int
     benchmark_agreement: int
     benchmark_id: None
-    dataset_name: DatasetName
+    dataset_name: str
     reviews: List[Any]
     view_label: str
 
@@ -201,8 +173,8 @@ class WelcomeElement:
         data_row_id = from_str(obj.get("DataRow ID"))
         labeled_data = from_str(obj.get("Labeled Data"))
         label = Label.from_dict(obj.get("Label"))
-        created_by = CreatedBy(obj.get("Created By"))
-        project_name = ProjectName(obj.get("Project Name"))
+        created_by = from_str(obj.get("Created By"))
+        project_name = from_str(obj.get("Project Name"))
         created_at = from_datetime(obj.get("Created At"))
         updated_at = from_datetime(obj.get("Updated At"))
         seconds_to_label = from_float(obj.get("Seconds to Label"))
@@ -210,7 +182,7 @@ class WelcomeElement:
         agreement = from_int(obj.get("Agreement"))
         benchmark_agreement = from_int(obj.get("Benchmark Agreement"))
         benchmark_id = from_none(obj.get("Benchmark ID"))
-        dataset_name = DatasetName(obj.get("Dataset Name"))
+        dataset_name = from_str(obj.get("Dataset Name"))
         reviews = from_list(lambda x: x, obj.get("Reviews"))
         view_label = from_str(obj.get("View Label"))
         return WelcomeElement(id, data_row_id, labeled_data, label, created_by, project_name, created_at, updated_at, seconds_to_label, external_id, agreement, benchmark_agreement, benchmark_id, dataset_name, reviews, view_label)
@@ -221,8 +193,8 @@ class WelcomeElement:
         result["DataRow ID"] = from_str(self.data_row_id)
         result["Labeled Data"] = from_str(self.labeled_data)
         result["Label"] = to_class(Label, self.label)
-        result["Created By"] = to_enum(CreatedBy, self.created_by)
-        result["Project Name"] = to_enum(ProjectName, self.project_name)
+        result["Created By"] = from_str(self.created_by)
+        result["Project Name"] = from_str(self.project_name)
         result["Created At"] = self.created_at.isoformat()
         result["Updated At"] = self.updated_at.isoformat()
         result["Seconds to Label"] = to_float(self.seconds_to_label)
@@ -230,13 +202,13 @@ class WelcomeElement:
         result["Agreement"] = from_int(self.agreement)
         result["Benchmark Agreement"] = from_int(self.benchmark_agreement)
         result["Benchmark ID"] = from_none(self.benchmark_id)
-        result["Dataset Name"] = to_enum(DatasetName, self.dataset_name)
+        result["Dataset Name"] = from_str(self.dataset_name)
         result["Reviews"] = from_list(lambda x: x, self.reviews)
         result["View Label"] = from_str(self.view_label)
         return result
 
 
-def welcome_from_dict(s: Any) -> List[WelcomeElement]:
+def welcome_from_dict(s: object) -> object:
     return from_list(WelcomeElement.from_dict, s)
 
 

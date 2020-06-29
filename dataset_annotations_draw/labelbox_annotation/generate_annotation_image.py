@@ -14,9 +14,9 @@ import cv2
 import json
 
 # base path of folder where images and annotaion are saved.
-folder_base_path = path.dataset_path + "LabelBox_annotation_test_label_box/"
+folder_base_path = path.dataset_path + "IML_dataset/new_microcsope/p.v/"
 # path of folder where all images are save.
-original_images_path = folder_base_path + "original_images/"
+original_images_path = folder_base_path + "100X_crop/"
 # save annotaion path.
 save_annotation_path = folder_base_path + "code_annotation_file/"
 save_images_path = folder_base_path + "annotated_images/"

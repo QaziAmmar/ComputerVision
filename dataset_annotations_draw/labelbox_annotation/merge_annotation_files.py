@@ -7,6 +7,7 @@ from custom_classes import path, cv_iml
 from dataset_annotations_draw.labelbox_annotation.labelbox_annotation_model import welcome_from_dict
 import json
 import cv2
+import os
 
 
 def intersection_over_union(boxA, boxB):
@@ -51,10 +52,10 @@ def check_point_in_array(point, array):
 
 
 # image_name = "IMG_4536.JPG"
-folder_base_path = path.dataset_path + "LabelBox_annotation_test_label_box/"
+folder_base_path = path.dataset_path + "IML_dataset/new_microcsope/p.v/"
 # img = cv2.imread(folder_base_path + image_name)
 
-label_box_annotation_path = folder_base_path + "LabelBoxannotations.json"
+label_box_annotation_path = folder_base_path + "pvivax.json"
 code_annotation_path = folder_base_path + "code_annotation_file/"
 
 json_dictionary = []
@@ -62,6 +63,7 @@ json_dictionary = []
 with open(label_box_annotation_path) as annotation_path:
     label_box_json_annotation = json.load(annotation_path)
 
+# you need to change this "welcome_from_dict" class each time when you write new object.
 label_box_result_python_object_array = welcome_from_dict(label_box_json_annotation)
 
 # %%
@@ -70,12 +72,15 @@ for label_box_result_python_object in label_box_result_python_object_array:
 
     print(label_box_result_python_object.external_id)
     # load image for testing either annotation are combining in correct way
-    img = cv2.imread(folder_base_path + "original_images/" + label_box_result_python_object.external_id)
+    img = cv2.imread(folder_base_path + "100X_crop/" + label_box_result_python_object.external_id)
     code_detected_points = []
     labelbox_points = []
     # convert Json object into python object
     code_annotation_jsonfile_path = code_annotation_path + \
                                     label_box_result_python_object.external_id.split('.')[0] + ".json"
+    if not os.path.isfile(code_annotation_jsonfile_path):
+        print("No file Found")
+        continue
     with open(code_annotation_jsonfile_path) as annotation_path:
         code_annotaion_python_object = json.load(annotation_path)
 
@@ -87,7 +92,9 @@ for label_box_result_python_object in label_box_result_python_object_array:
         # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
         code_detected_points.append([x, y, w, h])
     # draw annotation points on the image
-
+    if label_box_result_python_object.label.objects is None:
+        print("continue")
+        continue
     for point in label_box_result_python_object.label.objects:
         # getting points form the folder and draw it on the image
         x = point.bbox.left
@@ -106,8 +113,9 @@ for label_box_result_python_object in label_box_result_python_object_array:
             # finding the matched boxes form both points and then remove these points form both arrays.
             box1, box2 = getBoxpoints(temp_labelBox_point, code_temp_point)
             iou = intersection_over_union(box1, box2)
-            if iou > 0.90:
-                # append both bounding boxes into annotaion files
+            if iou > 0.50:
+                # append both bounding boxes into matched array so that these points can be removed form
+                # annotation file
                 print(iou)
                 matched_pointes_in_lablebox_bounding_boxes.append(temp_labelBox_point)
                 matched_pointes_in_code_detected_bounding_boxes.append(code_temp_point)
@@ -149,7 +157,7 @@ for label_box_result_python_object in label_box_result_python_object_array:
         "image_name": label_box_result_python_object.external_id,
         "objects": json_object
     })
-    cv2.imwrite(folder_base_path + label_box_result_python_object.external_id, img)
+    cv2.imwrite(folder_base_path + "final_image/" + label_box_result_python_object.external_id, img)
 
 # %%
 save_json_image_path = folder_base_path + "CodePlusLabelBox_annotation.json"
