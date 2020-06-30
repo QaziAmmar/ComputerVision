@@ -12,7 +12,7 @@ IMG_DIMS = (125, 125)
 
 #  load test data.
 
-test_data_set_base_path = path.dataset_path + "IML_cell_images/test/malaria/"
+test_data_set_base_path = path.dataset_path + "IML_dataset/new_microcsope/p.v/rbc/"
 files_names = path.read_all_files_name_from(test_data_set_base_path, ".JPG")
 test_files = []
 for name in files_names:
@@ -62,14 +62,14 @@ model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 
 # %%
 
-save_weights_path = path.save_models_path + "malaria_binaryclass_DrMoshin/basic_cnn_finetune_IMLdata.h5"
+save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_IML_fineTune.h5"
 model.load_weights(save_weights_path)
 
 # %%
 # Model Performance Evaluation
-
+print("start prediction")
 basic_cnn_preds = model.predict(test_imgs_scaled)
-
+print("end prediction")
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.6 else 0
                                                for pred in basic_cnn_preds.ravel()])
 
@@ -87,7 +87,7 @@ for i in range(len(basic_cnn_preds_labels)):
         cv2.imwrite(image_save_path, img)
 
 # end of testing code.
-
+exit(0)
 # %%
 # Start calculating F1 score of our dataset.
 import os

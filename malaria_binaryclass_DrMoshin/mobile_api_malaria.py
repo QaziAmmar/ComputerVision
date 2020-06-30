@@ -87,6 +87,7 @@ test_data_map = ex.map(get_img_data_parallel,
                        [record[0] for record in test_data_inp],
                        [record[1] for record in test_data_inp],
                        [record[2] for record in test_data_inp])
+
 test_data = np.array(list(test_data_map))
 
 print(test_data.shape)

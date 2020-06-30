@@ -1,29 +1,16 @@
-import numpy as np
-import cv2
-from matplotlib import pyplot as plt
 
-images_folder_path = "/Users/qaziammar/Downloads/EXTRACTS/3/"
-img1 = cv2.imread(images_folder_path + 'test9.jpg', 0)  # queryImage
-img2 = cv2.imread(images_folder_path + 'test10.jpg', 0)  # trainImage
+from numpy import array
+from numpy.linalg import norm
+from sklearn import preprocessing
+a = array([1, 2, 3])
+# print(a)
 
-# Initiate SIFT detector
-sift = cv2.xfeatures2d.SURF_create()
+l2 = norm(a)
+l2_norm= a / l2
 
-# find the keypoints and descriptors with SIFT
-kp1, des1 = sift.detectAndCompute(img1,None)
-kp2, des2 = sift.detectAndCompute(img2,None)
+print(sum(l2_norm))
+print(l2_norm)
 #%%
-# BFMatcher with default params
-bf = cv2.BFMatcher()
-matches = bf.knnMatch(des1,des2, k=2)
-
-# Apply ratio test
-good = []
-for m,n in matches:
-    if m.distance < 0.75*n.distance:
-        good.append([m])
-
-# cv2.drawMatchesKnn expects list of lists as matches.
-img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,good,flags=2)
-
-plt.imshow(img3),plt.show()
+a = a.reshape(-1, 1)
+result = preprocessing.normalize(a, norm='l2', axis=0) # axis = 0 along the column.
+print(sum(result))
