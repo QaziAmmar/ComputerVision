@@ -1,8 +1,8 @@
 # //  Created by Qazi Ammar Arshad on 30/06/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 """
-This code pass each cell from the cnn and generate json file that seprate the malaria and healthy
-cells.
+This code pass each cell from the cnn and generate json file that separate the malaria and healthy
+cells. Model used in this code is basic cnn that is traind on cell_imaegs dataset and then fint tune on IML dataset.
 """
 from custom_classes import path, predefine_models
 import json
@@ -21,7 +21,7 @@ IMG_DIMS = (125, 125)
 
 def get_model():
     model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
-    save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_IML_fineTune.h5"
+    save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/best_resutls/basic_cnn_IML_fineTune.h5"
     model.load_weights(save_weights_path)
     return model
 
@@ -49,21 +49,21 @@ def get_prediction_from_model(img, model):
 
 
 # %%
-
-
+# name of folder where you want to find the images
+folder_name = "p.f"
 # folder base path.
-folder_base_path = path.dataset_path + "IML_dataset/new_microcsope/p.v/"
-final_annotation_path = folder_base_path + "CodePlusLabelBox_annotation.json"
+folder_base_path = path.dataset_path + "IML_binary_classification_final/" + folder_name + "/"
+final_annotation_path = folder_base_path + "pf_loclization_annotation_code_plus_labelbox.json"
 # read json file
 with open(final_annotation_path) as annotation_path:
-    final_annotaion = json.load(annotation_path)
+    final_loclization_annotaion = json.load(annotation_path)
 
 json_dictionary = []
 model = get_model()
 
 # %%
 
-for image_annotation in final_annotaion:
+for image_annotation in final_loclization_annotaion:
     # we are testing on subset of images so first we check if images
     img_name = image_annotation["image_name"]
     img_path = folder_base_path + "100X_crop/" + img_name
@@ -107,7 +107,11 @@ for image_annotation in final_annotaion:
         "objects": json_object
     })
 
+print("saving annotation files in json")
 # save cell json file.
-save_json_image_path = folder_base_path + "rbc_classification_json/" + "cell_classification_annotation.json"
+# add the name of json file at the end in which you want to save the classification annotations.
+save_json_image_path = folder_base_path + "rbc_classification_json/" + "pf_binary_classification_annotation.json"
 with open(save_json_image_path, "w") as outfile:
     json.dump(json_dictionary, outfile)
+
+print("end of code")

@@ -4,7 +4,7 @@
 This code merge 2 JSON annotation files into single file.
 """
 from custom_classes import path, cv_iml
-from dataset_annotations_draw.labelbox_annotation.labelbox_annotation_model import welcome_from_dict
+from dataset_annotations.labelbox_annotation.labelbox_annotation_model import welcome_from_dict
 import json
 import cv2
 import os
@@ -50,13 +50,11 @@ def check_point_in_array(point, array):
             return True
     return False
 
-
 # image_name = "IMG_4536.JPG"
-folder_base_path = path.dataset_path + "IML_dataset/new_microcsope/p.v/"
-# img = cv2.imread(folder_base_path + image_name)
+folder_base_path = path.dataset_path + "/IML_dataset/p.f/"
 
-label_box_annotation_path = folder_base_path + "pvivax.json"
-code_annotation_path = folder_base_path + "code_annotation_file/"
+label_box_annotation_path = folder_base_path + "pf_labelbox_annotation.json"
+code_annotation_path = folder_base_path + "code_annotation_json_files/"
 
 json_dictionary = []
 
@@ -123,7 +121,7 @@ for label_box_result_python_object in label_box_result_python_object_array:
     # %%
 
     unique_bounding_boxes_array = []
-    #  Remove matched points from both annotations
+    #  Remove matched points from both annotations array
     for temp_labelBox_point in labelbox_points:
         if check_point_in_array(temp_labelBox_point, matched_pointes_in_lablebox_bounding_boxes):
             None
@@ -157,10 +155,10 @@ for label_box_result_python_object in label_box_result_python_object_array:
         "image_name": label_box_result_python_object.external_id,
         "objects": json_object
     })
-    cv2.imwrite(folder_base_path + "final_image/" + label_box_result_python_object.external_id, img)
+    cv2.imwrite(folder_base_path + "final_images/" + label_box_result_python_object.external_id, img)
 
 # %%
-save_json_image_path = folder_base_path + "CodePlusLabelBox_annotation.json"
+save_json_image_path = folder_base_path + "pf_CodePlusLabelBox_localization_annotation.json"
 with open(save_json_image_path, "w") as outfile:
     json.dump(json_dictionary, outfile)
 

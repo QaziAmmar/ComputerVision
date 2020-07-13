@@ -15,7 +15,7 @@ download_path = ""
 result_folder_path = ""
 
 if sys.platform == ("linux" or "linux1" or "linux2"):
-    base_path = "/home/itu/Desktop/Qazi/Model_Result_Dataset/"
+    base_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/"
 elif sys.platform == "darwin":
     base_path = "/Users/qaziammar/Documents/Thesis/Model_Result_Dataset/"
 

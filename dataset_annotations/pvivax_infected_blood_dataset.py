@@ -5,7 +5,7 @@ from custom_classes import path
 import json
 import cv2
 import os
-from dataset_annotations_draw.pvivax_model import Annotation_Model
+from dataset_annotations.pvivax_model import Annotation_Model
 
 # Link of dataset: https://www.kaggle.com/kmader/malaria-bounding-boxes
 
