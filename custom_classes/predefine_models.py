@@ -46,7 +46,6 @@ def get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=True, classes=1
         model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     else:
         out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
-
         model = tf.keras.Model(inputs=inp, outputs=out)
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 

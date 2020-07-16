@@ -1,22 +1,34 @@
 # %%
-# //  Created by Qazi Ammar Arshad on 01/01/2020.
+# //  Created by Qazi Ammar Arshad on 15/07/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
 import os
-import glob
 import tensorflow as tf
+import glob
 from custom_classes import path, predefine_models, cv_iml, testing_models
+from malaria_binaryclass_DrMoshin.image_loader import load_train_test_val_images_from
 
-data_set_base_path = path.dataset_path + "cell_images/"
+# hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
+# just separated into train, test and validation so their read style is just different.
+save_weights_path = path.save_models_path + "binary_classification_test_CNN/pv_binary_basic_cnn.h5"
+
+load_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn.h5"
+
 # Hard Negative mining. (HNM)
-save_weights_path = path.save_models_path + "binary_classification_test_CNN/2_CNN.h5"
+hard_negative_mining_experiments = True
 
-base_dir = os.path.join(data_set_base_path)
-infected_dir = os.path.join(base_dir, "Parasitized")
-healthy_dir = os.path.join(base_dir, "Uninfected")
+if hard_negative_mining_experiments:
+    # this is run only when hard_negative_mining_experiments = true
+    data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_HardNegative_mining/p.v/"
+    infected_files, healthy_files = load_train_test_val_images_from(data_set_base_path)
+else:
+    data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation/p.v/"
+    base_dir = os.path.join(data_set_base_path)
+    infected_dir = os.path.join(base_dir, "Parasitized")
+    healthy_dir = os.path.join(base_dir, "Uninfected")
 
-infected_files = glob.glob(infected_dir + '/*.png')
-healthy_files = glob.glob(healthy_dir + '/*.png')
+    infected_files = glob.glob(infected_dir + '/*.JPG')
+    healthy_files = glob.glob(healthy_dir + '/*.JPG')
 
 # %%
 # cell2
@@ -123,7 +135,7 @@ test_data_map = ex.map(get_img_data_parallel,
                        [record[2] for record in test_data_inp])
 test_data = np.array(list(test_data_map))
 
-train_data.shape, val_data.shape, test_data.shape
+print("train, test and validation shape", train_data.shape, val_data.shape, test_data.shape)
 
 # %%
 import matplotlib.pyplot as plt
@@ -164,8 +176,8 @@ print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-model = testing_models.get_1_CNN(INPUT_SHAPE)
-# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
+# model = testing_models.get_1_CNN(INPUT_SHAPE)
+model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
 # model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
@@ -174,15 +186,15 @@ model = testing_models.get_1_CNN(INPUT_SHAPE)
 # Model training
 import datetime
 
-logdir = os.path.join(path.base_path,
+logdir = os.path.join(path.save_models_path,
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                                  patience=2, min_lr=0.000001)
 callbacks = [reduce_lr, tensorboard_callback]
 
-# if os.path.isfile(save_weights_path):
-#     model.load_weights(save_weights_path)
+if os.path.isfile(load_weights_path):
+    model.load_weights(load_weights_path)
 
 history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
                     batch_size=BATCH_SIZE,

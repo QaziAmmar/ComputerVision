@@ -19,9 +19,13 @@ from sklearn.preprocessing import LabelEncoder
 # %%
 # name of folder where you want to find the images
 # folder base path.
-folder_base_path = path.dataset_path + "IML_multiclass_classification/p.v/"
+
+folder_base_path = path.dataset_path + "IML_multiclass_classification/p.f/"
 binary_classification_annotaion = folder_base_path + "rbc_binary_classification_json" \
-                                                     "/pv_binary_classification_annotation.json"
+                                                     "/pf_binary_classification_annotation.json"
+
+
+save_folder_path= path.dataset_path +  "IML_training_data/binary_classifcation/p.f/Uninfected/"
 # read json file
 with open(binary_classification_annotaion) as annotation_path:
     final_binary_classification_annotation = json.load(annotation_path)
@@ -51,12 +55,12 @@ for image_annotation in final_binary_classification_annotation:
         category = point['category']
         cell_name = point['cell_name']
         if category == "healthy":
-            continue
-        # crop the cell form the image
-        roi = image[y:y + h, x:x + w]
-        # malaria_cells_json.append(point)
-        cv2.imwrite(folder_base_path + "malaria_cell_by_cnn/ring/" + cell_name, roi)
-        # counter += 1
+            # crop the cell form the image
+            roi = image[y:y + h, x:x + w]
+            # malaria_cells_json.append(point)
+            # save imges folder path
+            cv2.imwrite(save_folder_path + cell_name, roi)
+            # counter += 1
 
     # append the malaria infected cell into separate json file
 #     malaria_json_dictionary.append({

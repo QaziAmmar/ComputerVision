@@ -51,9 +51,9 @@ def check_point_in_array(point, array):
     return False
 
 # image_name = "IMG_4536.JPG"
-folder_base_path = path.dataset_path + "/IML_dataset/p.f/"
+folder_base_path = path.dataset_path + "IML/IML_dataset/p.f/"
 
-label_box_annotation_path = folder_base_path + "pf_labelbox_annotation.json"
+label_box_annotation_path = folder_base_path + "pf_labelBox_annotation.json"
 code_annotation_path = folder_base_path + "code_annotation_json_files/"
 
 json_dictionary = []
@@ -105,13 +105,13 @@ for label_box_result_python_object in label_box_result_python_object_array:
     # %%
     matched_pointes_in_lablebox_bounding_boxes = []
     matched_pointes_in_code_detected_bounding_boxes = []
-    # compute the iOU of all the points and remove the points that very much overlaping.
+    # compute the iOU of all the points and rempvivax_labelBox_annotationove the points that very much overlaping.
     for temp_labelBox_point in labelbox_points:
         for code_temp_point in code_detected_points:
             # finding the matched boxes form both points and then remove these points form both arrays.
             box1, box2 = getBoxpoints(temp_labelBox_point, code_temp_point)
             iou = intersection_over_union(box1, box2)
-            if iou > 0.50:
+            if iou > 0.75:
                 # append both bounding boxes into matched array so that these points can be removed form
                 # annotation file
                 print(iou)
@@ -158,7 +158,7 @@ for label_box_result_python_object in label_box_result_python_object_array:
     cv2.imwrite(folder_base_path + "final_images/" + label_box_result_python_object.external_id, img)
 
 # %%
-save_json_image_path = folder_base_path + "pf_CodePlusLabelBox_localization_annotation.json"
+save_json_image_path = folder_base_path + "pv_CodePlusLabelBox_localization_annotation.json"
 with open(save_json_image_path, "w") as outfile:
     json.dump(json_dictionary, outfile)
 
