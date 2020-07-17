@@ -77,6 +77,7 @@ def intersect(box_a, box_b):
     inter = torch.clamp((max_xy - min_xy), min=0)
     return inter[:, :, 0] * inter[:, :, 1]
 
+
 #
 # def jaccard(box_a, box_b):
 #     """Compute the jaccard overlap of two sets of boxes.  The jaccard overlap
@@ -170,7 +171,8 @@ detected_annotated_img, _, json_object = get_detected_segmentaion(
     original_images_path + single_image_ground_truth["image_name"])
 
 detected_boxes = convert_points_into_boxes(json_object)
-ground_truth_boxes = convert_points_into_boxes(single_image_ground_truth["objects"])
+# ground_truth_boxes = convert_points_into_boxes(single_image_ground_truth["objects"])
+ground_truth_boxes = detected_boxes
 
 # %%
 # MioU = jaccard(ground_truth_boxes, detected_boxes)
@@ -199,20 +201,24 @@ for temp_iou_score in iou_score_2d_array:
 # Now separated the true positive, false positive and false negative
 true_positive = []
 for temp_matched_box in ground_truth_matched_index_in_detect_boxes_array:
-    if temp_matched_box[1] > 0.49:
+    if temp_matched_box[1] >= 0.5:
         true_positive.append(temp_matched_box)
 # boxes that have value grater then 0.49 is called as true positive and other are called as false_positive
 
-#%%
+# %%
 # calculate MioU of labels
 true_positive_sum = 0
 for temp_instance in true_positive:
     true_positive_sum += temp_instance[1]
-# false_instance = false negative + missed instances
-false_instances = (len(detected_boxes) - len(true_positive)) + (len(ground_truth_boxes) - len(true_positive))
+# false_instance = false positive + false negative
+false_positive = (len(detected_boxes) - len(true_positive))
+false_negative = (len(ground_truth_boxes) - len(true_positive))
 
-MioU = true_positive_sum /(len(true_positive) + false_instances)
+false_instances = false_positive + false_negative
 
+percision = len(true_positive) / (len(true_positive) + (len(detected_boxes) - len(true_positive)))
+recall = len(true_positive) / (len(true_positive) + false_negative)
+# find F1 score for
+F1 = (2 * percision * recall) / (percision + recall)
 
-
-
+# MioU = true_positive_sum / (len(true_positive) + false_instances)
