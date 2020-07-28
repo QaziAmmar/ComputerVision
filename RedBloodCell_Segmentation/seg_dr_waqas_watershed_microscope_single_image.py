@@ -29,7 +29,8 @@ def preprocess_image(image, mean_gray):
     imge_clahe = clahe.apply(gray)
 
     # Subtract the Background (mean) image
-    mean_subtracted = imge_clahe - mean_gray_resized
+    # mean_subtracted = imge_clahe - mean_gray_resized
+    mean_subtracted = imge_clahe
     # clone = mean_subtracted.copy()
 
     # Remove the pixels which are very close to the mean. 60 is selected after watching a few images
@@ -141,6 +142,8 @@ def save_cells_annotation(annotated_img, labels):
             y = 0
         w = w + 15
         h = h + 15
+        # cell size
+        # IML cell size 70 - 200
         if (w < 70 or h < 70) or (w > 200 or h > 200):
             continue
         cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 255, 0), 2)

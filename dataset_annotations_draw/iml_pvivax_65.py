@@ -1,17 +1,17 @@
 # //  Created by Qazi Ammar Arshad on 10/05/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 from custom_classes import path, cv_iml
-from dataset_annotations.model_classes.iml_pvivax_65_model import welcome_from_dict
+from dataset_annotations_draw.model_classes.iml_pvivax_65_model import welcome_from_dict
 from RedBloodCell_Segmentation.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
 import json
 import cv2
 
 # base path of folder where images and annotaion are saved.
-folder_base_path = path.dataset_path + "IML_dataset/new_microcsope/p.v/"
+folder_base_path = path.dataset_path + "IML_PV_65/p.v/"
 # path of folder where all images are save.
 images_path = folder_base_path + "100X_crop/"
 # save annotaion path.
-annotation_path = folder_base_path + "100X_crop_annotation.json"
+annotation_path = folder_base_path + "iml_pv_65.json"
 # save result path.
 save_result_path = folder_base_path + "annotation/"
 path.make_folder_with(save_result_path)
@@ -40,8 +40,8 @@ for image_cells in result:
         y = point['y']
         h = point['h']
         w = point['w']
-        # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        detected_points.append([x, y, x+w, y+h])
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 3)
+        # detected_points.append([x, y, x+w, y+h])
     # draw annotation points on the image
     for point in image_cells.label.red_blood_cell:
         # getting points form the folder and draw it on the image
@@ -49,9 +49,9 @@ for image_cells in result:
         y1 = point.geometry[0].y
         x2 = point.geometry[2].x
         y2 = point.geometry[2].y
-        # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        groundtruth_points.append([x1, y1, x2, y2])
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 3)
+        # groundtruth_points.append([x1, y1, x2, y2])
 
-    print(detected_points)
-    print(groundtruth_points)
-    # cv2.imwrite(save_result_path + image_name, img)
+    # print(detected_points)
+    # print(groundtruth_points)
+    cv2.imwrite(save_result_path + image_name, img)

@@ -13,6 +13,7 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_auc_score
+from skimage.util import random_noise
 
 
 def image_show(img, cmap=None, suptitle=""):
@@ -343,6 +344,10 @@ def augment_image(images_folder_path, file_extension, rotation=True, flipping=Tr
     :return: None
     """
 
+    def save_image(img_name, img):
+        # this function save image into target folder
+        cv2.imwrite(images_folder_path + img_name, img)
+
     def rotate(image_name, angle=90):
         """
         Rotate the image
@@ -352,8 +357,8 @@ def augment_image(images_folder_path, file_extension, rotation=True, flipping=Tr
         """
         img = cv2.imread(images_folder_path + image_name)
         rotated = imutils.rotate_bound(img, angle)
-        rotated_image_name = str(angle) + "_" + image_name + file_extension
-        cv2.imwrite(images_folder_path + rotated_image_name, rotated)
+        rotated_image_name = str(angle) + "_" + image_name
+        return rotated_image_name, rotated
 
     def flip(image_name, vflip=False, hflip=False):
         """
@@ -362,33 +367,50 @@ def augment_image(images_folder_path, file_extension, rotation=True, flipping=Tr
         :param vflip: whether to flip the image vertically
         :param hflip: whether to flip the image horizontally
         """
+        save_name = ""
         img = cv2.imread(images_folder_path + image_name)
-        if hflip or vflip:
-            if hflip and vflip:
-                c = -1
-            else:
-                c = 0 if vflip else 1
-            flip_image = cv2.flip(img, flipCode=c)
+        if vflip:
+            c = 1
+            save_name = "flip_v"
+        if hflip:
+            c = 0
+            save_name = "flip_h"
+        if hflip and vflip:
+            c = -1
+            save_name = "flip_hv"
 
-        rotated_image_name = "flip_hv" + "_" + image_name + file_extension
-        cv2.imwrite(images_folder_path + rotated_image_name, flip_image)
+        flip_image = cv2.flip(img, flipCode=c)
+        flip_image_name = save_name + "_" + image_name
+
+        return flip_image_name, flip_image
 
     all_images_name = path.read_all_files_name_from(folder_path=images_folder_path,
                                                     file_extension=file_extension)
     counter = 0
+
+    # adding random noise to image.
+    # img_noise = random_noise(img, mode= 's&p', clip=True)
+
     for image_name in all_images_name:
         # Perform the counter clockwise rotation holding at the center
         # 90 degrees
         if rotation:
-            rotate(image_name, angle=90)
-            rotate(image_name, angle=180)
-            rotate(image_name, angle=270)
+            rotated_img_name, rotated_img = rotate(image_name, angle=90)
+            save_image(rotated_img_name, rotated_img)
+            rotated_img_name, rotated_img = rotate(image_name, angle=180)
+            save_image(rotated_img_name, rotated_img)
+            rotated_img_name, rotated_img = rotate(image_name, angle=270)
+            save_image(rotated_img_name, rotated_img)
 
         if flipping:
-            flip(image_name, vflip=True, hflip=True)
+            # is same as 180 rotation
+            # flip_image_name, flip_image = flip(image_name, vflip=True, hflip=True)
+            # save_image(flip_image_name, flip_image)
+            flip_image_name, flip_image = flip(image_name, vflip=True, hflip=False)
+            save_image(flip_image_name, flip_image)
+            flip_image_name, flip_image = flip(image_name, vflip=False, hflip=True)
+            save_image(flip_image_name, flip_image)
 
         if counter % 50 == 0:
             print(counter)
         counter = counter + 1
-
-

@@ -6,7 +6,7 @@ This code first detect the cells in image and then check the accuracy against th
 
 import cv2
 import json
-import torch
+# import torch
 from custom_classes import path, cv_iml
 from RedBloodCell_Segmentation.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
 
@@ -57,25 +57,26 @@ def convert_points_into_boxes(points):
     return boxes_array
 
 
-def intersect(box_a, box_b):
-    """ We resize both tensors to [A,B,2] without new malloc:
-    [A,2] -> [A,1,2] -> [A,B,2]
-    [B,2] -> [1,B,2] -> [A,B,2]
-    Then we compute the area of intersect between box_a and box_b.
-    Args:
-      box_a: (tensor) bounding boxes, Shape: [A,4].
-      box_b: (tensor) bounding boxes, Shape: [B,4].
-    Return:
-      (tensor) intersection area, Shape: [A,B].
-    """
-    A = box_a.size(0)
-    B = box_b.size(0)
-    max_xy = torch.min(box_a[:, 2:].unsqueeze(1).expand(A, B, 2),
-                       box_b[:, 2:].unsqueeze(0).expand(A, B, 2))
-    min_xy = torch.max(box_a[:, :2].unsqueeze(1).expand(A, B, 2),
-                       box_b[:, :2].unsqueeze(0).expand(A, B, 2))
-    inter = torch.clamp((max_xy - min_xy), min=0)
-    return inter[:, :, 0] * inter[:, :, 1]
+#
+# def intersect(box_a, box_b):
+#     """ We resize both tensors to [A,B,2] without new malloc:
+#     [A,2] -> [A,1,2] -> [A,B,2]
+#     [B,2] -> [1,B,2] -> [A,B,2]
+#     Then we compute the area of intersect between box_a and box_b.
+#     Args:
+#       box_a: (tensor) bounding boxes, Shape: [A,4].
+#       box_b: (tensor) bounding boxes, Shape: [B,4].
+#     Return:
+#       (tensor) intersection area, Shape: [A,B].
+#     """
+#     A = box_a.size(0)
+#     B = box_b.size(0)
+#     max_xy = torch.min(box_a[:, 2:].unsqueeze(1).expand(A, B, 2),
+#                        box_b[:, 2:].unsqueeze(0).expand(A, B, 2))
+#     min_xy = torch.max(box_a[:, :2].unsqueeze(1).expand(A, B, 2),
+#                        box_b[:, :2].unsqueeze(0).expand(A, B, 2))
+#     inter = torch.clamp((max_xy - min_xy), min=0)
+#     return inter[:, :, 0] * inter[:, :, 1]
 
 
 #
@@ -128,10 +129,9 @@ def intersect(box_a, box_b):
 #
 #     row_ind, col_ind = linear_sum_assignment(1 - IOU_bbx_mul)
 #
-#     # if you calculate true positive, false positives etc using the IoU score. You won't need this calculated IoU. I just made it for calculating average of all
-#     calculated_IoU = []
-#     for ir in range(0, len(row_ind)):
-#         IOU_bbx_s = IOU_bbx_mul[row_ind[ir], col_ind[ir]]
+# # if you calculate true positive, false positives etc using the IoU score. You won't need this calculated IoU. I
+# just made it for calculating average of all calculated_IoU = [] for ir in range(0, len(row_ind)): IOU_bbx_s =
+# IOU_bbx_mul[row_ind[ir], col_ind[ir]]
 #
 #         calculated_IoU.append(IOU_bbx_s)
 #
@@ -164,61 +164,87 @@ ground_truth_labels_path = folder_base_path + "pv_loclization_annotation_code_pl
 with open(ground_truth_labels_path) as annotation_path:
     ground_truth = json.load(annotation_path)
 # %%
-single_image_ground_truth = ground_truth[0]
-original_img = cv2.imread(original_images_path + single_image_ground_truth["image_name"])
-
-detected_annotated_img, _, json_object = get_detected_segmentaion(
-    original_images_path + single_image_ground_truth["image_name"])
-
-detected_boxes = convert_points_into_boxes(json_object)
-# ground_truth_boxes = convert_points_into_boxes(single_image_ground_truth["objects"])
-ground_truth_boxes = detected_boxes
+true_positive_count = 0
+false_positive = 0
+false_negative = 0
 
 # %%
-# MioU = jaccard(ground_truth_boxes, detected_boxes)
+# iterate through all images and find TF and FP.
+for single_image_ground_truth in ground_truth:
+    if not(single_image_ground_truth['image_name'] in all_images_name) :
+        continue;
+    print(single_image_ground_truth["image_name"])
+    # single_image_ground_truth = ground_truth[0]
+    original_img = cv2.imread(original_images_path + single_image_ground_truth["image_name"])
 
-# %%
+    detected_annotated_img, _, json_object = get_detected_segmentaion(
+        original_images_path + single_image_ground_truth["image_name"])
 
-iou_score_2d_array = []
-# make a 2d matrix of iou of all points with other points
-for i, temp_ground_truth_box in zip(range(len(ground_truth_boxes)), ground_truth_boxes):
-    temp_iou_score = []
-    for j, temp_detected_box in zip(range(len(detected_boxes)), detected_boxes):
-        iou = intersection_over_union(temp_ground_truth_box, temp_detected_box)
-        temp_iou_score.append(iou)
-    iou_score_2d_array.append(temp_iou_score)
+    detected_boxes = convert_points_into_boxes(json_object)
+    ground_truth_boxes = convert_points_into_boxes(single_image_ground_truth["objects"])
+    # ground_truth_boxes = detected_boxes
 
-# %%
-# find maximum matching index from ground truth.
-ground_truth_matched_index_in_detect_boxes_array = []
-for temp_iou_score in iou_score_2d_array:
-    max_index = temp_iou_score.index(max(temp_iou_score))
-    max_iou = max(temp_iou_score)
-    # all detected points in
-    ground_truth_matched_index_in_detect_boxes_array.append([max_index, max_iou])
+    # %%
+    if 'IMG_4533.JPG' == single_image_ground_truth['image_name']:
+        print("debug")
 
-# %%
-# Now separated the true positive, false positive and false negative
-true_positive = []
-for temp_matched_box in ground_truth_matched_index_in_detect_boxes_array:
-    if temp_matched_box[1] >= 0.5:
-        true_positive.append(temp_matched_box)
-# boxes that have value grater then 0.49 is called as true positive and other are called as false_positive
+    iou_score_2d_array = []
+    # make a 2d matrix of iou of all points with other points
+    for i, temp_ground_truth_box in zip(range(len(ground_truth_boxes)), ground_truth_boxes):
+        temp_iou_score = []
+        for j, temp_detected_box in zip(range(len(detected_boxes)), detected_boxes):
+            iou = intersection_over_union(temp_ground_truth_box, temp_detected_box)
+            temp_iou_score.append(iou)
+        if len(temp_iou_score) > 0:
+            iou_score_2d_array.append(temp_iou_score)
 
-# %%
-# calculate MioU of labels
-true_positive_sum = 0
-for temp_instance in true_positive:
-    true_positive_sum += temp_instance[1]
-# false_instance = false positive + false negative
-false_positive = (len(detected_boxes) - len(true_positive))
-false_negative = (len(ground_truth_boxes) - len(true_positive))
+    # %%
+    # find maximum matching index from ground truth.
+    ground_truth_matched_index_in_detect_boxes_array = []
+    for temp_iou_score in iou_score_2d_array:
+        max_index = temp_iou_score.index(max(temp_iou_score))
+        max_iou = max(temp_iou_score)
+        # all detected points in
+        ground_truth_matched_index_in_detect_boxes_array.append([max_index, max_iou])
 
-false_instances = false_positive + false_negative
+    # %%
+    # Now separated the true positive, false positive and false negative
+    true_positive = []
+    for temp_matched_box in ground_truth_matched_index_in_detect_boxes_array:
+        if temp_matched_box[1] >= 0.5:
+            true_positive.append(temp_matched_box)
+    # boxes that have value grater then 0.49 is called as true positive and other are called as false_positive
 
-percision = len(true_positive) / (len(true_positive) + (len(detected_boxes) - len(true_positive)))
-recall = len(true_positive) / (len(true_positive) + false_negative)
+    # %%
+    # calculate MioU of labels
+    true_positive_sum = 0
+    for temp_instance in true_positive:
+        true_positive_sum += temp_instance[1]
+    # false_instance = false positive + false negative
+    true_positive_count += len(true_positive)
+    false_positive += (len(detected_boxes) - len(true_positive))
+    false_negative += (len(ground_truth_boxes) - len(true_positive))
+    false_instances = false_positive + false_negative
+
+print("Total True Positives:", true_positive_count)
+print("Total False Negative", false_negative)
+print("Total False Positives:", false_positive)
+
+precision = true_positive_count / (true_positive_count + false_positive)
+print("Precision: ", precision)
+recall = true_positive_count / (true_positive_count + false_negative)
+print("Recall:", recall)
 # find F1 score for
-F1 = (2 * percision * recall) / (percision + recall)
+F1 = (2 * precision * recall) / (precision + recall)
+print("F1 Score", F1)
+# precision = len(true_positive_count) / (len(true_positive_count) + (len(detected_boxes) - len(true_positive_count)))
+# recall = len(true_positive_count) / (len(true_positive_count) + false_negative)
+# # find F1 score for
+# F1 = (2 * precision * recall) / (precision + recall)
+
+
+# print("Precision: ", precision)
+# print("Recall:", recall)
+# print("F1 Score", F1)
 
 # MioU = true_positive_sum / (len(true_positive) + false_instances)
