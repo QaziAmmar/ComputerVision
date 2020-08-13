@@ -243,3 +243,5 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
 cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels, pos_label="malaria")
+
+

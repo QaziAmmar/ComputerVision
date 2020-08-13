@@ -1,6 +1,6 @@
 from custom_classes import cv_iml, path
+import os
 
-
-folder_path = path.dataset_path + "aug_test/"
-
-cv_iml.augment_image(folder_path, '.jpg', rotation=True, flipping=True)
+for root, dirs, files in os.walk(path.dataset_path):
+    for dirs_name in root:
+        print(dirs_name)
