@@ -36,9 +36,9 @@ def get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=True, classes=1
     flat = tf.keras.layers.Flatten()(pool3)
 
     hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
-    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    drop1 = tf.keras.layers.Dropout(rate=0.4)(hidden1)
     hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+    drop2 = tf.keras.layers.Dropout(rate=0.4)(hidden2)
 
     if binary_classification:
         out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
@@ -78,9 +78,9 @@ def get_vgg_19_fine_tune(INPUT_SHAPE, save_weight_path=None):
     base_out = base_vgg.output
     pool_out = tf.keras.layers.Flatten()(base_out)
     hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
-    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    drop1 = tf.keras.layers.Dropout(rate=0.4)(hidden1)
     hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+    drop2 = tf.keras.layers.Dropout(rate=0.4)(hidden2)
 
     out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
 

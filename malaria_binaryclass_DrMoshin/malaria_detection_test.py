@@ -12,13 +12,15 @@ INPUT_SHAPE = (125, 125, 3)
 IMG_DIMS = (125, 125)
 
 #  load test data.
-test_data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_HardNegative_mining/p.v/train/"
+# test_data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_HardNegative_mining/p.v/train/"
 # adding data form both healthy and infected folder
+test_data_set_base_path = "/home/iml/Downloads/"
+
 infected_dir = os.path.join(test_data_set_base_path, "Parasitized")
 healthy_dir = os.path.join(test_data_set_base_path, "Uninfected")
 
-infected_files_names = path.read_all_files_name_from(infected_dir, ".JPG")
-healthy_files_names = path.read_all_files_name_from(healthy_dir, ".JPG")
+infected_files_names = path.read_all_files_name_from(infected_dir, ".png")
+healthy_files_names = path.read_all_files_name_from(healthy_dir, ".png")
 
 test_files = []
 
@@ -71,7 +73,7 @@ train_labels_enc = le.transform(train_labels)
 model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
 
 # %%
-load_weights_path = path.save_models_path + "binary_classification_test_CNN/pv_binary_basic_cnn.h5"
+load_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/best_resutls/basic_cnn_IML_fineTune.h5"
 model.load_weights(load_weights_path)
 
 # %%
@@ -79,7 +81,7 @@ model.load_weights(load_weights_path)
 print("start prediction")
 basic_cnn_preds = model.predict(test_imgs_scaled)
 print("end prediction")
-basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.6 else 0
+basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
 
 # %%
@@ -89,14 +91,14 @@ for i in range(len(basic_cnn_preds_labels)):
     label = basic_cnn_preds_labels[i]
     img = cv2.imread(test_files[i])
     if label == 'healthy':
-        image_save_path = path.result_folder_path + "hard_negative_mining/p.v/healthy/" + test_files[i].split('/')[-1]
+        image_save_path = path.result_folder_path + "test/healthy/" + test_files[i].split('/')[-1]
         cv2.imwrite(image_save_path, img)
     else:
-        image_save_path = path.result_folder_path + "hard_negative_mining/p.v/malaria/" + test_files[i].split('/')[-1]
+        image_save_path = path.result_folder_path + "test/malaria/" + test_files[i].split('/')[-1]
         cv2.imwrite(image_save_path, img)
 
 # end of testing code.
-exit(0)
+# exit(0)
 # %%
 # # Start calculating F1 score of our dataset.
 # import os

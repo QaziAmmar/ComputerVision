@@ -1,13 +1,66 @@
-# %%
-# //  Created by Qazi Ammar Arshad on 15/07/2020.
+# //  Created by Qazi Ammar Arshad on 01/08/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+
 
 import os
 import tensorflow as tf
+import keras.backend as K
 import numpy as np
 from collections import Counter
 from custom_classes import path, predefine_models, cv_iml, testing_models
 from malaria_binaryclass_DrMoshin.image_loader import load_train_test_val_images_from
+from class_imbalance_loss import class_balanced_loss
+from keras.utils import to_categorical
+
+samples_per_cls = []
+number_of_classes = 2
+
+
+def get_model(INPUT_SHAPE, binary_classification=True, classes=1):
+    def custom_loss(y_true, y_pred):
+        # calculate loss, using y_pred
+        # logits = y_pred
+        # labels = y_true
+        # beta = 0.9999
+        # gamma = 2.0
+        # loss_type = "softmax"
+        # loss = class_balanced_loss.tensor_loss_func(labels, logits, samples_per_cls, number_of_classes, loss_type, beta,
+        #                                             gamma)
+
+        loss = K.square(y_pred - y_true)  # (batch_size, 2)
+
+        # multiplying the values with weights along batch dimension
+        loss = loss * [0.3, 0.7]  # (batch_size, 2)
+
+        # summing both loss values along batch dimension
+        loss = K.sum(loss, axis=1)
+
+        return loss
+
+    inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
+
+    conv1 = tf.keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(inp)
+    pool1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv1)
+    conv2 = tf.keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(pool1)
+    pool2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv2)
+    conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
+    pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
+
+    flat = tf.keras.layers.Flatten()(pool3)
+
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
+    drop1 = tf.keras.layers.Dropout(rate=0.4)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.4)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=inp, outputs=out)
+    model.compile(optimizer='adam', loss=tf.losses.categorical_crossentropy, metrics=['accuracy'])
+
+    model.summary()
+
+    return model
+
 
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
@@ -15,10 +68,20 @@ from malaria_binaryclass_DrMoshin.image_loader import load_train_test_val_images
 save_weights_path = path.save_models_path + "binary_classification_test_CNN/pf_binary_basic.h5"
 load_weights_path = path.save_models_path + "binary_classification_test_CNN/cell_images_basic_cnn.h5"
 
-data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f"
+data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.v"
 
-train_files, train_labels, test_files, test_labels,  val_files, val_labels = \
+train_files, train_labels, test_files, test_labels, val_files, val_labels = \
     load_train_test_val_images_from(data_set_base_path)
+#
+# train_files = train_files[: int(len(train_files) * 0.2)]
+# train_labels = train_labels[: int(len(train_labels) * 0.2)]
+# test_files = test_files[: int(len(test_files) * 0.2)]
+# test_labels = test_labels[: int(len(test_labels) * 0.2)]
+# val_files = val_files[: int(len(val_files) * 0.2)]
+# val_labels = val_labels[: int(len(val_labels) * 0.2)]
+# # %%
+# for num_of_imgs in Counter(train_labels).values():
+#     samples_per_cls.append(num_of_imgs)
 
 
 # %%
@@ -94,25 +157,11 @@ test_data = np.array(list(test_data_map))
 
 print("train, test and validation shape", train_data.shape, val_data.shape, test_data.shape)
 
-# %%
-import matplotlib.pyplot as plt
 
-plt.figure(1, figsize=(8, 8))
-n = 0
-
-for i in range(16):
-    n += 1
-    r = np.random.randint(0, train_data.shape[0], 1)
-    plt.subplot(4, 4, n)
-    plt.subplots_adjust(hspace=0.5, wspace=0.5)
-    plt.imshow(train_data[r[0]] / 255.)
-    plt.title('{}'.format(train_labels[r[0]]))
-    plt.xticks([]), plt.yticks([])
-plt.show()
 # %%
 BATCH_SIZE = 64
 NUM_CLASSES = 2
-EPOCHS = 25
+EPOCHS = 50
 INPUT_SHAPE = (125, 125, 3)
 
 train_imgs_scaled = train_data / 255.
@@ -129,18 +178,18 @@ train_labels_enc = le.transform(train_labels)
 val_labels_enc = le.transform(val_labels)
 test_labels_enc = le.transform(test_labels)
 
+train_labels_enc = to_categorical(train_labels_enc, num_classes=number_of_classes)
+val_labels_enc = to_categorical(val_labels_enc, num_classes=number_of_classes)
+test_labels_enc = to_categorical(test_labels_enc, num_classes=number_of_classes)
+
 print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-# model = testing_models.get_1_CNN(INPUT_SHAPE)
-model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
-# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
-# model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
-# model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
-# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
+model = get_model(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
+
 # %%
-# Model training
+
 import datetime
 
 logdir = os.path.join(path.save_models_path,
@@ -172,6 +221,7 @@ print('Test accuracy:', score[1])
 
 
 # %%
+import matplotlib.pyplot as plt
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 t = f.suptitle('Basic CNN Performance', fontsize=12)
 f.subplots_adjust(top=0.85, wspace=0.3)
@@ -201,5 +251,3 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
 cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels, pos_label="malaria")
-
-

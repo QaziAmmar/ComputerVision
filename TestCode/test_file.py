@@ -1,21 +1,27 @@
 # //  Created by Qazi Ammar Arshad on 10/05/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
-from custom_classes import path, cv_iml
-from dataset_annotations_draw.model_classes.iml_pvivax_65_model import welcome_from_dict
-from RedBloodCell_Segmentation.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
-import json
+
 import cv2
+from custom_classes import path, cv_iml
+# plot boxes on images
 
-# base path of folder where images and annotaion are saved.if (w < 70 or h < 70) or (w > 200 or h > 200):
-folder_base_path = path.dataset_path + "Malaria_2010_dataset/"
-# path of folder where all images are save.
-images_path = folder_base_path + "Part 4/"
-save_annotated_imgs_path = folder_base_path + "annotated_img/"
+folder_base_path = path.dataset_path + "1000X-100x/all_images/"
+all_images_name = path.read_all_files_name_from(folder_base_path, ".JPG")
 
-images_name = path.read_all_files_name_from(images_path, ".jpg")
+#%%
+# find substring from the images name
 
-# save annotaion path.
-# %%
-for img_name in images_name:
-    annotated_img, _, json_object = get_detected_segmentaion(images_path + img_name)
-    cv2.imwrite(save_annotated_imgs_path + img_name, annotated_img)
+for image_name in all_images_name:
+    if image_name.find("100x") != -1:
+        img = cv2.imread(folder_base_path + image_name)
+        cv2.rectangle(img, (735, 1340), (1000, 1560), (255, 0, 0), 2)
+        cv2.imwrite(folder_base_path+ image_name, img)
+        continue
+    if image_name.find("400x") != -1:
+        img = cv2.imread(folder_base_path + image_name)
+        cv2.rectangle(img, (451, 1204), (1260, 2060), (0, 0, 255), 2)
+        cv2.imwrite(folder_base_path + image_name, img)
+
+
+
+
