@@ -104,7 +104,8 @@ def tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, 
     weights = weights / np.sum(weights) * no_of_classes
     print(weights)
 
-    one_hot_labels = tf.one_hot(labels, no_of_classes)
+    # one_hot_labels = tf.one_hot(labels, no_of_classes)
+    one_hot_labels = labels
 
     weights = tf.cast(weights, dtype=tf.float32)
     weights = tf.expand_dims(weights, 0)
@@ -114,12 +115,11 @@ def tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, 
     weights = tf.tile(weights, [1, no_of_classes])
 
     if loss_type == 'softmax':
-        tower_loss = tf.losses.softmax_cross_entropy(
-            one_hot_labels, logits, weights=tf.reduce_mean(weights, axis=1))
+        tower_loss = tf.compat.v1.losses.softmax_cross_entropy(one_hot_labels, logits,
+                                                               weights=tf.reduce_mean(weights, axis=1))
         tower_loss = tf.reduce_mean(tower_loss)
     elif loss_type == 'sigmoid':
-        tower_loss = weights * tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=one_hot_labels, logits=logits)
+        tower_loss = weights * tf.compat.v1.losses.sigmoid_cross_entropy(labels=one_hot_labels, logits=logits)
         # Normalize by the total number of positive samples.
         tower_loss = tf.reduce_sum(tower_loss) / tf.reduce_sum(one_hot_labels)
     elif loss_type == 'focal':
@@ -129,17 +129,11 @@ def tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, 
     return tower_loss
 
 
-
-
-def get_CB_loss(no_of_classes, samples_per_cls):
-    # no_of_classes = 5
-    logits = torch.rand(10, no_of_classes).float()
-    labels = torch.randint(0, no_of_classes, size=(10,))
+def get_CB_loss(no_of_classes, samples_per_cls, labels, logits):
     beta = 0.9999
     gamma = 2.0
-    # samples_per_cls = [2, 3, 1, 2, 2]
     loss_type = "softmax"
-    cb_loss = CB_loss(labels, logits, samples_per_cls, no_of_classes, loss_type, beta, gamma)
+    cb_loss = tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, beta, gamma)
     return cb_loss
 
 

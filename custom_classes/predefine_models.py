@@ -7,22 +7,20 @@ from custom_classes import path
 
 # This file contained all models that are working perfectly.
 
-# def get_basic_CNN_for_malaria(INPUT_SHAPE, save_weight_path=None, binary_classification=True, classes=2):
 def get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=True, classes=1):
-    # Model 1: CNN from Scratch
-    # This model server for both binary and multiple-class classification of malaria. if you want to do
-    # multi-class classification then you need to false the binary_classification and need to mention
-    # number of classes.
+
     """
+    Model 1: CNN from Scratch.
+    This model server for both binary and multiple-class classification of malaria. if you want to do
+    multi-class classification then you need to false the binary_classification and need to mention
+    number of classes.
 
     :param INPUT_SHAPE: Shape of input vector
     :param binary_classification: this is for binary classification in our case it is malaria and
     healthy cells.
     :param classes: Number of classes for different stage of malaria.
-    :return: model of your required type.
+    :return: model tensorflow model
     """
-    # if save_weight_path is None:
-    #     save_weight_path = path.save_models_path + "malaria_binaryclass_DrMoshin/basic_cnn.h5"
 
     inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
 
@@ -54,9 +52,21 @@ def get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=True, classes=1
     return model
 
 
-def get_vgg_19_fine_tune(INPUT_SHAPE, save_weight_path=None):
-    # Model 3: Fine-tuned Pre-trained Model with Image Augmentation.
-    # only last 2 layers are fine-tuned on our dataset.
+def get_vgg_19_fine_tune(INPUT_SHAPE, binary_classification=True, classes=1, save_weight_path=None):
+    """
+    Model 3: VGG Fine-tuned Pre-trained Model
+    only last 2 layers are fine-tuned on our dataset.
+    This model server for both binary and multiple-class classification of malaria. if you want to do
+    multi-class classification then you need to false the binary_classification and need to mention
+    number of classes.
+    :param INPUT_SHAPE: Shape of input vector/image
+    :param binary_classification: this is for binary classification in our case it is malaria and
+    healthy cells.
+    :param classes: numnber of classes e.g malaria life cycle stage.
+    :param save_weight_path: path of pretrained weights of vgg.
+    :return: tensorflow vgg model
+    """
+
     if save_weight_path is None:
         save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
     vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
@@ -82,14 +92,23 @@ def get_vgg_19_fine_tune(INPUT_SHAPE, save_weight_path=None):
     hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
     drop2 = tf.keras.layers.Dropout(rate=0.4)(hidden2)
 
-    out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
+    if binary_classification:
 
-    model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-5),
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
+        out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
+
+        model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
+        model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-5),
+                      loss='binary_crossentropy',
+                      metrics=['accuracy'])
+    else:
+        out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+
+        model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
+        model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-5),
+                      loss=tf.losses.categorical_crossentropy,
+                      metrics=['accuracy'])
+
     model.summary()
-    # model.load_weights(save_weight_path)
     return model
 
     # print("Total Layers:", len(model.layers))
@@ -157,7 +176,6 @@ def get_resnet50_transferLearning(INPUT_SHAPE, save_weight_path=None):
                   metrics=['accuracy'])
 
     model.summary()
-    # model.load_weights(save_weight_path)
     return model
 
 
@@ -197,5 +215,5 @@ def get_dennet121_transfer_learning(INPUT_SHAPE, save_weight_path=None, binary_c
                       metrics=['accuracy'])
 
     model.summary()
-    # model.load_weights(save_weight_path)
+
     return model

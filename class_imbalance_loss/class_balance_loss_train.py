@@ -16,25 +16,40 @@ samples_per_cls = []
 number_of_classes = 2
 
 
-def get_model(INPUT_SHAPE, binary_classification=True, classes=1):
+def get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=1):
+    inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
+
+    conv1 = tf.keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(inp)
+    pool1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv1)
+    conv2 = tf.keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(pool1)
+    pool2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv2)
+    conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
+    pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
+    model = tf.keras.Model(inputs=inp, outputs=pool3)
+
+    model.load_weights(path.save_models_path + "binary_classification_test_CNN/cell_images_basic_no_top.h5")
+    pool3 = model.output
+
+    flat = tf.keras.layers.Flatten()(pool3)
+
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=model.input, outputs=out)
+    model.compile(optimizer='adam', loss=tf.losses.categorical_crossentropy, metrics=['accuracy'])
+
+    model.summary()
+
+    return model
+
+
+def get_model(INPUT_SHAPE, classes=1):
     def custom_loss(y_true, y_pred):
         # calculate loss, using y_pred
-        # logits = y_pred
-        # labels = y_true
-        # beta = 0.9999
-        # gamma = 2.0
-        # loss_type = "softmax"
-        # loss = class_balanced_loss.tensor_loss_func(labels, logits, samples_per_cls, number_of_classes, loss_type, beta,
-        #                                             gamma)
-
-        loss = K.square(y_pred - y_true)  # (batch_size, 2)
-
-        # multiplying the values with weights along batch dimension
-        loss = loss * [0.3, 0.7]  # (batch_size, 2)
-
-        # summing both loss values along batch dimension
-        loss = K.sum(loss, axis=1)
-
+        loss = class_balanced_loss.get_CB_loss(number_of_classes, samples_per_cls, y_true, y_pred)
         return loss
 
     inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
@@ -49,40 +64,68 @@ def get_model(INPUT_SHAPE, binary_classification=True, classes=1):
     flat = tf.keras.layers.Flatten()(pool3)
 
     hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
-    drop1 = tf.keras.layers.Dropout(rate=0.4)(hidden1)
-    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-    drop2 = tf.keras.layers.Dropout(rate=0.4)(hidden2)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(256, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
     out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
     model = tf.keras.Model(inputs=inp, outputs=out)
-    model.compile(optimizer='adam', loss=tf.losses.categorical_crossentropy, metrics=['accuracy'])
+    model.compile(optimizer='adam', loss=custom_loss, metrics=['accuracy'])
 
     model.summary()
 
     return model
 
 
+def get_vgg_model(INPUT_SHAPE, classes=2):
+    save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
+    vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
+                                            weights=save_weight_path,
+                                            input_shape=INPUT_SHAPE)
+    # Freeze the layers
+    vgg.trainable = True
+
+    set_trainable = False
+    for layer in vgg.layers:
+        if layer.name in ['block5_conv1', 'block4_conv1']:
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
+
+    base_vgg = vgg
+    base_out = base_vgg.output
+    pool_out = tf.keras.layers.Flatten()(base_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+    drop1 = tf.keras.layers.Dropout(rate=0.4)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+
+    model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
+    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-5),
+                  loss=tf.losses.categorical_crossentropy,
+                  metrics=['accuracy'])
+    model.summary()
+    # model.load_weights(save_weight_path)
+    return model
+
+
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 
-save_weights_path = path.save_models_path + "binary_classification_test_CNN/pf_binary_basic.h5"
-load_weights_path = path.save_models_path + "binary_classification_test_CNN/cell_images_basic_cnn.h5"
+# save_weights_path = path.save_models_path + "binary_classification_test_CNN/pv_basicCNN_binary_2hiddenUnit.h5"
+# load_weights_path = path.save_models_path + "/binary_classification_test_CNN/vgg_2hidden_units/pv_vgg_binary_2hiddenUnit.h5"
 
 data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.v"
 
 train_files, train_labels, test_files, test_labels, val_files, val_labels = \
     load_train_test_val_images_from(data_set_base_path)
-#
-# train_files = train_files[: int(len(train_files) * 0.2)]
-# train_labels = train_labels[: int(len(train_labels) * 0.2)]
-# test_files = test_files[: int(len(test_files) * 0.2)]
-# test_labels = test_labels[: int(len(test_labels) * 0.2)]
-# val_files = val_files[: int(len(val_files) * 0.2)]
-# val_labels = val_labels[: int(len(val_labels) * 0.2)]
-# # %%
-# for num_of_imgs in Counter(train_labels).values():
-#     samples_per_cls.append(num_of_imgs)
-
+# %%
+for num_of_imgs in Counter(train_labels).values():
+    samples_per_cls.append(num_of_imgs)
 
 # %%
 
@@ -157,11 +200,10 @@ test_data = np.array(list(test_data_map))
 
 print("train, test and validation shape", train_data.shape, val_data.shape, test_data.shape)
 
-
 # %%
 BATCH_SIZE = 64
 NUM_CLASSES = 2
-EPOCHS = 50
+EPOCHS = 25
 INPUT_SHAPE = (125, 125, 3)
 
 train_imgs_scaled = train_data / 255.
@@ -186,7 +228,8 @@ print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-model = get_model(INPUT_SHAPE, binary_classification=False, classes=number_of_classes)
+# model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
+model = get_model(INPUT_SHAPE, classes=number_of_classes)
 
 # %%
 
@@ -194,7 +237,7 @@ import datetime
 
 logdir = os.path.join(path.save_models_path,
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
+tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=0)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                                  patience=2, min_lr=0.000001)
 callbacks = [reduce_lr, tensorboard_callback]
@@ -212,8 +255,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
-model.save(save_weights_path)
-# model.load_weights(save_weights_path)
+# model.save(save_weights_path)
+# model.load_weights(load_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -222,6 +265,7 @@ print('Test accuracy:', score[1])
 
 # %%
 import matplotlib.pyplot as plt
+
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 t = f.suptitle('Basic CNN Performance', fontsize=12)
 f.subplots_adjust(top=0.85, wspace=0.3)
@@ -248,6 +292,7 @@ plt.show()
 # %%
 # Model Performance Evaluation
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
-basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
-                                               for pred in basic_cnn_preds.ravel()])
-cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels, pos_label="malaria")
+# Making prediction lables for multiclass
+basic_cnn_preds = basic_cnn_preds.argmax(1)
+prediction_labels = le.inverse_transform(basic_cnn_preds)
+cv_iml.get_f1_score(test_labels, prediction_labels, pos_label='malaria', plot_confusion_matrix=True)

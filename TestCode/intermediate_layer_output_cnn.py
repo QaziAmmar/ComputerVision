@@ -35,10 +35,12 @@ def get_model(INPUT_SHAPE):
 
 INPUT_SHAPE = (125, 125, 3)
 model = get_model(INPUT_SHAPE)
-
-save_weights_path = path.save_models_path + "MalariaDetaction_DrMoshin/basic_cnn_IML_fineTune.h5"
+load_weight_path = path.save_models_path + "binary_classification_test_CNN/cell_images_basic_cnn.h5"
+save_weights_path = path.save_models_path + "binary_classification_test_CNN/cell_images_basic_no_top.h5"
 model.load_weights(save_weights_path)
-layer_name = 'flatten_2'
+layer_name = 'max_pooling2d_2'
+#%%
+model.summary()
 
 # %%
 
@@ -58,11 +60,13 @@ basic_cnn_preds = model.predict(test_img_scaled)
 # getting intermidiate layres data/
 
 # this how we get intermedicate layers output form net work
-layer_name = 'dense_4'
+layer_name = 'max_pooling2d_2'
 
 intermediate_from_a = model.get_layer(layer_name).output
 
 intermediate_model = tf.keras.models.Model(inputs=model.input,outputs=intermediate_from_a)
+
+#%%
 intermediate_model.predict([test_img_scaled])
 
 
