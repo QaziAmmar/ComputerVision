@@ -16,37 +16,46 @@ import tensorflow.keras.backend as kb
 
 
 def focal_loss(labels, logits, alpha, gamma):
-    """Compute the focal loss between `logits` and the ground truth `labels`.
+  """Compute the focal loss between `logits` and the ground truth `labels`.
+  Focal loss = -alpha_t * (1-pt)^gamma * log(pt)
+  where pt is the probability of being classified to the true class.
+  pt = p (if true class), otherwise pt = 1 - p. p = sigmoid(logit).
+  Args:
+    labels: A float32 tensor of size [batch, num_classes].
+    logits: A float32 tensor of size [batch, num_classes].
+    alpha: A float32 tensor of size [batch_size]
+      specifying per-example weight for balanced cross entropy.
+    gamma: A float32 scalar modulating loss from hard and easy examples.
+  Returns:
+    focal_loss: A float32 scalar representing normalized total loss.
+  """
+  with tf.name_scope('focal_loss'):
+    logits = tf.cast(logits, dtype=tf.float32)
+    cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
+        labels=labels, logits=logits)
 
-    Focal loss = -alpha_t * (1-pt)^gamma * log(pt)
-    where pt is the probability of being classified to the true class.
-    pt = p (if true class), otherwise pt = 1 - p. p = sigmoid(logit).
+    # positive_label_mask = tf.equal(labels, 1.0)
+    # probs = tf.sigmoid(logits)
+    # probs_gt = tf.where(positive_label_mask, probs, 1.0 - probs)
+    # # With gamma < 1, the implementation could produce NaN during back prop.
+    # modulator = tf.pow(1.0 - probs_gt, gamma)
 
-    Args:
-      labels: A float tensor of size [batch, num_classes].
-      logits: A float tensor of size [batch, num_classes].
-      alpha: A float tensor of size [batch_size]
-        specifying per-example weight for balanced cross entropy.
-      gamma: A float scalar modulating loss from hard and easy examples.
-
-    Returns:
-      focal_loss: A float32 scalar representing normalized total loss.
-    """
-    BCLoss = F.binary_cross_entropy_with_logits(input=logits, target=labels, reduction="none")
-
+    # A numerically stable implementation of modulator.
     if gamma == 0.0:
-        modulator = 1.0
+      modulator = 1.0
     else:
-        modulator = torch.exp(-gamma * labels * logits - gamma * torch.log(1 +
-                                                                           torch.exp(-1.0 * logits)))
 
-    loss = modulator * BCLoss
+      modulator = tf.exp(-gamma * labels * logits - gamma * tf.compat.v1.log1p(
+          tf.exp(-1.0 * logits)))
+
+    loss = modulator * cross_entropy
 
     weighted_loss = alpha * loss
-    focal_loss = torch.sum(weighted_loss)
+    focal_loss = tf.reduce_sum(weighted_loss)
+    # Normalize by the total number of positive samples.
+    focal_loss /= tf.reduce_sum(labels)
+  return focal_loss
 
-    focal_loss /= torch.sum(labels)
-    return focal_loss
 
 
 def CB_loss(labels, logits, samples_per_cls, no_of_classes, loss_type, beta, gamma):
@@ -119,7 +128,7 @@ def tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, 
                                                                weights=tf.reduce_mean(weights, axis=1))
         tower_loss = tf.reduce_mean(tower_loss)
     elif loss_type == 'sigmoid':
-        tower_loss = weights * tf.compat.v1.losses.sigmoid_cross_entropy(labels=one_hot_labels, logits=logits)
+        tower_loss = weights * tf.compat.v1.losses.sigmoid_cross_entropy(one_hot_labels, logits=logits)
         # Normalize by the total number of positive samples.
         tower_loss = tf.reduce_sum(tower_loss) / tf.reduce_sum(one_hot_labels)
     elif loss_type == 'focal':
@@ -130,7 +139,7 @@ def tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, 
 
 
 def get_CB_loss(no_of_classes, samples_per_cls, labels, logits):
-    beta = 0.9999
+    beta = 0.99999
     gamma = 2.0
     loss_type = "softmax"
     cb_loss = tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, beta, gamma)

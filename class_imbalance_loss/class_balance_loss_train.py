@@ -4,7 +4,9 @@
 
 import os
 import tensorflow as tf
-import keras.backend as K
+import cv2
+from concurrent import futures
+import threading
 import numpy as np
 from collections import Counter
 from custom_classes import path, predefine_models, cv_iml, testing_models
@@ -46,11 +48,13 @@ def get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=1):
     return model
 
 
+def custom_loss(y_true, y_pred):
+    # calculate loss, using y_pred
+    loss = class_balanced_loss.get_CB_loss(number_of_classes, samples_per_cls, y_true, y_pred)
+    return loss
+
 def get_model(INPUT_SHAPE, classes=1):
-    def custom_loss(y_true, y_pred):
-        # calculate loss, using y_pred
-        loss = class_balanced_loss.get_CB_loss(number_of_classes, samples_per_cls, y_true, y_pred)
-        return loss
+
 
     inp = tf.keras.layers.Input(shape=INPUT_SHAPE)
 
@@ -98,15 +102,14 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
     base_out = base_vgg.output
     pool_out = tf.keras.layers.Flatten()(base_out)
     hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
-    drop1 = tf.keras.layers.Dropout(rate=0.4)(hidden1)
-    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(256, activation='relu')(drop1)
     drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
-    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
-
+    out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
     model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-5),
-                  loss=tf.losses.categorical_crossentropy,
+    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
+                  loss='binary_crossentropy',
                   metrics=['accuracy'])
     model.summary()
     # model.load_weights(save_weight_path)
@@ -116,8 +119,8 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 
-# save_weights_path = path.save_models_path + "binary_classification_test_CNN/pv_basicCNN_binary_2hiddenUnit.h5"
-# load_weights_path = path.save_models_path + "/binary_classification_test_CNN/vgg_2hidden_units/pv_vgg_binary_2hiddenUnit.h5"
+save_weights_path = path.save_models_path + "binary_classification_test_CNN/pv_vgg19_binary_cnn.h5"
+# load_weights_path =  path.save_models_path + "binary_classification_test_CNN/pv_vgg19_binary_cnn.h5"
 
 data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.v"
 
@@ -132,31 +135,6 @@ for num_of_imgs in Counter(train_labels).values():
 print(train_files.shape, val_files.shape, test_files.shape)
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
 
-# %%
-import cv2
-from concurrent import futures
-import threading
-
-
-def get_img_shape_parallel(idx, img, total_imgs):
-    if idx % 5000 == 0 or idx == (total_imgs - 1):
-        print('{}:working on img num {}'.format(threading.current_thread().name, idx))
-    return cv2.imread(img).shape
-
-
-ex = futures.ThreadPoolExecutor(max_workers=None)
-data_inp = [(idx, img, len(train_files)) for idx, img in enumerate(train_files)]
-print('Starting Img shape computation:')
-train_img_dims_map = ex.map(get_img_shape_parallel,
-                            [record[0] for record in data_inp],
-                            [record[1] for record in data_inp],
-                            [record[2] for record in data_inp])
-# this part of code is getting dimensions of all image and save in train_img_dims.
-train_img_dims = list(train_img_dims_map)
-print('Min Dimensions:', np.min(train_img_dims, axis=0))
-print('Average Dimensions: ', np.mean(train_img_dims, axis=0))
-print('Median Dimensions:', np.median(train_img_dims, axis=0))
-print('Max Dimensions:', np.max(train_img_dims, axis=0))
 
 # %%
 # Load image data and resize on 125, 125 pixel.
@@ -220,16 +198,16 @@ train_labels_enc = le.transform(train_labels)
 val_labels_enc = le.transform(val_labels)
 test_labels_enc = le.transform(test_labels)
 
-train_labels_enc = to_categorical(train_labels_enc, num_classes=number_of_classes)
-val_labels_enc = to_categorical(val_labels_enc, num_classes=number_of_classes)
-test_labels_enc = to_categorical(test_labels_enc, num_classes=number_of_classes)
+# train_labels_enc = to_categorical(train_labels_enc, num_classes=number_of_classes)
+# val_labels_enc = to_categorical(val_labels_enc, num_classes=number_of_classes)
+# test_labels_enc = to_categorical(test_labels_enc, num_classes=number_of_classes)
 
 print(train_labels[:6], train_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-# model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
-model = get_model(INPUT_SHAPE, classes=number_of_classes)
+model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
+# model = get_model(INPUT_SHAPE, classes=number_of_classes)
 
 # %%
 
@@ -255,7 +233,7 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
-# model.save(save_weights_path)
+model.save(save_weights_path)
 # model.load_weights(load_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
@@ -295,4 +273,6 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
-cv_iml.get_f1_score(test_labels, prediction_labels, pos_label='malaria', plot_confusion_matrix=True)
+cv_iml.get_f1_score(test_labels, prediction_labels,  binary_classifcation = True, pos_label='malaria',
+                    plot_confusion_matrix=True)
+

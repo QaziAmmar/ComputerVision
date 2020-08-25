@@ -215,7 +215,7 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
 
 # demonstration of calculating metrics for a neural network model using sklearn
 
-def get_f1_score(actual_labels, preds_labels, pos_label=1, plot_confusion_matrix=False):
+def get_f1_score(actual_labels, preds_labels,binary_classifcation ,pos_label=1, plot_confusion_matrix=False):
     """
     Calculate the F1 score of CNN prediction.
     This method works for both binary class and multiclass. For binary class you have to
@@ -230,7 +230,7 @@ def get_f1_score(actual_labels, preds_labels, pos_label=1, plot_confusion_matrix
     :return: this function return confusion matrix.
     """
     # demonstration of calculating metrics for a neural network model using sklearn
-    if pos_label == 1:
+    if not binary_classifcation:
         # For multiclass classification.
         accuracy = accuracy_score(actual_labels, preds_labels)
         precision = precision_score(actual_labels, preds_labels, pos_label=pos_label, average="weighted")
