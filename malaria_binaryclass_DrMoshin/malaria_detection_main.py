@@ -6,16 +6,16 @@ import os
 import tensorflow as tf
 import numpy as np
 from collections import Counter
-from custom_classes import path, predefine_models, cv_iml, testing_models
-from malaria_binaryclass_DrMoshin.image_loader import load_train_test_val_images_from
+from custom_classes import path, predefine_models, cv_iml
+from custom_classes.images_loader import *
 
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 
-save_weights_path = path.save_models_path + "binary_classification_test_CNN/pf_binary_basic.h5"
-load_weights_path = path.save_models_path + "binary_classification_test_CNN/cell_images_basic_cnn.h5"
+save_weights_path = path.save_models_path + "binary_classification_test_CNN/pf_plus_vgg19_binary_cnn.h5"
+load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pfplus_binary_basic_cnn.h5"
 
-data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f"
+data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f_plus_p.v"
 
 train_files, train_labels, test_files, test_labels,  val_files, val_labels = \
     load_train_test_val_images_from(data_set_base_path)
@@ -32,27 +32,6 @@ from concurrent import futures
 import threading
 
 
-def get_img_shape_parallel(idx, img, total_imgs):
-    if idx % 5000 == 0 or idx == (total_imgs - 1):
-        print('{}:working on img num {}'.format(threading.current_thread().name, idx))
-    return cv2.imread(img).shape
-
-
-ex = futures.ThreadPoolExecutor(max_workers=None)
-data_inp = [(idx, img, len(train_files)) for idx, img in enumerate(train_files)]
-print('Starting Img shape computation:')
-train_img_dims_map = ex.map(get_img_shape_parallel,
-                            [record[0] for record in data_inp],
-                            [record[1] for record in data_inp],
-                            [record[2] for record in data_inp])
-# this part of code is getting dimensions of all image and save in train_img_dims.
-train_img_dims = list(train_img_dims_map)
-print('Min Dimensions:', np.min(train_img_dims, axis=0))
-print('Average Dimensions: ', np.mean(train_img_dims, axis=0))
-print('Median Dimensions:', np.median(train_img_dims, axis=0))
-print('Max Dimensions:', np.max(train_img_dims, axis=0))
-
-# %%
 # Load image data and resize on 125, 125 pixel.
 IMG_DIMS = (125, 125)
 
@@ -163,8 +142,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
-model.save(save_weights_path)
-# model.load_weights(save_weights_path)
+# model.save(save_weights_path)
+model.load_weights(load_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -200,6 +179,6 @@ plt.show()
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
-cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels, pos_label="malaria")
+cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels,binary_classifcation=False ,pos_label="malaria")
 
 

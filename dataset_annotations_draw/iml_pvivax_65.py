@@ -19,7 +19,7 @@ path.make_folder_with(save_result_path)
 with open(annotation_path) as annotation_path:
     json_annotation = json.load(annotation_path)
 
-# convert Json object into python object
+# convert Json object into python objectf
 result = welcome_from_dict(json_annotation)
 # %%
 

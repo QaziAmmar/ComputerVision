@@ -148,32 +148,40 @@ def get_vgg_19_transfer_learning(INPUT_SHAPE, save_weight_path=None):
     return model
 
 
-def get_resnet50_transferLearning(INPUT_SHAPE, save_weight_path=None):
-    if save_weight_path is None:
+def get_resnet50_transferLearning(INPUT_SHAPE ,classes, include_top= False):
+
+    if include_top:
+        save_weight_path = path.save_models_path + "resnet50_weights_tf_dim_ordering_tf_kernels.h5"
+
+        resnet50 = tf.keras.applications.resnet50.ResNet50(include_top=True, weights=save_weight_path,
+                                                           input_shape=INPUT_SHAPE, classes=classes)
+        model = resnet50
+
+    else:
         save_weight_path = path.save_models_path + "resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5"
 
-    resnet50 = tf.keras.applications.resnet50.ResNet50(include_top=False, weights=save_weight_path,
-                                                       input_shape=INPUT_SHAPE)
-    resnet50.trainable = False
+        resnet50 = tf.keras.applications.resnet50.ResNet50(include_top=False, weights=save_weight_path,
+                                                           input_shape=INPUT_SHAPE)
+        resnet50.trainable = False
 
-    # Freeze the layers
+        # Freeze the layers
 
-    for layer in resnet50.layers:
-        layer.trainable = False
+        for layer in resnet50.layers:
+            layer.trainable = False
 
-    base_resnet50 = resnet50
-    base_out = base_resnet50.output
-    pool_out = tf.keras.layers.Flatten()(base_out)
-    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
-    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+        base_resnet50 = resnet50
+        base_out = base_resnet50.output
+        pool_out = tf.keras.layers.Flatten()(base_out)
+        hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+        drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+        hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+        drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
-    out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
-    model = tf.keras.Model(inputs=base_resnet50.input, outputs=out)
-    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
+        out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+        model = tf.keras.Model(inputs=base_resnet50.input, outputs=out)
+        model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
+                      loss=tf.losses.categorical_crossentropy,
+                      metrics=['accuracy'])
 
     model.summary()
     return model

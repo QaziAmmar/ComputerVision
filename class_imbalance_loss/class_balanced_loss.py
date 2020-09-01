@@ -139,8 +139,8 @@ def tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, 
 
 
 def get_CB_loss(no_of_classes, samples_per_cls, labels, logits):
-    beta = 0.99999
-    gamma = 2.0
+    beta = 0.9999
+    gamma = 0.5
     loss_type = "softmax"
     cb_loss = tensor_loss_func(labels, logits, samples_per_cls, no_of_classes, loss_type, beta, gamma)
     return cb_loss

@@ -8,6 +8,7 @@ import pandas as pd
 import glob
 import pathlib
 from custom_classes import path, cv_iml, predefine_models
+from class_imbalance_loss import class_balanced_loss
 from keras.utils import to_categorical
 import os
 
@@ -15,9 +16,10 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 # %%
 # Directory data
-data_dir = path.result_folder_path + "pvivax_malaria_cells/"
+
+data_dir = path.dataset_path + "IML_training_data/IML_multiclass_classification/p.v/"
 data_dir = pathlib.Path(data_dir)
-save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "basic_cnn_MC_TL.h5"
+save_weights_path = path.save_models_path + "IML_multiclass_CNN_experimtents/" + "basic_cnn_MC_TL.h5"
 # image_count = len(list(data_dir.glob('*/*.png')))
 #
 # print(image_count)
@@ -27,13 +29,12 @@ save_weights_path = path.save_models_path + "pvivax_malaria_multi_class/" + "bas
 
 # %%
 files_df = None
-np.random.seed(42)
 number_of_classes = 0
 for folder_name in data_dir.glob('*'):
     # '.DS_Store' file is automatically created by mac which we need to exclude form your code.
     if '.DS_Store' == str(folder_name).split('/')[-1]:
         continue
-    files_in_folder = glob.glob(str(folder_name) + '/*.png')
+    files_in_folder = glob.glob(str(folder_name) + '/*.JPG')
     df2 = pd.DataFrame({
         'filename': files_in_folder,
         'label': [folder_name.name] * len(files_in_folder)
@@ -43,8 +44,8 @@ for folder_name in data_dir.glob('*'):
         files_df = df2
     else:
         files_df = files_df.append(df2, ignore_index=True)
-
-files_df.sample(frac=1, random_state=42).reset_index(drop=True)
+# %%
+files_df = files_df.sample(frac=1).reset_index(drop=True)
 
 files_df.head()
 
@@ -71,28 +72,6 @@ import cv2
 from concurrent import futures
 import threading
 
-
-def get_img_shape_parallel(idx, img, total_imgs):
-    if idx % 5000 == 0 or idx == (total_imgs - 1):
-        print('{}:working on img num {}'.format(threading.current_thread().name, idx))
-    return cv2.imread(img).shape
-
-
-ex = futures.ThreadPoolExecutor(max_workers=None)
-data_inp = [(idx, img, len(train_files)) for idx, img in enumerate(train_files)]
-print('Starting Img shape computation:')
-train_img_dims_map = ex.map(get_img_shape_parallel,
-                            [record[0] for record in data_inp],
-                            [record[1] for record in data_inp],
-                            [record[2] for record in data_inp])
-# this part of code is getting dimensions of all image and save in train_img_dims.
-train_img_dims = list(train_img_dims_map)
-print('Min Dimensions:', np.min(train_img_dims, axis=0))
-print('Average Dimensions: ', np.mean(train_img_dims, axis=0))
-print('Median Dimensions:', np.median(train_img_dims, axis=0))
-print('Max Dimensions:', np.max(train_img_dims, axis=0))
-
-# %%
 # Load image data and resize on 125, 125 pixel.
 IMG_DIMS = (125, 125)
 
@@ -137,19 +116,6 @@ train_data.shape, val_data.shape, test_data.shape
 # %%
 import matplotlib.pyplot as plt
 
-plt.figure(1, figsize=(8, 8))
-n = 0
-
-for i in range(16):
-    n += 1
-    r = np.random.randint(0, train_data.shape[0], 1)
-    plt.subplot(4, 4, n)
-    plt.subplots_adjust(hspace=0.5, wspace=0.5)
-    plt.imshow(train_data[r[0]] / 255.)
-    plt.title('{}'.format(train_labels[r[0]]))
-    plt.xticks([]), plt.yticks([])
-plt.show()
-# %%
 BATCH_SIZE = 64
 NUM_CLASSES = 2
 EPOCHS = 25
@@ -176,8 +142,26 @@ test_labels_enc = to_categorical(test_labels_enc, num_classes=number_of_classes)
 print(train_labels[:6], train_labels_enc[:6])
 
 # %%
+# section for class balance loss count number of sample for each class in one hot label order
+samples_per_cls = list(np.zeros(number_of_classes))
+
+for train_item in Counter(train_labels).items():
+    class_name = train_item[0]
+    class_count = train_item[1]
+    label_enc = le.transform([class_name])
+    labe_index = int(label_enc)
+    samples_per_cls[labe_index] = class_count
 
 
+# %%
+# Custom loss function for class imbalance loss
+def custom_loss(y_true, y_pred):
+    # calculate loss, using y_pred
+    loss = class_balanced_loss.get_CB_loss(number_of_classes, samples_per_cls, y_true, y_pred)
+    return loss
+
+
+# %%
 model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
                                                    classes=number_of_classes)
 # model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False,
@@ -247,4 +231,4 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
-cv_iml.get_f1_score(test_labels, prediction_labels, plot_confusion_matrix=True)
+cv_iml.get_f1_score(test_labels, prediction_labels, binary_classifcation=False, plot_confusion_matrix=True)

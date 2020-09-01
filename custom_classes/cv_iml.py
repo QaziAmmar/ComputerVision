@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix
 from sklearn.metrics import roc_auc_score
 from skimage.util import random_noise
 
@@ -233,13 +233,14 @@ def get_f1_score(actual_labels, preds_labels,binary_classifcation ,pos_label=1, 
     if not binary_classifcation:
         # For multiclass classification.
         accuracy = accuracy_score(actual_labels, preds_labels)
-        precision = precision_score(actual_labels, preds_labels, pos_label=pos_label, average="weighted")
-        recall = recall_score(actual_labels, preds_labels, pos_label=pos_label, average="weighted")
-        f1 = f1_score(actual_labels, preds_labels, pos_label=pos_label, average="weighted")
+        precision = precision_score(actual_labels, preds_labels, average="weighted")
+        recall = recall_score(actual_labels, preds_labels, average="weighted")
+        f1 = f1_score(actual_labels, preds_labels, average="weighted")
         print('Accuracy: %f' % accuracy)
         print('Precision: %f' % precision)
         print('Recall: %f' % recall)
         print('F1 score: %f' % f1)
+
     else:
         accuracy = accuracy_score(actual_labels, preds_labels)
         print('Accuracy: %f' % accuracy)
@@ -259,7 +260,7 @@ def get_f1_score(actual_labels, preds_labels,binary_classifcation ,pos_label=1, 
     matrix = confusion_matrix(actual_labels, preds_labels)
     print(matrix)
     if plot_confusion_matrix:
-        show_confusion_matrix(matrix=matrix, labels=np.unique(actual_labels))
+        show_confusion_matrix(matrix=matrix, labels=list(np.unique(actual_labels)))
 
 
 def show_confusion_matrix(matrix, labels: None):
