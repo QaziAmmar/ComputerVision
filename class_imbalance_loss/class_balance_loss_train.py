@@ -8,10 +8,11 @@ from concurrent import futures
 import threading
 import numpy as np
 from collections import Counter
-from custom_classes import cv_iml
+from custom_classes import cv_iml, path
 from custom_classes.images_loader import *
 from class_imbalance_loss import class_balanced_loss
 from keras.utils import to_categorical
+from custom_classes.images_loader import *
 
 
 def get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=1):
@@ -116,11 +117,11 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 # load_weights_path =  path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pv_binary_basic_cnn.h5"
-save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/pv_woh_basic_binary_cnn.h5"
-data_set_base_path = path.dataset_path + "IML_training_data/IML_multiclass_without_healthy_train_test_seprerate/p.v"
+save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/pv_basic_binary_cnn.h5"
+data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.v"
 
 train_files, train_labels, test_files, test_labels, val_files, val_labels = \
-    load_train_test_val_images_for_multiclass_from(data_set_base_path)
+    load_train_test_val_images_from(data_set_base_path)
 
 # %%
 

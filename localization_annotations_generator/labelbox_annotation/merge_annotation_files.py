@@ -4,7 +4,7 @@
 This code merge 2 JSON annotation files into single file.
 """
 from custom_classes import path, cv_iml
-from dataset_annotations_draw.labelbox_annotation.labelbox_annotation_model import welcome_from_dict
+from localization_annotations_generator.labelbox_annotation.labelbox_annotation_model import welcome_from_dict
 import json
 import cv2
 import os

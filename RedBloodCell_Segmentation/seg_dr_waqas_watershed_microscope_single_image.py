@@ -143,7 +143,7 @@ def save_cells_annotation(annotated_img, labels):
         h = h + 15
         if (w < 70 or h < 70) or (w > 200 or h > 200):
             continue
-        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
         roi = original_image[y:y + h, x:x + w, :]
 
         #  Make JSON object to save annotation file.

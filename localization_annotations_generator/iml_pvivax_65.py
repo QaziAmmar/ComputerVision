@@ -1,7 +1,7 @@
 # //  Created by Qazi Ammar Arshad on 10/05/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 from custom_classes import path, cv_iml
-from dataset_annotations_draw.model_classes.iml_pvivax_65_model import welcome_from_dict
+from localization_annotations_generator.model_classes.iml_pvivax_65_model import welcome_from_dict
 from RedBloodCell_Segmentation.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
 import json
 import cv2

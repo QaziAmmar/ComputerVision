@@ -7,65 +7,32 @@ import numpy as np
 import pandas as pd
 import glob
 import pathlib
+import matplotlib.pyplot as plt
+from collections import Counter
 from custom_classes import path, cv_iml, predefine_models
+from custom_classes.images_loader import *
 from class_imbalance_loss import class_balanced_loss
 from keras.utils import to_categorical
 import os
-
+# Achieving peak performance requires an efficient input pipeline that delivers data
+# for the next step before the current step has finished
 AUTOTUNE = tf.data.experimental.AUTOTUNE
+
 
 # %%
 # Directory data
 
-data_dir = path.dataset_path + "IML_training_data/IML_multiclass_classification/p.v/"
-data_dir = pathlib.Path(data_dir)
-save_weights_path = path.save_models_path + "IML_multiclass_CNN_experimtents/" + "basic_cnn_MC_TL.h5"
-# image_count = len(list(data_dir.glob('*/*.png')))
-#
-# print(image_count)
+data_dir = path.dataset_path + "BBBC041/BBBC041_train_test_separate/"
+# data_dir = pathlib.Path(data_dir)
+save_weights_path = path.save_models_path + "BBBC041/resnet50_finetune_pvivax.h5"
 
-# CLASS_NAMES = np.array([item.name for item in data_dir.glob('*') if item.name != ".DS_Store"])
-# print(CLASS_NAMES)
+train_files, train_labels, test_files, test_labels, val_files, val_labels = \
+    load_train_test_val_images_from(data_dir,file_extension=".png")
 
 # %%
-files_df = None
-number_of_classes = 0
-for folder_name in data_dir.glob('*'):
-    # '.DS_Store' file is automatically created by mac which we need to exclude form your code.
-    if '.DS_Store' == str(folder_name).split('/')[-1]:
-        continue
-    files_in_folder = glob.glob(str(folder_name) + '/*.JPG')
-    df2 = pd.DataFrame({
-        'filename': files_in_folder,
-        'label': [folder_name.name] * len(files_in_folder)
-    })
-    number_of_classes += 1
-    if files_df is None:
-        files_df = df2
-    else:
-        files_df = files_df.append(df2, ignore_index=True)
-# %%
-files_df = files_df.sample(frac=1).reset_index(drop=True)
-
-files_df.head()
-
-# %%
-from sklearn.model_selection import train_test_split
-from collections import Counter
-
-# Generating tanning and testing data.
-train_files, test_files, train_labels, test_labels = train_test_split(files_df['filename'].values,
-                                                                      files_df['label'].values,
-                                                                      test_size=0.2,
-                                                                      random_state=42)
-# Generating validation data form tanning data.
-train_files, val_files, train_labels, val_labels = train_test_split(train_files,
-                                                                    train_labels,
-                                                                    test_size=0.2,
-                                                                    random_state=42)
-
-print(train_files.shape, val_files.shape, test_files.shape)
+# show the number of train, test and val files in dataset folder
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
+
 
 # %%
 import cv2
@@ -114,7 +81,24 @@ test_data = np.array(list(test_data_map))
 train_data.shape, val_data.shape, test_data.shape
 
 # %%
+# show load data
 import matplotlib.pyplot as plt
+
+plt.figure(1, figsize=(8, 8))
+n = 0
+
+for i in range(16):
+    n += 1
+    r = np.random.randint(0, train_data.shape[0], 1)
+    plt.subplot(4, 4, n)
+    plt.subplots_adjust(hspace=0.5, wspace=0.5)
+    plt.imshow(train_data[r[0]] / 255.)
+    plt.title('{}'.format(train_labels[r[0]]))
+    plt.xticks([]), plt.yticks([])
+plt.show()
+
+# %%
+number_of_classes = len(list(np.unique(train_labels)))
 
 BATCH_SIZE = 64
 NUM_CLASSES = 2
@@ -154,7 +138,8 @@ for train_item in Counter(train_labels).items():
 
 
 # %%
-# Custom loss function for class imbalance loss
+# Custom loss function for class imbalance loss, we need to make our predefine_model function as so that they can
+# take loss function as parameters.
 def custom_loss(y_true, y_pred):
     # calculate loss, using y_pred
     loss = class_balanced_loss.get_CB_loss(number_of_classes, samples_per_cls, y_true, y_pred)
@@ -162,18 +147,25 @@ def custom_loss(y_true, y_pred):
 
 
 # %%
-model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
-                                                   classes=number_of_classes)
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
+#                                                    classes=number_of_classes)
 # model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False,
 #                                                          classes=number_of_classes)
+model = predefine_models.get_resnet50(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+
+# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
+#                                               classes=number_of_classes)
+
+print("Total Layers:", len(model.layers))
+print("Total trainable layers:", sum([1 for l in model.layers if l.trainable]))
 # %%
 
 # Model training
 import datetime
 
-logdir = os.path.join(path.save_models_path,
+logdir = os.path.join(path.save_models_path + "/resnet50_BBBC041_checkpoints/",
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
+tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=0)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                                  patience=2, min_lr=0.000001)
 callbacks = [reduce_lr, tensorboard_callback]
@@ -190,8 +182,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 
-# model.save(save_weights_path)
-model.load_weights(save_weights_path)
+model.save(save_weights_path)
+# model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -232,3 +224,6 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
 cv_iml.get_f1_score(test_labels, prediction_labels, binary_classifcation=False, plot_confusion_matrix=True)
+
+
+

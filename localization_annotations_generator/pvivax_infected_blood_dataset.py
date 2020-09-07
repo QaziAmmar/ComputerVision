@@ -14,12 +14,12 @@ from custom_classes import path
 import json
 import cv2
 import os
-from dataset_annotations_draw.pvivax_model import Annotation_Model
+from localization_annotations_generator.pvivax_model import Annotation_Model
 
 # folder name can be healthy or malaria.
 # folder_name = "malaria/"
 # defining path for all images.
-dataset_path = path.dataset_path + "BBBC041/"
+dataset_path = path.dataset_path + "BBBC041/original_data/"
 images_path = dataset_path + "images/"
 train_image_annotation_path = dataset_path + "training.json"
 test_image_annotation_path = dataset_path + "test.json"
