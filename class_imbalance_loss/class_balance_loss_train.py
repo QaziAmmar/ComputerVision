@@ -9,10 +9,10 @@ import threading
 import numpy as np
 from collections import Counter
 from custom_classes import cv_iml, path
-from custom_classes.images_loader import *
+from custom_classes.dataset_loader import *
 from class_imbalance_loss import class_balanced_loss
 from keras.utils import to_categorical
-from custom_classes.images_loader import *
+from custom_classes.dataset_loader import *
 
 
 def get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=1):
@@ -121,7 +121,7 @@ save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/pv_basi
 data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.v"
 
 train_files, train_labels, test_files, test_labels, val_files, val_labels = \
-    load_train_test_val_images_from(data_set_base_path)
+    load_train_test_val_images_from(data_set_base_path, show_train_data=Fasle)
 
 # %%
 

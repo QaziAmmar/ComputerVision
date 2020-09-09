@@ -36,6 +36,26 @@ def image_show(img, cmap=None, suptitle=""):
     plt.show()
 
 
+def show_train_images(train_data, train_labels):
+    """
+    This function show 16 random images form train data.
+    :param train_data:
+    :return: None
+    """
+    plt.figure(1, figsize=(8, 8))
+    n = 0
+
+    for i in range(16):
+        n += 1
+        r = np.random.randint(0, train_data.shape[0], 1)
+        plt.subplot(4, 4, n)
+        plt.subplots_adjust(hspace=0.5, wspace=0.5)
+        plt.imshow(train_data[r[0]] / 255.)
+        plt.title('{}'.format(train_labels[r[0]]))
+        plt.xticks([]), plt.yticks([])
+    plt.show()
+
+
 def show_histogram(img, title=None):
     """
     version: 1.1
@@ -215,7 +235,7 @@ def get_image_patches_by_sliding_window(img, stepSize, window_size, overlapping)
 
 # demonstration of calculating metrics for a neural network model using sklearn
 
-def get_f1_score(actual_labels, preds_labels,binary_classifcation ,pos_label=1, plot_confusion_matrix=False):
+def get_f1_score(actual_labels, preds_labels, binary_classifcation, pos_label=1, plot_confusion_matrix=False):
     """
     Calculate the F1 score of CNN prediction.
     This method works for both binary class and multiclass. For binary class you have to

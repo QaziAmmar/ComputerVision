@@ -7,7 +7,7 @@ import tensorflow as tf
 import numpy as np
 from collections import Counter
 from custom_classes import path, predefine_models, cv_iml
-from custom_classes.images_loader import *
+from custom_classes.dataset_loader import *
 
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
@@ -18,7 +18,7 @@ load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/basicCN
 data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f_plus_p.v"
 
 train_files, train_labels, test_files, test_labels,  val_files, val_labels = \
-    load_train_test_val_images_from(data_set_base_path)
+    load_train_test_val_images_from(data_set_base_path, show_train_data=Fasle)
 
 
 # %%

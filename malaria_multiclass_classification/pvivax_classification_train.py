@@ -10,7 +10,7 @@ import pathlib
 import matplotlib.pyplot as plt
 from collections import Counter
 from custom_classes import path, cv_iml, predefine_models
-from custom_classes.images_loader import *
+from custom_classes.dataset_loader import *
 from class_imbalance_loss import class_balanced_loss
 from keras.utils import to_categorical
 import os
@@ -27,7 +27,7 @@ data_dir = path.dataset_path + "BBBC041/BBBC041_train_test_separate/"
 save_weights_path = path.save_models_path + "BBBC041/resnet50_finetune_pvivax.h5"
 
 train_files, train_labels, test_files, test_labels, val_files, val_labels = \
-    load_train_test_val_images_from(data_dir,file_extension=".png")
+    load_train_test_val_images_from(data_dir, file_extension=".png", show_train_data=Fasle)
 
 # %%
 # show the number of train, test and val files in dataset folder
