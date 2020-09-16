@@ -9,10 +9,11 @@ import json
 import cv2
 import os
 
-
 # folder base path.
-folder_base_path = path.dataset_path + "IML_loclization_final/p.f/"
-final_annotation_path = folder_base_path + "pf_loclization_annotation_code_plus_labelbox.json"
+
+folder_base_path = path.dataset_path + "IML_binary_classification_final/p.f/"
+final_annotation_path = folder_base_path + "rbc_binary_classification_json/pf_binary_classification_annotation.json"
+save_cells_path = path.dataset_path + "IML_training_data/binary_classifcation/p.f_new/"
 # read json file
 with open(final_annotation_path) as annotation_path:
     final_annotaion = json.load(annotation_path)
@@ -39,9 +40,13 @@ for image_annotation in final_annotaion:
         y = int(point['y'])
         h = int(point['h'])
         w = int(point['w'])
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        # roi = image[y:y + h, x:x + w]
-        # cell_name = img_name[:-4] + "_" + str(counter) + ".JPG"
+        category = point['category']
+        if category == 'malaria':
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        else:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        roi = image[y:y + h, x:x + w]
+        cell_name = img_name[:-4] + "_" + str(counter) + ".JPG"
         # json_object.append({
         #     "cell_name": cell_name,
         #     "x": str(x),
@@ -50,11 +55,11 @@ for image_annotation in final_annotaion:
         #     "w": str(w),
         # })
 
-        # cv2.imwrite(folder_base_path + "rbc/" + cell_name, roi)
+        cv2.imwrite(save_cells_path + category + "/" + cell_name, roi)
         counter += 1
 
     #     save image annotated image
-    cv2.imwrite(folder_base_path + "final_images/" + img_name, img)
+    # cv2.imwrite(folder_base_path + "final_images/" + img_name, img)
     #   save cell location in json file.
     # json_dictionary.append({
     #     "image_name": img_name,

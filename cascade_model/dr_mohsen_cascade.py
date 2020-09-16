@@ -43,6 +43,11 @@ def get_basic_cnn_for_cascade(INPUT_SHAPE):
     conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
     pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
 
+    model = tf.keras.Model(inputs=inp, outputs=pool3)
+
+    model.load_weights(path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_no_top.h5")
+    pool3 = model.output
+
     flat = tf.keras.layers.Flatten()(pool3)
 
     hidden1 = tf.keras.layers.Dense(512, activation='relu')(flat)
@@ -73,7 +78,8 @@ def build_dr_mohsen_cascade(width, height, numOfMulticlassLbls, numOfBinaryClass
     INPUT_SHAPE = (height, width, 3)
     chanDim = -1
 
-    inp, drop2 = get_vgg_for_cascade(INPUT_SHAPE)
+    inp, drop2 = get_basic_cnn_for_cascade(INPUT_SHAPE)
+    # inp, drop2 = get_vgg_for_cascade(INPUT_SHAPE)
 
     # now separate multiclass networks
     multiclassBranch = build_multiclass_branch(drop2,

@@ -1,16 +1,22 @@
 # import the necessary packages
-from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
-import tensorflow as tf
-import numpy as np
-import argparse
-import imutils
 import pickle
-import cv2
 from custom_classes import path
+from cascade_model import dr_mohsen_cascade, fashionNet
 from custom_classes.dataset_loader import *
 
-save_model_path = path.save_models_path + "BBBC041/cascade.h5"
+
+def convert_multiclass_lbl_to_binary_lbl(multiclass_labels):
+    binary_label = []
+    for tempLabel in multiclass_labels:
+        if tempLabel == "healthy":
+            binary_label.append("healthy")
+        else:
+            binary_label.append("malaria")
+    return binary_label
+
+
+save_model_path = path.save_models_path + "BBBC041/loss_test.h5"
 path_to_binary_label = path.save_models_path + "label_encoder_path/binaryclass_lb.pickle"
 path_to_mutliclass_label = path.save_models_path + "label_encoder_path/multiclass_lb.pickle"
 
@@ -21,12 +27,35 @@ train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled,
 
 # %%
 
+#  converting labels to binary class labels.
+train_binary_labels = convert_multiclass_lbl_to_binary_lbl(train_labels)
+test_binary_labels = convert_multiclass_lbl_to_binary_lbl(test_labels)
+val_binary_labels = convert_multiclass_lbl_to_binary_lbl(val_labels)
+
+# convert binary_labels to numpy arrays.
+train_binary_labels = np.array(train_binary_labels)
+test_binary_labels = np.array(test_binary_labels)
+val_binary_labels = np.array(val_binary_labels)
+
+num_of_multiclass_labels = len(list(np.unique(train_labels)))
+num_of_binaryClass_labels = len(list(np.unique(train_binary_labels)))
+
+# %%
+
 # load the trained convolutional neural network from disk, followed
 # by the category and color label binarizers, respectively
 print("[INFO] loading network...")
-model = load_model(save_model_path, custom_objects={"tf": tf})
-categoryLB = pickle.loads(open(path_to_mutliclass_label, "rb").read())
-colorLB = pickle.loads(open(path_to_binary_label, "rb").read())
+model = dr_mohsen_cascade.build_dr_mohsen_cascade(125, 125,
+                                                  numOfMulticlassLbls=num_of_multiclass_labels,
+                                                  numOfBinaryClassLbls=num_of_binaryClass_labels,
+                                                  finalAct="softmax")
+# model = fashionNet.build(125, 125,
+#                          numOfMulticlassLbls=num_of_multiclass_labels,
+#                          numOfBinaryClassLbls=num_of_binaryClass_labels,
+#                          finalAct="softmax")
+model.load_weights(save_model_path)
+multiclassLE = pickle.loads(open(path_to_mutliclass_label, "rb").read())
+binaryLB = pickle.loads(open(path_to_binary_label, "rb").read())
 
 # %%
 
@@ -39,11 +68,14 @@ print("[INFO] classifying image...")
 # labels
 
 multiclass_preds = multiclass_Proba.argmax(1)
-multiclass_prediction_labels = categoryLB.inverse_transform(multiclass_preds)
-
-binary_preds = binary_Proba.argmax(1)
-binary_prediction_labels = colorLB.inverse_transform(binary_preds)
+multiclass_prediction_labels = multiclassLE.inverse_transform(multiclass_preds)
 
 cv_iml.get_f1_score(test_labels, multiclass_prediction_labels, binary_classifcation=False, pos_label='malaria',
                     plot_confusion_matrix=True)
 
+
+# binary_preds = binary_Proba.argmax(1)
+# binary_prediction_labels = binaryLB.inverse_transform(binary_preds)
+#
+# cv_iml.get_f1_score(test_binary_labels, binary_prediction_labels, binary_classifcation=True, pos_label='malaria',
+#                     plot_confusion_matrix=True)

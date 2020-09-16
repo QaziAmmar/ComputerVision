@@ -18,7 +18,7 @@ load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/basicCN
 data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f_plus_p.v"
 
 train_files, train_labels, test_files, test_labels,  val_files, val_labels = \
-    load_train_test_val_images_from(data_set_base_path, show_train_data=Fasle)
+    load_train_test_val_images_from(data_set_base_path, show_train_data=True)
 
 
 # %%

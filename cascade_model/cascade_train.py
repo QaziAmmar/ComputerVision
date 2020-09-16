@@ -7,6 +7,7 @@ from keras.utils import to_categorical
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.optimizers import Adam
 from cascade_model.dr_mohsen_cascade import build_dr_mohsen_cascade
+from cascade_model import fashionNet
 import matplotlib.pyplot as plt
 
 
@@ -25,25 +26,25 @@ def convert_multiclass_lbl_to_binary_lbl(multiclass_labels):
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 EPOCHS = 50
-INIT_LR = 1e-5
-BS = 32
+INIT_LR = 1e-3
+BS = 16
 
 # %% # grab the image paths and randomly shuffle them
-save_model_path = path.save_models_path + "BBBC041/cascade.h5"
+save_model_path = path.save_models_path + "BBBC041/loss_test.h5"
 
-data_dir = path.dataset_path + "BBBC041/BBBC041_train_test_separate/"
+data_dir = path.dataset_path + "BBBC041/loss_test2_folder/"
 # save_weights_path = path.save_models_path + "BBBC041/basic_cnn_loss_test.h5"
 
 train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
     load_train_test_val_images_from(data_dir, file_extension=".png", show_train_data=True)
 
 # %% make train images that fit on batch size
-extra_train_images = len(train_labels) % BS
-train_imgs_scaled = train_imgs_scaled[extra_train_images:]
-train_labels = train_labels[extra_train_images:]
-extra_val_images = len(val_labels) % BS
-val_imgs_scaled = val_imgs_scaled[extra_val_images:]
-val_labels = val_labels[extra_val_images:]
+# extra_train_images = len(train_labels) % BS
+# train_imgs_scaled = train_imgs_scaled[extra_train_images:]
+# train_labels = train_labels[extra_train_images:]
+# extra_val_images = len(val_labels) % BS
+# val_imgs_scaled = val_imgs_scaled[extra_val_images:]
+# val_labels = val_labels[extra_val_images:]
 
 # %%# show the number of train, test and val files in dataset folder
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
@@ -110,10 +111,10 @@ model = build_dr_mohsen_cascade(125, 125,
                                 numOfBinaryClassLbls=num_of_binaryClass_labels,
                                 finalAct="softmax")
 
-
-# define two dictionaries: one that specifies the loss method for
-# each output of the network along with a second dictionary that
-# specifies the weight per loss
+# model = fashionNet.build(125, 125,
+#                          numOfMulticlassLbls=num_of_multiclass_labels,
+#                          numOfBinaryClassLbls=num_of_binaryClass_labels,
+#                          finalAct="softmax")
 
 
 # def combined_loss(y_true, y_pred):
@@ -128,20 +129,19 @@ model = build_dr_mohsen_cascade(125, 125,
 
 
 def binary_loss(y_true, y_pred):
-    loss = tf.losses.binary_crossentropy(y_true, y_pred)
+    loss = tf.losses.categorical_crossentropy(y_true, y_pred)
     return loss
 
 
 def multi_loss(y_true, y_pred):
     my_loss = []
     for i in range(BS - 1):  # this will run in the range of the batch
-        if tf.argmax(y_pred[i]) == 1:  # tf.argmax
+        if tf.argmax(y_pred[i]) == 1:  # healthy
             # append to the my_loss
             tower_loss = tf.constant(0.0)
         else:
-            # append the special loss to my_loss
-            tower_loss = tf.compat.v1.losses.softmax_cross_entropy(y_true[i], y_pred[i])
-            # print(my_loss)
+            # malaria case
+            tower_loss = tf.losses.categorical_crossentropy(y_true[i], y_pred[i])
             # print(tower_loss.eval())
         my_loss.append(tower_loss)
     # convert the my_loss to tensor
@@ -176,7 +176,7 @@ H = model.fit(x=train_imgs_scaled,
               verbose=1)
 # save the model to disk
 print("[INFO] serializing network...")
-model.save(save_model_path, save_format="h5")
+model.save(save_model_path)
 
 # %%
 # save the category binarizer to disk
@@ -238,7 +238,7 @@ plt.show()
 # plt.savefig("{}_accs.png".format(args["plot"]))
 plt.close()
 
-#%%
+# %%
 # evulate test
 # classify the input image using Keras' multi-output functionality
 print("[INFO] classifying image...")

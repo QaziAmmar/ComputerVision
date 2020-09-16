@@ -10,8 +10,11 @@ import numpy as np
 from collections import Counter
 from custom_classes import cv_iml, path
 from custom_classes.dataset_loader import *
+import seaborn as sns
 from class_imbalance_loss import class_balanced_loss
 from keras.utils import to_categorical
+import matplotlib.pyplot as plt
+
 from custom_classes.dataset_loader import *
 
 
@@ -70,7 +73,7 @@ def get_model(INPUT_SHAPE, classes=1):
 
     out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
     model = tf.keras.Model(inputs=inp, outputs=out)
-    model.compile(optimizer='adam', loss=tf.losses.categorical_crossentropy, metrics=['accuracy'])
+    model.compile(optimizer='adam', loss=custom_loss, metrics=['accuracy'])
 
     model.summary()
     # model.load_weights(path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_cnn.h5")
@@ -78,6 +81,9 @@ def get_model(INPUT_SHAPE, classes=1):
 
 
 def get_vgg_model(INPUT_SHAPE, classes=2):
+    # these weights are trained on binary data and work fine
+    # save_weight_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_2hidden_units/pv_vgg_binary_notop.h5"
+
     save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
     vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
                                             weights=save_weight_path,
@@ -97,18 +103,18 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
     base_vgg = vgg
     base_out = base_vgg.output
     pool_out = tf.keras.layers.Flatten()(base_out)
-    hidden1 = tf.keras.layers.Dense(64, activation='relu')(pool_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
     drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-    hidden2 = tf.keras.layers.Dense(32, activation='relu')(drop1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
     drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
-    out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
     model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
 
     # opt = SGD(lr=0.00001)
     # # model.compile(loss="categorical_crossentropy", optimizer=opt)
     model.compile(optimizer="adam",
-                  loss=tf.losses.binary_crossentropy,
+                  loss=tf.losses.categorical_crossentropy,
                   metrics=['accuracy'])
     model.summary()
     return model
@@ -117,71 +123,27 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 # load_weights_path =  path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pv_binary_basic_cnn.h5"
-save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/pv_basic_binary_cnn.h5"
-data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.v"
 
-train_files, train_labels, test_files, test_labels, val_files, val_labels = \
-    load_train_test_val_images_from(data_set_base_path, show_train_data=Fasle)
+save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_19_binary_temp/pv_vgg_binary.h5"
+data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f/"
+
+INPUT_SHAPE = (125, 125, 3)
+
+train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
+    load_train_test_val_images_from(data_set_base_path, file_extension=".JPG", show_train_data=True)
 
 # %%
 
-print(train_files.shape, val_files.shape, test_files.shape)
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
-
-# %%
-# Load image data and resize on 125, 125 pixel.
-IMG_DIMS = (125, 125)
-
-
-def get_img_data_parallel(idx, img, total_imgs):
-    if idx % 5000 == 0 or idx == (total_imgs - 1):
-        print('{}: working on img num {}'.format(threading.current_thread().name, idx))
-    img = cv2.imread(img)
-    img = cv2.resize(img, dsize=IMG_DIMS, interpolation=cv2.INTER_CUBIC)
-    img = np.array(img, dtype=np.float32)
-
-    return img
-
-
-ex = futures.ThreadPoolExecutor(max_workers=None)
-train_data_inp = [(idx, img, len(train_files)) for idx, img in enumerate(train_files)]
-val_data_inp = [(idx, img, len(val_files)) for idx, img in enumerate(val_files)]
-test_data_inp = [(idx, img, len(test_files)) for idx, img in enumerate(test_files)]
-print('Loading Train Images:')
-train_data_map = ex.map(get_img_data_parallel,
-                        [record[0] for record in train_data_inp],
-                        [record[1] for record in train_data_inp],
-                        [record[2] for record in train_data_inp])
-train_data = np.array(list(train_data_map))
-
-print('\nLoading Validation Images:')
-val_data_map = ex.map(get_img_data_parallel,
-                      [record[0] for record in val_data_inp],
-                      [record[1] for record in val_data_inp],
-                      [record[2] for record in val_data_inp])
-val_data = np.array(list(val_data_map))
-
-print('\nLoading Test Images:')
-test_data_map = ex.map(get_img_data_parallel,
-                       [record[0] for record in test_data_inp],
-                       [record[1] for record in test_data_inp],
-                       [record[2] for record in test_data_inp])
-test_data = np.array(list(test_data_map))
-
-print("train, test and validation shape", train_data.shape, val_data.shape, test_data.shape)
 
 # %%
 # section for class balance loss
 number_of_classes = len(list(np.unique(train_labels)))
 
 BATCH_SIZE = 64
-NUM_CLASSES = 2
+NUM_CLASSES = number_of_classes
 EPOCHS = 25
-INPUT_SHAPE = (125, 125, 3)
 
-train_imgs_scaled = train_data / 255.
-val_imgs_scaled = val_data / 255.
-test_imgs_scaled = test_data / 255.
 
 # encode text category labels
 from sklearn.preprocessing import LabelEncoder
@@ -212,11 +174,12 @@ for train_item in Counter(train_labels).items():
 
 # %%
 # load model according to your choice.
-# model = get_vgg_model(INPUT_SHAPE, classes=1)
-model = get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=number_of_classes)
+model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
+# model = get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=number_of_classes)
 # model = get_model(INPUT_SHAPE, classes=number_of_classes)
 
-# %%
+
+#%%
 
 import datetime
 
@@ -276,7 +239,7 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 # # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
-cv_iml.get_f1_score(test_labels, prediction_labels, binary_classifcation=False, pos_label='malaria',
+cv_iml.get_f1_score(test_labels, prediction_labels, binary_classifcation=True, pos_label='malaria',
                     plot_confusion_matrix=True)
 
 # Making predication labels for binary classification

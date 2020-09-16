@@ -6,7 +6,7 @@ import numpy as np
 from custom_classes import path
 import matplotlib.pyplot as plt
 import imutils
-
+import pandas
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
@@ -47,11 +47,12 @@ def show_train_images(train_data, train_labels):
 
     for i in range(16):
         n += 1
-        r = np.random.randint(0, train_data.shape[0], 1)
+        # each time random images are loaded
+        # r = np.random.randint(0, train_data.shape[0], 1)
         plt.subplot(4, 4, n)
         plt.subplots_adjust(hspace=0.5, wspace=0.5)
-        plt.imshow(train_data[r[0]] / 255.)
-        plt.title('{}'.format(train_labels[r[0]]))
+        plt.imshow(train_data[i] / 255.)
+        plt.title('{}'.format(train_labels[i]))
         plt.xticks([]), plt.yticks([])
     plt.show()
 
@@ -435,3 +436,20 @@ def augment_image(images_folder_path, file_extension, rotation=True, flipping=Tr
         if counter % 50 == 0:
             print(counter)
         counter = counter + 1
+
+
+def hist_of_label_count(dataList):
+    """
+    This function take the list of input data and plot the histogram of count for each unique
+    label in dataList
+    :param dataList: list for ploting data
+    :return: NONE
+    """
+    # thses imporst are only required for this function
+    import pandas
+    from collections import Counter
+    # end section of import
+    counts = Counter(dataList)
+    df = pandas.DataFrame.from_dict(counts, orient='index')
+    df.plot(kind='bar')
+    plt.show()

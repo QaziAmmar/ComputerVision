@@ -122,3 +122,4 @@ def load_train_test_val_images_from(folder_path, file_extension=".JPG", show_tra
     test_imgs_scaled = test_data / 255.
 
     return train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels
+    # return train_files, train_labels, test_files, test_labels, val_files, val_labels

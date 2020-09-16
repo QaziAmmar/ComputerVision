@@ -6,11 +6,12 @@
 import numpy as np
 import pandas as pd
 import glob
-from custom_classes import path, cv_iml, predefine_models
+from custom_classes import path
 import pathlib
 import cv2
 # Directory data
-data_dir = path.dataset_path + "BBBC041_train_test_val/"
+images_extension = ".JPG"
+data_dir = path.dataset_path + "IML_training_data/binary_classifcation/p.f/"
 data_dir = pathlib.Path(data_dir)
 
 # %%
@@ -19,7 +20,7 @@ for folder_name in data_dir.glob('*'):
     # '.DS_Store' this hidden file is automatically created by mac/windows which we need to exclude form your data.
     if '.DS_Store' == str(folder_name).split('/')[-1]:
         continue
-    files_in_folder = glob.glob(str(folder_name) + '/*.png')
+    files_in_folder = glob.glob(str(folder_name) + '/*' + images_extension)
     df2 = pd.DataFrame({
         'filename': files_in_folder,
         'label': [folder_name.name] * len(files_in_folder)
@@ -52,7 +53,7 @@ print(train_files.shape, val_files.shape, test_files.shape)
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
 
 # %%
-base_train_test_path = path.dataset_path + "BBBC041_train_test_sperate/"
+base_train_test_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f/"
 # save train data
 train_folder = base_train_test_path + "train/"
 # save test data
