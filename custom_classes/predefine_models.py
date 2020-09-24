@@ -184,11 +184,11 @@ def get_resnet50(INPUT_SHAPE, classes):
     return model
 
 
-def get_dennet121_transfer_learning(INPUT_SHAPE, save_weight_path=None, binary_classification=True,
-                                    classes=1):
-    if save_weight_path is None:
-        save_weight_path = path.save_models_path + "densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5"
+def get_dennet121_transfer_learning(INPUT_SHAPE, classes=2):
 
+    save_weight_path = path.save_models_path + "densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5"
+    # binary_weights_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/SavedModel/IML_binary_CNN_experimtents" \
+    #                       "/vgg_19_binary_temp/pfPlusPv/pv_densnet_binary_no_top.h5"
     # Model
     dn121 = tf.keras.applications.DenseNet121(weights=save_weight_path, include_top=False, input_shape=INPUT_SHAPE)
     dn121.trainable = False
@@ -205,20 +205,15 @@ def get_dennet121_transfer_learning(INPUT_SHAPE, save_weight_path=None, binary_c
     hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
     drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
-    if binary_classification:
-        out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
-        model = tf.keras.Model(inputs=base_dn121.input, outputs=out)
-        model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
-                      loss='binary_crossentropy',
-                      metrics=['accuracy'])
-    else:
+    # temp_model = tf.keras.Model(inputs=base_dn121.input, outputs=drop2)
+    # temp_model.load_weights(binary_weights_path)
 
-        out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
-        model = tf.keras.Model(inputs=base_dn121.input, outputs=out)
-        model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
-                      loss='categorical_crossentropy',
-                      metrics=['accuracy'])
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=dn121.input, outputs=out)
+    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
 
-    model.summary()
+    # model.summary()
 
     return model

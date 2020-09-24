@@ -6,8 +6,8 @@
 from custom_classes import path
 import os
 
-healthy_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/IML_training_data/binary_classifcation/p.f/healthy/"
-malaria_healthy = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/IML_training_data/binary_classifcation/p.f/malaria_healthy/"
+healthy_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/IML_training_data/binary_classifcation/pfpv_new/healthy/"
+malaria_healthy = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/IML_training_data/binary_classifcation/pfpv_new/malaria"
 
 
 healthy_files_name = path.read_all_files_name_from(healthy_path, ".JPG")
@@ -16,6 +16,7 @@ malaria_healthy_files_name = path.read_all_files_name_from(malaria_healthy, ".JP
 #%% check unique files name in these folders
 
 unique_file_name = set(healthy_files_name) & set(malaria_healthy_files_name)
+print(len(unique_file_name))
 
 #%%
 for img in unique_file_name:

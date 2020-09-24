@@ -2,7 +2,7 @@
 
 # Dont remove this code.
 
-from custom_classes import path
+from custom_classes import path, predefine_models
 from keras.models import Model
 import tensorflow as tf
 import cv2
@@ -71,10 +71,11 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
 
 
 INPUT_SHAPE = (125, 125, 3)
-model = get_vgg_model(INPUT_SHAPE)
+# model = get_vgg_model(INPUT_SHAPE)
+model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
 
-load_weight_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_2hidden_units/pv_vgg_binary_2hiddenUnit.h5"
-save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_2hidden_units/pv_vgg_binary_notop.h5"
+load_weight_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_19_binary_temp/pfPlusPv/pfpv_densnet_binaryClassification.h5"
+save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_19_binary_temp/pfPlusPv/pv_densnet_binary_no_top.h5"
 model.load_weights(load_weight_path)
 layer_name = 'block5_pool'
 #%%
@@ -98,7 +99,7 @@ basic_cnn_preds = model.predict(test_img_scaled)
 # getting intermidiate layres data/
 
 # this how we get intermedicate layers output form net work
-layer_name = 'block5_pool'
+layer_name = 'dense_1'
 
 intermediate_from_a = model.get_layer(layer_name).output
 

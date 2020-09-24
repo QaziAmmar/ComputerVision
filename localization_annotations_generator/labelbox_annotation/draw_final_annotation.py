@@ -11,9 +11,9 @@ import os
 
 # folder base path.
 
-folder_base_path = path.dataset_path + "IML_binary_classification_final/p.f/"
-final_annotation_path = folder_base_path + "rbc_binary_classification_json/pf_binary_classification_annotation.json"
-save_cells_path = path.dataset_path + "IML_training_data/binary_classifcation/p.f_new/"
+folder_base_path = path.dataset_path + "IML_binary_classification_final/p.f_plux_p.v/"
+final_annotation_path = folder_base_path + "rbc_binary_classification_json/pf_plus_binary_classification_annotation.json"
+save_cells_path = path.dataset_path + "IML_training_data/binary_classifcation/pfpv_new/"
 # read json file
 with open(final_annotation_path) as annotation_path:
     final_annotaion = json.load(annotation_path)
@@ -59,7 +59,7 @@ for image_annotation in final_annotaion:
         counter += 1
 
     #     save image annotated image
-    # cv2.imwrite(folder_base_path + "final_images/" + img_name, img)
+    cv2.imwrite(folder_base_path + "final_images/" + img_name, img)
     #   save cell location in json file.
     # json_dictionary.append({
     #     "image_name": img_name,

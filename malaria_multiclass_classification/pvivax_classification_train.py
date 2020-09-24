@@ -22,10 +22,10 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 # %%
 # Directory data
 
-data_dir = path.dataset_path + "BBBC041/BBBC041_train_test_separate/"
+data_dir = path.dataset_path + "BBBC041/train_test_val/"
 
-save_weights_path = path.save_models_path + "BBBC041/basic_cnn.h5"
-load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_cnn.h5"
+save_weights_path = path.save_models_path + "BBBC041/densenet_multiclass.h5"
+# load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_cnn.h5"
 
 train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
     load_train_test_val_images_from(data_dir, file_extension=".png", show_train_data=True)
@@ -84,13 +84,12 @@ def custom_loss(y_true, y_pred):
 # %%
 model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
                                                    classes=number_of_classes)
-# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, binary_classification=False,
-#                                                          classes=number_of_classes)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_resnet50(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
 
-# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
-#                                               classes=number_of_classes)
-
+model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
+                                              classes=number_of_classes)
+model.load_weights("/home/iml/Desktop/qazi/Model_Result_Dataset/SavedModel/IML_binary_CNN_experimtents/cell_images_basic_cnn.h5")
 print("Total Layers:", len(model.layers))
 print("Total trainable layers:", sum([1 for l in model.layers if l.trainable]))
 # %%

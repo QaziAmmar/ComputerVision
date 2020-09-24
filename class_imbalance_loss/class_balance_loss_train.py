@@ -8,7 +8,7 @@ from concurrent import futures
 import threading
 import numpy as np
 from collections import Counter
-from custom_classes import cv_iml, path
+from custom_classes import cv_iml, path, predefine_models
 from custom_classes.dataset_loader import *
 import seaborn as sns
 from class_imbalance_loss import class_balanced_loss
@@ -82,7 +82,7 @@ def get_model(INPUT_SHAPE, classes=1):
 
 def get_vgg_model(INPUT_SHAPE, classes=2):
     # these weights are trained on binary data and work fine
-    # save_weight_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_2hidden_units/pv_vgg_binary_notop.h5"
+    # save_weight_path= path.save_models_path + "IML_binary_CNN_experimtents/vgg_19_binary_temp/pv_vgg_binary_no_top.h5"
 
     save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
     vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
@@ -103,9 +103,9 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
     base_vgg = vgg
     base_out = base_vgg.output
     pool_out = tf.keras.layers.Flatten()(base_out)
-    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+    hidden1 = tf.keras.layers.Dense(16, activation='relu')(pool_out)
     drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    hidden2 = tf.keras.layers.Dense(8, activation='relu')(drop1)
     drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
     out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
@@ -120,17 +120,18 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
     return model
 
 
+# %%
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 # load_weights_path =  path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pv_binary_basic_cnn.h5"
 
-save_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/vgg_19_binary_temp/pv_vgg_binary.h5"
-data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f/"
 
+save_weights_path = path.save_models_path + "BBBC041/basic_multiclass.h5"
+data_set_base_path = path.dataset_path + "BBBC041/train_test_val/"
 INPUT_SHAPE = (125, 125, 3)
 
 train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
-    load_train_test_val_images_from(data_set_base_path, file_extension=".JPG", show_train_data=True)
+    load_train_test_val_images_from(data_set_base_path, file_extension=".png", show_train_data=True)
 
 # %%
 
@@ -144,7 +145,6 @@ BATCH_SIZE = 64
 NUM_CLASSES = number_of_classes
 EPOCHS = 25
 
-
 # encode text category labels
 from sklearn.preprocessing import LabelEncoder
 
@@ -154,7 +154,6 @@ le.fit(train_labels)
 train_labels_enc = le.transform(train_labels)
 val_labels_enc = le.transform(val_labels)
 test_labels_enc = le.transform(test_labels)
-
 train_labels_enc = to_categorical(train_labels_enc, num_classes=number_of_classes)
 val_labels_enc = to_categorical(val_labels_enc, num_classes=number_of_classes)
 test_labels_enc = to_categorical(test_labels_enc, num_classes=number_of_classes)
@@ -174,12 +173,14 @@ for train_item in Counter(train_labels).items():
 
 # %%
 # load model according to your choice.
-model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
-# model = get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=number_of_classes)
-# model = get_model(INPUT_SHAPE, classes=number_of_classes)
+model = get_cnn_pretrained_weights_model(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+# model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
+# model = predefine_models.get_resnet50(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, number_of_classes)
+# model.load_weights(path.save_models_path + "IML_binary_CNN_experimtents/vgg_2hidden_units"
+#                                            "/pf_plus_vgg_binary_2hiddenUnit.h5")
 
-
-#%%
+# %%
 
 import datetime
 
@@ -239,7 +240,7 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 # # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
-cv_iml.get_f1_score(test_labels, prediction_labels, binary_classifcation=True, pos_label='malaria',
+cv_iml.get_f1_score(test_labels, prediction_labels, binary_classifcation=False, pos_label='malaria',
                     plot_confusion_matrix=True)
 
 # Making predication labels for binary classification

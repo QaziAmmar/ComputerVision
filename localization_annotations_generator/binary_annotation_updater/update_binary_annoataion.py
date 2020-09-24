@@ -14,8 +14,8 @@ from custom_classes import path
 # name of folder where you want to find the images
 # folder base path
 
-final_annotation_path = path.dataset_path + "IML_binary_classification_final/p.f/rbc_binary_classification_json/pf_binary_classification_annotation.json"
-incorrected_classified_cells_path = path.dataset_path + "IML_binary_classification_final/p.f/malaria_healthy"
+final_annotation_path = path.dataset_path + "IML_binary_classification_final/p.f_plux_p.v/rbc_binary_classification_json/pf_plus_binary_classification_annotation.json"
+incorrected_classified_cells_path = path.dataset_path + "IML_binary_classification_final/p.f_plux_p.v/actual_malaria/"
 incorrect_files_name = path.read_all_files_name_from(incorrected_classified_cells_path, '.JPG')
 # read json file
 with open(final_annotation_path) as annotation_path:
@@ -64,12 +64,11 @@ for image_annotation in final_loclization_annotaion:
     })
 
 
-
 #%%
 print("saving annotation files in json")
 # save cell json file.
 # add the name of json file at the end in which you want to save the classification annotations.
-save_json_image_path = path.dataset_path + "IML_binary_classification_final/p.f/rbc_binary_classification_json/new_pf_binary_classification_annotation.json"
+save_json_image_path = path.dataset_path + "IML_binary_classification_final/p.f_plux_p.v/rbc_binary_classification_json/new_pf_plus_binary_classification_annotation.json"
 with open(save_json_image_path, "w") as outfile:
     json.dump(json_dictionary, outfile)
 
