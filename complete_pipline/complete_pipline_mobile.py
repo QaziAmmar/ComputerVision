@@ -17,7 +17,7 @@ from concurrent import futures
 from keras.utils import to_categorical
 from sklearn.preprocessing import LabelEncoder
 from custom_classes import path, cv_iml
-from RedBloodCell_Segmentation.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
+from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
 
 
 def get_basic_CNN_for_binary(INPUT_SHAPE):

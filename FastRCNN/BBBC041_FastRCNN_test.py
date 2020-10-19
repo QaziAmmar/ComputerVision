@@ -8,7 +8,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 import random
-import pprint
 import sys
 import time
 import numpy as np
@@ -17,7 +16,6 @@ import pickle
 import math
 import cv2
 import copy
-from matplotlib import pyplot as plt
 import tensorflow as tf
 import pandas as pd
 import os
@@ -37,11 +35,24 @@ from keras.models import Model
 from keras.utils import generic_utils
 from keras.engine import Layer, InputSpec
 from keras import initializers, regularizers
+from custom_classes import cv_iml
+import matplotlib.pyplot as plt
+
+from itertools import cycle
+
+from sklearn import svm, datasets
+from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import label_binarize
+from sklearn.multiclass import OneVsRestClassifier
+from scipy import interpolate
+from sklearn.metrics import roc_auc_score
 
 
 #### Config setting
 
 # %%
+
 
 class Config:
 
@@ -1056,11 +1067,11 @@ def rpn_to_roi(rpn_layer, regr_layer, C, dim_ordering, use_regr=True, max_boxes=
 # %% #### Test Images and test annotation file paths
 
 
-base_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/'
+base_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/'
 
-test_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/test_annotation.txt'  # Test data (annotation file)
+test_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/test_annotations.txt'  # Test data (annotation file)
 
-test_base_path = base_path + 'images/'  # Directory to save the test images
+test_base_path = base_path + 'test/'  # Directory to save the test images
 
 config_output_filename = os.path.join(base_path, 'model_vgg_config.pickle')
 
@@ -1191,7 +1202,7 @@ model_rpn = Model(img_input, rpn_layers)
 model_classifier_only = Model([feature_map_input, roi_input], classifier)
 
 model_classifier = Model([feature_map_input, roi_input], classifier)
-model_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/model/model_frcnn_vgg.hdf5"
+model_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/model/model_frcnn_vgg.hdf5"
 print('Loading weights from {}'.format(model_path))
 model_rpn.load_weights(model_path, by_name=True)
 model_classifier.load_weights(model_path, by_name=True)
@@ -1208,11 +1219,10 @@ print(class_mapping)
 class_to_color = {class_mapping[v]: np.random.randint(0, 255, 3) for v in class_mapping}
 
 # %%
-
 test_imgs = os.listdir(test_base_path)
 
 imgs_path = []
-for i in range(12):
+for i in range(1):
     idx = np.random.randint(len(test_imgs))
     imgs_path.append(test_imgs[idx])
 
@@ -1220,10 +1230,8 @@ all_imgs = []
 
 classes = {}
 
-# %% md ##### Sample test images with bounding boxes using trained model weights.
-
-
-# If the box classification value is less than this, we ignore this box
+# %% Sample test images with bounding boxes using trained model weights. # If the box classification value is less
+# than this, we ignore this box
 bbox_threshold = 0.7
 
 for idx, img_name in enumerate(imgs_path):
@@ -1332,7 +1340,7 @@ for idx, img_name in enumerate(imgs_path):
     plt.figure(figsize=(10, 10))
     plt.grid()
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    cv2.imwrite("/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/test/" + img_name, img)
+    cv2.imwrite("/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/test_result/" + img_name, img)
     plt.show()
 
 
@@ -1383,7 +1391,6 @@ def get_map(pred, gt, f):
                 continue
 
         T[pred_class].append(int(found_match))
-
     for gt_box in gt:
         if not gt_box['bbox_matched']:  # and not gt_box['difficult']:
             if gt_box['class'] not in P:
@@ -1442,16 +1449,74 @@ def format_img_map(img, C):
     return img, fx, fy
 
 
-# %%
-
 print(class_mapping)
 
-# %%
 
-# This might takes a while to parser the data
+# show the result of each detected category.
+def count_matched_cell():
+    red_blood_cell_count = 0
+    ring_count = 0
+    trophozoite_count = 0
+    schizont_count = 0
+    difficult_count = 0
+    leukocyte_count = 0
+    gametocyte_count = 0
+
+    red_blood_cell_matched = 0
+    ring_matched = 0
+    trophozoite_matched = 0
+    schizont_matched = 0
+    difficult_matched = 0
+    leukocyte_matched = 0
+    gametocyte_matched = 0
+
+    for temp_img in test_imgs:
+        for temp_cell in temp_img['bboxes']:
+            if temp_cell['class'] == "difficult":
+                difficult_count += 1
+                if temp_cell['bbox_matched']:
+                    difficult_matched += 1
+            elif temp_cell['class'] == "ring":
+                ring_count += 1
+                if temp_cell['bbox_matched']:
+                    ring_matched += 1
+            elif temp_cell['class'] == "schizont":
+                schizont_count += 1
+                if temp_cell['bbox_matched']:
+                    schizont_matched += 1
+            elif temp_cell['class'] == "trophozoite":
+                trophozoite_count += 1
+                if temp_cell['bbox_matched']:
+                    trophozoite_matched += 1
+            elif temp_cell['class'] == "gametocyte":
+                gametocyte_count += 1
+                if temp_cell['bbox_matched']:
+                    gametocyte_matched += 1
+            elif temp_cell['class'] == "leukocyte":
+                leukocyte_count += 1
+                if temp_cell['bbox_matched']:
+                    leukocyte_matched += 1
+            elif temp_cell['class'] == "red blood cell":
+                red_blood_cell_count += 1
+                if temp_cell['bbox_matched']:
+                    red_blood_cell_matched += 1
+    print('Red blood cell %d/%d' % (red_blood_cell_matched, red_blood_cell_count))
+    print('trophozoite %d/%d' % (trophozoite_matched, trophozoite_count))
+    print('schizont %d/%d' % (schizont_matched, schizont_count))
+    print('difficult %d/%d' % (difficult_matched, difficult_count))
+    print('ring %d/%d' % (ring_matched, ring_count))
+    print('leukocyte %d/%d' % (leukocyte_matched, leukocyte_count))
+    print('gametocyte %d/%d' % (gametocyte_matched, gametocyte_count))
+
+
+# %% # This might takes a while to parser the data
+
 test_imgs, _, _ = get_data(test_path)
 
 # %% md ##### To calcualte Mean Average Precision for Test images based on the trained weights
+
+ROC_T = {}
+ROC_P = {}
 
 T = {}
 P = {}
@@ -1548,11 +1613,21 @@ for idx, img_data in enumerate(test_imgs):
             P[key] = []
         T[key].extend(t[key])
         P[key].extend(p[key])
+    # this for loop will add all true label and confidence into ROC arrays.
+    for key in t.keys():
+        if key not in ROC_T:
+            # print(key)
+            ROC_T[key] = []
+            ROC_P[key] = []
+        ROC_T[key] = (ROC_T[key] + t[key])
+        ROC_P[key] = (ROC_P[key] + p[key])
+    # end for loop will add all true label and confidence into ROC arrays.
     all_aps = []
     for key in T.keys():
         if key != 'bg' and key != 'leukocyte':
             # print(key)
             ap = average_precision_score(T[key], P[key])
+            # fpr, tpr, _ = roc_curve(T[key], P[key])
             print('{} AP: {}'.format(key, ap))
             all_aps.append(ap)
     print('mAP = {}'.format(np.mean(np.array(all_aps))))
@@ -1565,9 +1640,44 @@ print('mean average precision:', np.mean(np.array(mAPs)))
 
 # %%
 
+
 mAP = [mAP for mAP in mAPs if str(mAP) != 'nan']
 mean_average_prec = round(np.mean(np.array(mAP)), 3)
 print('After training %dk batches, the mean average precision is %0.3f' % (len(record_df), mean_average_prec))
+
+print("##########################################")
+
+count_matched_cell()
+
+print("Plotting ROC curve")
+
+fpr = dict()
+tpr = dict()
+roc_auc = dict()
+for key in T.keys():
+    fpr[key], tpr[key], _ = roc_curve(ROC_T[key], ROC_P[key])
+    roc_auc[key] = auc(fpr[key], tpr[key])
+
+# Plot all ROC curves
+plt.figure()
+lw = 2
+
+colors = ['aqua', 'darkorange', 'cornflowerblue', 'navy', 'deeppink', 'aqua', 'darkorange', 'cornflowerblue']
+color_counter = 0
+for key in ROC_T.keys():
+    plt.plot(list(fpr[key]), list(tpr[key]), color=colors[color_counter], lw=lw,
+             label='ROC curve of class {0} (area = {1:0.2f})'
+                   ''.format(key, roc_auc[key]))
+    color_counter += 1
+
+plt.plot([0, 1], [0, 1], 'k--', lw=lw)
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Some extension of Receiver operating characteristic to multi-class')
+plt.legend(loc="lower right")
+plt.show()
 
 # record_df.loc[len(record_df)-1, 'mAP'] = mean_average_prec
 # record_df.to_csv(C.record_path, index=0)

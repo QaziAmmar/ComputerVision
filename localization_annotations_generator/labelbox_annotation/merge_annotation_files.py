@@ -3,8 +3,8 @@
 """
 This code merge 2 JSON annotation files into single file.
 """
-from custom_classes import path, cv_iml
-from localization_annotations_generator.labelbox_annotation.labelbox_annotation_model import welcome_from_dict
+from custom_classes import path
+from localization_annotations_generator.labelbox_annotation.draw_labelbox_generated_annotation import welcome_from_dict
 import json
 import cv2
 import os
@@ -50,8 +50,9 @@ def check_point_in_array(point, array):
             return True
     return False
 
+
 # image_name = "IMG_4536.JPG"
-folder_base_path = path.dataset_path + "IML/IML_dataset/p.f/"
+folder_base_path = path.dataset_path + "chughati_slides_shalamar_annotated_complete/"
 
 label_box_annotation_path = folder_base_path + "pf_labelBox_annotation.json"
 code_annotation_path = folder_base_path + "code_annotation_json_files/"

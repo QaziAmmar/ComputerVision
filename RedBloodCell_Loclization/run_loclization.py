@@ -14,12 +14,12 @@ import cv2
 import json
 
 # base path of folder where images and annotaion are saved.
-folder_base_path = path.dataset_path + "IML_dataset/new_microcsope/p.v/"
+folder_base_path = path.dataset_path + "Shalamar_Captured_Malaria/"
 # path of folder where all images are save.
-original_images_path = folder_base_path + "100X_crop/"
+original_images_path = folder_base_path + "images/"
 # save annotaion path.
-save_annotation_path = folder_base_path + "code_annotation_file/"
-save_images_path = folder_base_path + "annotated_images/"
+# save_annotation_path = folder_base_path + "code_annotation_file/"
+save_images_path = folder_base_path + "loclization_results/"
 
 all_images_name = path.read_all_files_name_from(original_images_path, '.JPG')
 
@@ -32,6 +32,6 @@ for image_name in all_images_name:
 
     cv2.imwrite(save_images_path + image_name, annotated_img)
 
-    save_annotation_json = save_annotation_path + image_name.split('.')[0] + ".json"
-    with open(save_annotation_json, "a") as outfile:
-        json.dump(json_object, outfile)
+    # save_annotation_json = save_annotation_path + image_name.split('.')[0] + ".json"
+    # with open(save_annotation_json, "a") as outfile:
+    #     json.dump(json_object, outfile)

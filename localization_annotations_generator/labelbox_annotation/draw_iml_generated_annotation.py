@@ -11,9 +11,9 @@ import os
 
 # folder base path.
 
-folder_base_path = path.dataset_path + "IML_binary_classification_final/p.f_plux_p.v/"
-final_annotation_path = folder_base_path + "rbc_binary_classification_json/pf_plus_binary_classification_annotation.json"
-save_cells_path = path.dataset_path + "IML_training_data/binary_classifcation/pfpv_new/"
+folder_base_path = path.dataset_path + "chughati_slides_shalamar_annotated_complete/"
+final_annotation_path = folder_base_path + "pf_pv_binary.json"
+save_cells_path = folder_base_path + "binary_pf_plus_pv/"
 # read json file
 with open(final_annotation_path) as annotation_path:
     final_annotaion = json.load(annotation_path)
@@ -25,35 +25,29 @@ json_dictionary = []
 for image_annotation in final_annotaion:
     # we are testing on subset of images so first we check if images
     img_name = image_annotation["image_name"]
-    img_path = folder_base_path + "100X_crop/" + img_name
+    img_path = folder_base_path + "p.f_plus_p.v/" + img_name
     if not os.path.isfile(img_path):
         print("No file Found")
         continue
     print(img_name)
     # load image for testing either annotation are combining in correct way
-    img = cv2.imread(folder_base_path + "100X_crop/" + image_annotation["image_name"])
+    img = cv2.imread(folder_base_path + "p.f_plus_p.v/" + image_annotation["image_name"])
     image = img.copy()
     json_object = []
     counter = 1
-    for point in image_annotation["objects"]:
-        x = int(point['x'])
-        y = int(point['y'])
-        h = int(point['h'])
-        w = int(point['w'])
-        category = point['category']
+    for object in image_annotation["objects"]:
+        category = object["type"]
+        bbox = object["bbox"]
+        x = int(bbox['x'])
+        y = int(bbox['y'])
+        h = int(bbox['h'])
+        w = int(bbox['w'])
         if category == 'malaria':
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
         else:
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         roi = image[y:y + h, x:x + w]
         cell_name = img_name[:-4] + "_" + str(counter) + ".JPG"
-        # json_object.append({
-        #     "cell_name": cell_name,
-        #     "x": str(x),
-        #     "y": str(y),
-        #     "h": str(h),
-        #     "w": str(w),
-        # })
 
         cv2.imwrite(save_cells_path + category + "/" + cell_name, roi)
         counter += 1

@@ -1,10 +1,21 @@
 # //  Created by Qazi Ammar Arshad on 10/05/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
-from custom_classes import path, cv_iml
-from localization_annotations_generator.model_classes.iml_pvivax_65_model import welcome_from_dict
-from RedBloodCell_Segmentation.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
+"""
+# Link of dataset: https://www.kaggle.com/kmader/malaria-bounding-boxes
+
+######################### Description: #########################
+This file contains code that draw boxes on the cell annotated by LabelBox editor.
+"""
+
+
+
 import json
+
 import cv2
+
+from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
+from custom_classes import path
+from localization_annotations_generator.model_classes.iml_labelbox_model import welcome_from_dict
 
 # base path of folder where images and annotaion are saved.
 folder_base_path = path.dataset_path + "IML_PV_65/p.v/"

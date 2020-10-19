@@ -1,30 +1,28 @@
 # //  Created by Qazi Ammar Arshad on 01/10/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
+import os
+from collections import Counter
+
+import matplotlib.pyplot as plt
 # import the necessary packages
 import tensorflow as tf
-import numpy as np
-import pandas as pd
-import glob
-import pathlib
-import matplotlib.pyplot as plt
-from collections import Counter
-from custom_classes import path, cv_iml, predefine_models
-from custom_classes.dataset_loader import *
-from class_imbalance_loss import class_balanced_loss
 from keras.utils import to_categorical
-import os
+
+from class_imbalance_loss import class_balanced_loss
+from custom_classes import path, predefine_models
+from custom_classes.dataset_loader import *
+
 # Achieving peak performance requires an efficient input pipeline that delivers data
 # for the next step before the current step has finished
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-
 # %%
 # Directory data
 
-data_dir = path.dataset_path + "BBBC041/train_test_val/"
+data_dir = path.dataset_path + "BBBC041_ranking_lbl/"
 
-save_weights_path = path.save_models_path + "BBBC041/densenet_multiclass.h5"
+save_weights_path = path.save_models_path + "BBBC041/vgg19_woh.h5"
 # load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_cnn.h5"
 
 train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
@@ -34,15 +32,12 @@ train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled,
 # show the number of train, test and val files in dataset folder
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
 
-
 # %%
 number_of_classes = len(list(np.unique(train_labels)))
 
 BATCH_SIZE = 64
-NUM_CLASSES = 2
 EPOCHS = 25
 INPUT_SHAPE = (125, 125, 3)
-
 
 # encode text category labels
 from sklearn.preprocessing import LabelEncoder
@@ -82,14 +77,14 @@ def custom_loss(y_true, y_pred):
 
 
 # %%
-model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
-                                                   classes=number_of_classes)
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
+#                                                    classes=number_of_classes)
 # model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_resnet50(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
 
 model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
                                               classes=number_of_classes)
-model.load_weights("/home/iml/Desktop/qazi/Model_Result_Dataset/SavedModel/IML_binary_CNN_experimtents/cell_images_basic_cnn.h5")
+# model.load_weights("/home/iml/Desktop/qazi/Model_Result_Dataset/SavedModel/IML_binary_CNN_experimtents/cell_images_basic_cnn.h5")
 print("Total Layers:", len(model.layers))
 print("Total trainable layers:", sum([1 for l in model.layers if l.trainable]))
 # %%
@@ -102,9 +97,11 @@ logdir = os.path.join(path.save_models_path + "/resnet50_BBBC041_checkpoints/",
 tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=0)
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                                  patience=2, min_lr=0.000001)
-callbacks = [reduce_lr, tensorboard_callback]
+# This callback will stop the training when there is no improvement in
+# the validation loss for three consecutive epochs.
+earlyStop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
 
-
+callbacks = [reduce_lr, tensorboard_callback, earlyStop]
 
 history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
                     batch_size=BATCH_SIZE,
@@ -148,7 +145,6 @@ l2 = ax2.legend(loc="best")
 plt.show()
 
 # %%
-from sklearn.metrics import confusion_matrix
 
 # This portion need to be updated accoruding to multiclass
 # Model Performance Evaluation
@@ -156,7 +152,5 @@ basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 # Making prediction lables for multiclass
 basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
-cv_iml.get_f1_score(test_labels, prediction_labels, binary_classifcation=False, plot_confusion_matrix=True)
-
-
-
+cv_iml.get_f1_score(test_labels, prediction_labels, pos_label='malaria', binary_classifcation=False,
+                    plot_confusion_matrix=True)

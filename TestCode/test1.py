@@ -1,47 +1,130 @@
-# //  Created by Qazi Ammar Arshad on 30/06/2020.
-# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
+"""
+pytorch understanding practice example code.
+"""
+# importing the libraries
+import numpy as np
+import torch
+import torchvision
+import matplotlib.pyplot as plt
+from time import time
+from torchvision import datasets, transforms
+from torch import nn, optim
+from custom_classes import cv_iml
 
-# this is a test file that is use to plot the distribution of data.
-
-
-from custom_classes import path, cv_iml
-from collections import Counter
-import random
-import cv2
-from custom_classes.dataset_loader import load_train_test_val_images_from
-
-# name of folder where you want to find the images
-# folder base path
-
-data_set_base_path = path.dataset_path + "IML_training_data/IML_multiclass_healthy_after_first_stage/p.v"
-
-INPUT_SHAPE = (125, 125, 3)
-
-train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
-    load_train_test_val_images_from(data_set_base_path, file_extension=".JPG", show_train_data=True)
-
-# %%
-# print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
-print('Train:', Counter(train_labels) + Counter(val_labels) + Counter(test_labels))
-
+# version of pytorch
+print(torch.__version__)
 # %%
 
-cv_iml.hist_of_label_count(list(train_labels))
+# transformations to be applied on images
+transform = transforms.Compose([transforms.ToTensor(),
+                                transforms.Normalize((0.5,), (0.5,))])
+
+dataset_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/mnist"
+
+trainset = datasets.MNIST(root=dataset_path, download=True, train=True, transform=transform)
+testset = datasets.MNIST(root=dataset_path, download=True, train=False, transform=transform)
+
+# %%
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True)
+testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=True)
+
+dataiter = iter(trainloader)
+
+images, labels = dataiter.next()
+print(images.shape)
+print(labels.shape)
+
 
 # %%
 
-# randomly select train 227 files form the healthy
-# test selected items = 89
-# val selected items = 59
+# defining the model architecture
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
 
-healthy_folder_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/IML_training_data/IML_multiclass_healthy_after_first_stage/p.v/train/healthy/"
-healthy_cells = path.read_all_files_name_from(healthy_folder_path, ".JPG")
+        self.cnn_layers = nn.Sequential(
+            # Defining a 2D convolution layer
+            nn.Conv2d(1, 4, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(4),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            # Defining another 2D convolution layer
+            nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(4),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
 
-sampled_list = random.sample(healthy_cells, 2086)
+        self.linear_layers = nn.Sequential(
+            nn.Linear(4 * 7 * 7, 10)
+        )
 
-save_folder_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/IML_training_data/IML_multiclass_healthy_after_first_stage/p.v/train/new_healthy/"
+    # Defining the forward pass
+    def forward(self, x):
+        x = self.cnn_layers(x)
+        x = x.view(x.size(0), -1)
+        x = self.linear_layers(x)
+        return x
 
-for temp_img in sampled_list:
-    complete_path = healthy_folder_path + temp_img
-    img = cv2.imread(complete_path)
-    cv2.imwrite(save_folder_path + temp_img, img)
+
+# defining the model
+model = Net()
+# defining the optimizer
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+# defining the loss function
+criterion = nn.CrossEntropyLoss()
+# checking if GPU is available
+if torch.cuda.is_available():
+    model = model.cuda()
+    criterion = criterion.cuda()
+
+print(model)
+#%%
+
+for i in range(10):
+    running_loss = 0
+    for images, labels in trainloader:
+
+        if torch.cuda.is_available():
+            images = images.cuda()
+            labels = labels.cuda()
+
+        # Training pass
+        optimizer.zero_grad()
+
+        output = model(images)
+        loss = criterion(output, labels)
+
+        # This is where the model learns by backpropagation
+        loss.backward()
+
+        # And optimizes its weights here
+        optimizer.step()
+
+        running_loss += loss.item()
+    else:
+        print("Epoch {} - Training loss: {}".format(i + 1, running_loss / len(trainloader)))
+
+#%%
+
+
+correct_count, all_count = 0, 0
+for images, labels in testloader:
+    for i in range(len(labels)):
+        if torch.cuda.is_available():
+            images = images.cuda()
+            labels = labels.cuda()
+        img = images[i].view(1, 1, 28, 28)
+        with torch.no_grad():
+            logps = model(img)
+
+        ps = torch.exp(logps)
+        probab = list(ps.cpu()[0])
+        pred_label = probab.index(max(probab))
+        true_label = labels.cpu()[i]
+        if true_label == pred_label:
+            correct_count += 1
+        all_count += 1
+
+print("Number Of Images Tested =", all_count)
+print("\nModel Accuracy =", (correct_count / all_count))

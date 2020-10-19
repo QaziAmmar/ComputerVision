@@ -16,6 +16,21 @@ import threading
 from custom_classes import cv_iml
 
 
+def convert_multiclass_lbl_to_binary_lbl(multiclass_labels):
+    """
+    This function convert the multiclass labels into binary labels as healthy and malaria.
+    :param multiclass_labels: ['ring', 'schizont', ...]
+    :return: ['healthy', 'malaria']
+    """
+    binary_label = []
+    for tempLabel in multiclass_labels:
+        if tempLabel == "healthy":
+            binary_label.append("healthy")
+        else:
+            binary_label.append("malaria")
+    return binary_label
+
+
 def process_path(data_dir, file_extension=".JPG"):
     """
     This function go through the entire folder path and return all files in that folder.
@@ -57,7 +72,7 @@ def load_img_data_parallel(train_files, val_files, test_files):
             print('{}: working on img num {}'.format(threading.current_thread().name, idx))
         img = cv2.imread(img)
         img = cv2.resize(img, dsize=IMG_DIMS, interpolation=cv2.INTER_CUBIC)
-        img = np.array(img, dtype=np.float32)
+        img = np.array(img)
 
         return img
 
@@ -85,8 +100,6 @@ def load_img_data_parallel(train_files, val_files, test_files):
                            [record[1] for record in test_data_inp],
                            [record[2] for record in test_data_inp])
     test_data = np.array(list(test_data_map))
-
-    train_data.shape, val_data.shape, test_data.shape
 
     return train_data, val_data, test_data
 
@@ -116,10 +129,16 @@ def load_train_test_val_images_from(folder_path, file_extension=".JPG", show_tra
     if show_train_data:
         cv_iml.show_train_images(train_data, train_labels)
 
-    # Normalized input data.
+    # Normalized image data between 0 - 1
     train_imgs_scaled = train_data / 255.
     val_imgs_scaled = val_data / 255.
     test_imgs_scaled = test_data / 255.
 
+    # convert multiclass labels to binary labels.
+    # train_labels = convert_multiclass_lbl_to_binary_lbl(train_labels)
+    # test_labels = convert_multiclass_lbl_to_binary_lbl(test_labels)
+    # val_labels = convert_multiclass_lbl_to_binary_lbl(val_labels)
+
     return train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels
     # return train_files, train_labels, test_files, test_labels, val_files, val_labels
+

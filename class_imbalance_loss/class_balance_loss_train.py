@@ -27,10 +27,10 @@ def get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=1):
     pool2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv2)
     conv3 = tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
     pool3 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(conv3)
-    model = tf.keras.Model(inputs=inp, outputs=pool3)
-
-    model.load_weights(path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_no_top.h5")
-    pool3 = model.output
+    # model = tf.keras.Model(inputs=inp, outputs=pool3)
+    #
+    # model.load_weights(path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_no_top.h5")
+    # pool3 = model.output
 
     flat = tf.keras.layers.Flatten()(pool3)
 
@@ -40,7 +40,7 @@ def get_cnn_pretrained_weights_model(INPUT_SHAPE, classes=1):
     drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
     out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
-    model = tf.keras.Model(inputs=model.input, outputs=out)
+    model = tf.keras.Model(inputs=inp.input, outputs=out)
     model.compile(optimizer="adam", loss=tf.losses.categorical_crossentropy, metrics=['accuracy'])
 
     model.summary()
@@ -126,7 +126,7 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
 # load_weights_path =  path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pv_binary_basic_cnn.h5"
 
 
-save_weights_path = path.save_models_path + "BBBC041/basic_multiclass.h5"
+save_weights_path = path.save_models_path + "BBBC041/basic_CNN_binary.h5"
 data_set_base_path = path.dataset_path + "BBBC041/train_test_val/"
 INPUT_SHAPE = (125, 125, 3)
 
@@ -173,9 +173,9 @@ for train_item in Counter(train_labels).items():
 
 # %%
 # load model according to your choice.
-model = get_cnn_pretrained_weights_model(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+# model = get_cnn_pretrained_weights_model(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
 # model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
-# model = predefine_models.get_resnet50(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+model = predefine_models.get_resnet50(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, number_of_classes)
 # model.load_weights(path.save_models_path + "IML_binary_CNN_experimtents/vgg_2hidden_units"
 #                                            "/pf_plus_vgg_binary_2hiddenUnit.h5")

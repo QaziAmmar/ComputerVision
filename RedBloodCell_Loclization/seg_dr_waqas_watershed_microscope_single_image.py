@@ -17,7 +17,9 @@ import os.path
 import numpy as np
 from scipy import ndimage
 from skimage.feature import peak_local_max
-from skimage.morphology import watershed
+from custom_classes import cv_iml
+# from skimage.morphology import watershed
+from skimage.segmentation import watershed
 
 
 def preprocess_image(image, mean_gray):
@@ -34,16 +36,23 @@ def preprocess_image(image, mean_gray):
 
     # Remove the pixels which are very close to the mean. 60 is selected after watching a few images
     # mean_subtracted[mean_subtracted < 60] = 0
+    ret, thresh = cv2.threshold(imge_clahe, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    invert_thresh = cv2.bitwise_not(thresh)
     mean_subtracted[mean_subtracted < mean_subtracted.mean()] = 0
+    # for IML microscope kernal size is 12 for opening operation
+    # kernel = np.ones((12, 12), np.uint8)
     # to remove noise data form the image.
-    kernel = np.ones((12, 12), np.uint8)
+    kernel = np.ones((5, 5), np.uint8)
     mean_subtracted_open = cv2.morphologyEx(mean_subtracted, cv2.MORPH_OPEN, kernel)
 
-    # To separate connected cells, do the Erosion. The kernal parameters are randomly selected.
-    kernel = np.ones((6, 6), np.uint8)
-    forground_background_mask = cv2.erode(mean_subtracted_open, kernel)
 
-    return forground_background_mask
+    # To separate connected cells, do the Erosion. The kernal parameters are randomly selected.
+    # For IML images kernal size is 6
+    # kernel = np.ones((6, 6), np.uint8)
+    kernel = np.ones((4, 4), np.uint8)
+    forground_background_mask = cv2.erode(invert_thresh, kernel)
+
+    return invert_thresh
 
 
 def image_thresh_with_divide(image, num_of_parts):
@@ -141,7 +150,7 @@ def save_cells_annotation(annotated_img, labels):
             y = 0
         w = w + 15
         h = h + 15
-        if (w < 70 or h < 70) or (w > 200 or h > 200):
+        if (w < 65 or h < 65) or (w > 110 or h > 110):
             continue
         cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
         roi = original_image[y:y + h, x:x + w, :]
@@ -207,7 +216,9 @@ def get_mean_gray_image(img):
     # This function convert image into gray and the by applying opening morphological operation computer the mean image.
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # we need to computer the kernerl size by the ration of image size.
-    kernel = np.ones((250, 250), np.uint8)
+    #  for IML microscope images kernal size should be 250
+    # kernel = np.ones((250, 250), np.uint8)
+    kernel = np.ones((75, 75), np.uint8)
     mean_gray = cv2.morphologyEx(gray_img, cv2.MORPH_OPEN, kernel)
     return mean_gray
 
@@ -229,7 +240,8 @@ def get_detected_segmentaion(image_name):
 
     annotated_img = image.copy()
     forground_background_mask = preprocess_image(image.copy(), mean_gray)
-
+    base_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/Shalamar_Captured_Malaria/mask/"
+    cv2.imwrite(base_path+ image_name.split ('/')[-1], forground_background_mask)
     # find contours of newimg
     contours, hierarchy = cv2.findContours(forground_background_mask, cv2.RETR_TREE,
                                               cv2.CHAIN_APPROX_SIMPLE)

@@ -1,7 +1,6 @@
 # //  Created by Qazi Ammar Arshad on 20/03/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
-from custom_classes import path
 import json
 import cv2
 import os
@@ -10,9 +9,9 @@ import numpy as np
 from scipy import ndimage
 from skimage.feature import peak_local_max
 from skimage.morphology import watershed
-from custom_classes import path, cv_iml
+from custom_classes import path
 
-from localization_annotations_generator.pvivax_model import Annotation_Model, Objects, Bounding_box
+from localization_annotations_generator.BBBC041.pvivax_model import Annotation_Model
 
 
 # Link of dataset: https://www.kaggle.com/kmader/malaria-bounding-boxes

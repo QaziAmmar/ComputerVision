@@ -63,6 +63,7 @@ train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled,
 
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
 
+
 # %%
 # First complete the binary cycle
 
@@ -117,12 +118,12 @@ prediction_labels = le.inverse_transform(basic_cnn_preds)
 cv_iml.get_f1_score(binary_test_labels, prediction_labels, binary_classifcation=True, pos_label='malaria',
                     plot_confusion_matrix=True)
 
-#%%
+# %%
 # only chose those test images which are classified as malaria by binary cnn
 cnn_indicated_test_imgs_scaled = test_imgs_scaled[prediction_labels == "malaria"]
 cnn_indicated_test_labels = test_labels[prediction_labels == "malaria"]
 print(Counter(cnn_indicated_test_labels))
-#%%
+# %%
 # section for class balance loss
 number_of_classes = len(list(np.unique(train_labels)))
 
@@ -157,4 +158,3 @@ basic_cnn_preds = basic_cnn_preds.argmax(1)
 prediction_labels = le.inverse_transform(basic_cnn_preds)
 cv_iml.get_f1_score(cnn_indicated_test_labels, prediction_labels, binary_classifcation=False, pos_label='malaria',
                     plot_confusion_matrix=True)
-

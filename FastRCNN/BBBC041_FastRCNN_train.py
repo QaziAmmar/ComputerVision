@@ -1241,9 +1241,9 @@ def rpn_to_roi(rpn_layer, regr_layer, C, dim_ordering, use_regr=True, max_boxes=
 
 # %%
 
-base_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/'
+base_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/'
 
-train_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/train_annotations.txt'  # Training data (annotation file)
+train_path = '/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/train_annotations.txt'  # Training data (annotation file)
 
 num_rois = 4  # Number of RoIs to process at once.
 
@@ -2022,7 +2022,8 @@ for epoch_num in range(num_epochs):
             if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
                 mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor)) / len(rpn_accuracy_rpn_monitor)
                 rpn_accuracy_rpn_monitor = []
-                #                 print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length))
+                # print('Average number of overlapping bounding boxes from RPN = {} for {} previous
+                # iterations'.format(mean_overlapping_bboxes, epoch_length))
                 if mean_overlapping_bboxes == 0:
                     print(
                         'RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')

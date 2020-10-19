@@ -10,29 +10,28 @@ This code read both training.json and test.json files merge them, after that we 
 these files. Then we separate them on the base of their label.
 """
 
-from custom_classes import path
 import json
 import cv2
 import os
-from localization_annotations_generator.pvivax_model import Annotation_Model
+from localization_annotations_generator.BBBC041.pvivax_model import Annotation_Model
 
 # folder name can be healthy or malaria.
 # folder_name = "malaria/"
 # defining path for all images.
 
-dataset_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041/original_data/"
+dataset_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/"
 
 images_path = dataset_path + "images/"
 train_image_annotation_path = dataset_path + "training.json"
-# test_image_annotation_path = dataset_path + "test.json"
-save_crop_images_path = "/home/iml/Downloads/malaria/malaria/train/"
+test_image_annotation_path = dataset_path + "test.json"
+save_crop_images_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_self_annotated/"
 
 # Reading training json annotation path
 with open(train_image_annotation_path) as train_image_annotation_path:
     train_annotation = json.load(train_image_annotation_path)
 # Reading test json annotation path
-# with open(test_image_annotation_path) as test_image_annotation_path:
-#     test_annotation = json.load(test_image_annotation_path)
+with open(test_image_annotation_path) as test_image_annotation_path:
+    test_annotation = json.load(test_image_annotation_path)
 
 # %%
 # Parsing JSON data into python object for easy use. combine both test and train
@@ -42,8 +41,8 @@ python_annotations = []
 for annotation in train_annotation:
     python_annotations.append(Annotation_Model(annotation))
 #
-# for annotation in test_annotation:
-#     python_annotations.append(Annotation_Model(annotation))
+for annotation in test_annotation:
+    python_annotations.append(Annotation_Model(annotation))
 
 
 # %%
@@ -72,6 +71,7 @@ def separate_rbs(images_annotations, save_images_path):
         # '', 'images', '8d02117d-6c71-4e47-b50a-6cc8d5eb1d55.png']
         img = cv2.imread(images_path + image_name)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        original_img = img.copy()
         # counter variable to append with image name to uniquely save the image name.
         count = 0
         for object in image.objects:
@@ -109,8 +109,8 @@ def separate_rbs(images_annotations, save_images_path):
             cv2.imwrite(save_name, crop_image)
             count += 1
 #         save complete image with annotation
-#         folder_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041/original_data/train/"
-#         cv2.imwrite(folder_path + image_name, img)
+        folder_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/test/"
+        cv2.imwrite(folder_path + image_name, original_img)
 
 
 def change_extension_of_image(images_annotations):
