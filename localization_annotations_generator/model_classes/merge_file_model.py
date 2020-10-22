@@ -74,11 +74,14 @@ def to_float(x: Any) -> float:
 
 
 class CreatedBy(Enum):
+    MSCS18031_ITU_EDU_PK = "mscs18031@itu.edu.pk"
+    MUAAZ_ZAKRIA_ITU_EDU_PK = "muaaz.zakria@itu.edu.pk"
     SYED_JAVED_ITU_EDU_PK = "syed.javed@itu.edu.pk"
+    USAMA_IRFAN_ITU_EDU_PK = "usama.irfan@itu.edu.pk"
 
 
 class DatasetName(Enum):
-    SHALAMAR_MALARIA_SLIDES = "Shalamar Malaria Slides"
+    SHALAMAR_LOCALIZATION = "Shalamar Localization "
 
 
 class Bbox:
@@ -112,51 +115,27 @@ class Bbox:
 
 
 class Color(Enum):
-    A30059 = "#A30059"
-    FF34_FF = "#FF34FF"
-    FF4_A46 = "#FF4A46"
-    THE_006_FA6 = "#006FA6"
-    THE_008941 = "#008941"
     THE_1_CE6_FF = "#1CE6FF"
 
 
 class SchemaID(Enum):
-    CKGGBQ5_CU04_HJ0_Y7_ZFZEQ9_C16 = "ckggbq5cu04hj0y7zfzeq9c16"
-    CKGGBQ5_CV04_HL0_Y7_ZEAW6_EF0_M = "ckggbq5cv04hl0y7zeaw6ef0m"
-    CKGGBQ5_CV04_HN0_Y7_Z7_ROVFWWR = "ckggbq5cv04hn0y7z7rovfwwr"
-    CKGGBQ5_CV04_HP0_Y7_Z8_KK40_MI0 = "ckggbq5cv04hp0y7z8kk40mi0"
-    CKGGBQ5_CW04_HR0_Y7_Z2_TZFAA25 = "ckggbq5cw04hr0y7z2tzfaa25"
-    CKGGBQ5_CW04_HT0_Y7_ZE98_LFFZO = "ckggbq5cw04ht0y7ze98lffzo"
+    CKGHYMONU1_CJY0_Y94_BC5_TB10_S = "ckghymonu1cjy0y94bc5tb10s"
 
 
 class Title(Enum):
-    CONFUSED = "Confused"
-    DIFFICULT = "Difficult"
-    GAMETOCYTE = "Gametocyte"
-    RING = "Ring"
-    SCHIZONT = "Schizont"
-    TROPHOZOITE = "Trophozoite"
-
-
-class Value(Enum):
-    CONFUSED = "confused"
-    DIFFICULT = "difficult"
-    GAMETOCYTE = "gametocyte"
-    RING = "ring"
-    SCHIZONT = "schizont"
-    TROPHOZOITE = "trophozoite"
+    HEALTHY = "healthy"
 
 
 class Object:
     feature_id: str
     schema_id: SchemaID
     title: Title
-    value: Value
+    value: Title
     color: Color
     bbox: Bbox
     instance_uri: str
 
-    def __init__(self, feature_id: str, schema_id: SchemaID, title: Title, value: Value, color: Color, bbox: Bbox, instance_uri: str) -> None:
+    def __init__(self, feature_id: str, schema_id: SchemaID, title: Title, value: Title, color: Color, bbox: Bbox, instance_uri: str) -> None:
         self.feature_id = feature_id
         self.schema_id = schema_id
         self.title = title
@@ -171,7 +150,7 @@ class Object:
         feature_id = from_str(obj.get("featureId"))
         schema_id = SchemaID(obj.get("schemaId"))
         title = Title(obj.get("title"))
-        value = Value(obj.get("value"))
+        value = Title(obj.get("value"))
         color = Color(obj.get("color"))
         bbox = Bbox.from_dict(obj.get("bbox"))
         instance_uri = from_str(obj.get("instanceURI"))
@@ -182,7 +161,7 @@ class Object:
         result["featureId"] = from_str(self.feature_id)
         result["schemaId"] = to_enum(SchemaID, self.schema_id)
         result["title"] = to_enum(Title, self.title)
-        result["value"] = to_enum(Value, self.value)
+        result["value"] = to_enum(Title, self.value)
         result["color"] = to_enum(Color, self.color)
         result["bbox"] = to_class(Bbox, self.bbox)
         result["instanceURI"] = from_str(self.instance_uri)
@@ -212,7 +191,37 @@ class Label:
 
 
 class ProjectName(Enum):
-    SHALAMAR_CAPTURED_MALARIA = "Shalamar Captured Malaria"
+    SHALAMAR_BOUNDING_BOXES_LOCALIZATION = "Shalamar Bounding Boxes localization"
+
+
+class Review:
+    score: int
+    id: str
+    created_at: datetime
+    created_by: CreatedBy
+
+    def __init__(self, score: int, id: str, created_at: datetime, created_by: CreatedBy) -> None:
+        self.score = score
+        self.id = id
+        self.created_at = created_at
+        self.created_by = created_by
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'Review':
+        assert isinstance(obj, dict)
+        score = from_int(obj.get("score"))
+        id = from_str(obj.get("id"))
+        created_at = from_datetime(obj.get("createdAt"))
+        created_by = CreatedBy(obj.get("createdBy"))
+        return Review(score, id, created_at, created_by)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["score"] = from_int(self.score)
+        result["id"] = from_str(self.id)
+        result["createdAt"] = self.created_at.isoformat()
+        result["createdBy"] = to_enum(CreatedBy, self.created_by)
+        return result
 
 
 class WelcomeElement:
@@ -230,10 +239,10 @@ class WelcomeElement:
     benchmark_agreement: int
     benchmark_id: None
     dataset_name: DatasetName
-    reviews: List[Any]
+    reviews: List[Review]
     view_label: str
 
-    def __init__(self, id: str, data_row_id: str, labeled_data: str, label: Label, created_by: CreatedBy, project_name: ProjectName, created_at: datetime, updated_at: datetime, seconds_to_label: float, external_id: str, agreement: Optional[int], benchmark_agreement: int, benchmark_id: None, dataset_name: DatasetName, reviews: List[Any], view_label: str) -> None:
+    def __init__(self, id: str, data_row_id: str, labeled_data: str, label: Label, created_by: CreatedBy, project_name: ProjectName, created_at: datetime, updated_at: datetime, seconds_to_label: float, external_id: str, agreement: Optional[int], benchmark_agreement: int, benchmark_id: None, dataset_name: DatasetName, reviews: List[Review], view_label: str) -> None:
         self.id = id
         self.data_row_id = data_row_id
         self.labeled_data = labeled_data
@@ -264,11 +273,11 @@ class WelcomeElement:
         updated_at = from_datetime(obj.get("Updated At"))
         seconds_to_label = from_float(obj.get("Seconds to Label"))
         external_id = from_str(obj.get("External ID"))
-        agreement = from_union([from_int, from_none], obj.get("Agreement"))
+        agreement = from_union([from_none, from_int], obj.get("Agreement"))
         benchmark_agreement = from_int(obj.get("Benchmark Agreement"))
         benchmark_id = from_none(obj.get("Benchmark ID"))
         dataset_name = DatasetName(obj.get("Dataset Name"))
-        reviews = from_list(lambda x: x, obj.get("Reviews"))
+        reviews = from_list(Review.from_dict, obj.get("Reviews"))
         view_label = from_str(obj.get("View Label"))
         return WelcomeElement(id, data_row_id, labeled_data, label, created_by, project_name, created_at, updated_at, seconds_to_label, external_id, agreement, benchmark_agreement, benchmark_id, dataset_name, reviews, view_label)
 
@@ -284,11 +293,11 @@ class WelcomeElement:
         result["Updated At"] = self.updated_at.isoformat()
         result["Seconds to Label"] = to_float(self.seconds_to_label)
         result["External ID"] = from_str(self.external_id)
-        result["Agreement"] = from_union([from_int, from_none], self.agreement)
+        result["Agreement"] = from_union([from_none, from_int], self.agreement)
         result["Benchmark Agreement"] = from_int(self.benchmark_agreement)
         result["Benchmark ID"] = from_none(self.benchmark_id)
         result["Dataset Name"] = to_enum(DatasetName, self.dataset_name)
-        result["Reviews"] = from_list(lambda x: x, self.reviews)
+        result["Reviews"] = from_list(lambda x: to_class(Review, x), self.reviews)
         result["View Label"] = from_str(self.view_label)
         return result
 

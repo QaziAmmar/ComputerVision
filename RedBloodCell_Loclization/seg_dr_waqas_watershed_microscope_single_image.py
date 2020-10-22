@@ -36,23 +36,23 @@ def preprocess_image(image, mean_gray):
 
     # Remove the pixels which are very close to the mean. 60 is selected after watching a few images
     # mean_subtracted[mean_subtracted < 60] = 0
-    ret, thresh = cv2.threshold(imge_clahe, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    thresh = image_thresh_with_divide(gray, 8)
+    # ret, thresh = cv2.threshold(mean_subtracted, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     invert_thresh = cv2.bitwise_not(thresh)
-    mean_subtracted[mean_subtracted < mean_subtracted.mean()] = 0
+    # mean_subtracted[mean_subtracted < mean_subtracted.mean()] = 0
     # for IML microscope kernal size is 12 for opening operation
     # kernel = np.ones((12, 12), np.uint8)
-    # to remove noise data form the image.
+    # to fill the gap indise the cells data form the image.
     kernel = np.ones((5, 5), np.uint8)
-    mean_subtracted_open = cv2.morphologyEx(mean_subtracted, cv2.MORPH_OPEN, kernel)
+    mean_subtracted_open = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
-
-    # To separate connected cells, do the Erosion. The kernal parameters are randomly selected.
-    # For IML images kernal size is 6
+    # To separate connected cells, do the Erosion. The kernel parameters are randomly selected.
+    # For IML images kernel size is 6
     # kernel = np.ones((6, 6), np.uint8)
     kernel = np.ones((4, 4), np.uint8)
-    forground_background_mask = cv2.erode(invert_thresh, kernel)
+    forground_background_mask = cv2.erode(mean_subtracted_open, kernel)
 
-    return invert_thresh
+    return forground_background_mask
 
 
 def image_thresh_with_divide(image, num_of_parts):
@@ -60,7 +60,8 @@ def image_thresh_with_divide(image, num_of_parts):
     # and return binary mask.
     # divide image into 10 equal parts.
     img_clone = image
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = image
     darker = cv2.equalizeHist(gray)
 
     image_parts = num_of_parts
@@ -150,7 +151,7 @@ def save_cells_annotation(annotated_img, labels):
             y = 0
         w = w + 15
         h = h + 15
-        if (w < 65 or h < 65) or (w > 110 or h > 110):
+        if (w < 60 or h < 60) or (w > 130 or h > 130):
             continue
         cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
         roi = original_image[y:y + h, x:x + w, :]
@@ -240,7 +241,7 @@ def get_detected_segmentaion(image_name):
 
     annotated_img = image.copy()
     forground_background_mask = preprocess_image(image.copy(), mean_gray)
-    base_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/Shalamar_Captured_Malaria/mask/"
+    base_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/loclization_test/mask/"
     cv2.imwrite(base_path+ image_name.split ('/')[-1], forground_background_mask)
     # find contours of newimg
     contours, hierarchy = cv2.findContours(forground_background_mask, cv2.RETR_TREE,

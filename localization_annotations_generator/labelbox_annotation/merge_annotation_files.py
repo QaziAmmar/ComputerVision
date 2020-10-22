@@ -4,7 +4,7 @@
 This code merge 2 JSON annotation files into single file.
 """
 from custom_classes import path
-from localization_annotations_generator.labelbox_annotation.draw_labelbox_generated_annotation import welcome_from_dict
+from localization_annotations_generator.model_classes.merge_file_model import welcome_from_dict
 import json
 import cv2
 import os
@@ -52,56 +52,61 @@ def check_point_in_array(point, array):
 
 
 # image_name = "IMG_4536.JPG"
-folder_base_path = path.dataset_path + "chughati_slides_shalamar_annotated_complete/"
+folder_base_path = path.dataset_path + "Shalamar_Captured_Malaria/"
 
-label_box_annotation_path = folder_base_path + "pf_labelBox_annotation.json"
-code_annotation_path = folder_base_path + "code_annotation_json_files/"
+label_box_annotation_path = folder_base_path + "labelbox_generated_annotation/" \
+                                               "labelbox_annotation_on_code_generated_annotation.json"
+code_annotation_path = folder_base_path + "code_generated_annotation/code_generated_localization.json"
 
 json_dictionary = []
 
+# load label box generated annotations files
 with open(label_box_annotation_path) as annotation_path:
     label_box_json_annotation = json.load(annotation_path)
 
 # you need to change this "welcome_from_dict" class each time when you write new object.
 label_box_result_python_object_array = welcome_from_dict(label_box_json_annotation)
 
+# load code generated annotations .json files
+with open(code_annotation_path) as annotation_path:
+    code_generated_annotations = json.load(annotation_path)
+
+
 # %%
-
+counter = 0
 for label_box_result_python_object in label_box_result_python_object_array:
-
-    print(label_box_result_python_object.external_id)
+    if label_box_result_python_object.external_id == "PA171993.JPG":
+        continue
+    img_name = label_box_result_python_object.external_id
+    print(img_name)
     # load image for testing either annotation are combining in correct way
-    img = cv2.imread(folder_base_path + "100X_crop/" + label_box_result_python_object.external_id)
+    img = cv2.imread(folder_base_path + "images/" + img_name)
+    # save all points that are detected by code and labelbox.
     code_detected_points = []
     labelbox_points = []
-    # convert Json object into python object
-    code_annotation_jsonfile_path = code_annotation_path + \
-                                    label_box_result_python_object.external_id.split('.')[0] + ".json"
-    if not os.path.isfile(code_annotation_jsonfile_path):
-        print("No file Found")
-        continue
-    with open(code_annotation_jsonfile_path) as annotation_path:
-        code_annotaion_python_object = json.load(annotation_path)
 
-    for point in code_annotaion_python_object:
-        x = point['x']
-        y = point['y']
-        h = point['h']
-        w = point['w']
-        # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        code_detected_points.append([x, y, w, h])
+    code_generated_annotation_object = next((item for item in code_generated_annotations if item["image_name"] == img_name), None)
+    if code_generated_annotation_object is not None:
+        # if we found any None object the we move forward to label box loop.
+        for object in code_generated_annotation_object['objects']:
+            category = object["type"]
+            bbox = object["bbox"]
+            x = int(bbox['x'])
+            y = int(bbox['y'])
+            h = int(bbox['h'])
+            w = int(bbox['w'])
+            # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            code_detected_points.append([x, y, w, h])
     # draw annotation points on the image
-    if label_box_result_python_object.label.objects is None:
-        print("continue")
-        continue
-    for point in label_box_result_python_object.label.objects:
-        # getting points form the folder and draw it on the image
-        x = point.bbox.left
-        y = point.bbox.top
-        h = point.bbox.height
-        w = point.bbox.width
-        # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        labelbox_points.append([x, y, w, h])
+    if label_box_result_python_object.label.objects is not None:
+        for point in label_box_result_python_object.label.objects:
+            # getting points form the folder and draw it on the image
+            x = point.bbox.left
+            y = point.bbox.top
+            h = point.bbox.height
+            w = point.bbox.width
+            # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            labelbox_points.append([x, y, w, h])
 
     # %%
     matched_pointes_in_lablebox_bounding_boxes = []
@@ -156,11 +161,12 @@ for label_box_result_python_object in label_box_result_python_object_array:
         "image_name": label_box_result_python_object.external_id,
         "objects": json_object
     })
-    cv2.imwrite(folder_base_path + "final_images/" + label_box_result_python_object.external_id, img)
+    cv2.imwrite(folder_base_path + "loclization_results/" + label_box_result_python_object.external_id, img)
+    counter += 1
 
 # %%
-save_json_image_path = folder_base_path + "pv_CodePlusLabelBox_localization_annotation.json"
+save_json_image_path = folder_base_path + "code_plus_labelBox_annotation.json"
 with open(save_json_image_path, "w") as outfile:
     json.dump(json_dictionary, outfile)
 
-print("Code end")
+print("Code end with count", counter)
