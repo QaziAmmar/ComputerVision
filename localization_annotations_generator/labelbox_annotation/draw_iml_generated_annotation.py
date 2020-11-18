@@ -13,7 +13,7 @@ import os
 
 folder_base_path = path.dataset_path + "Shalamar_Captured_Malaria/"
 final_annotation_path = folder_base_path + "final_annotaion.json"
-save_cells_path = folder_base_path + "individual_cells/"
+# save_cells_path = folder_base_path + "individual_cells/"
 # read json file
 with open(final_annotation_path) as annotation_path:
     final_annotaion = json.load(annotation_path)
@@ -25,7 +25,7 @@ json_dictionary = []
 for image_annotation in final_annotaion:
     # we are testing on subset of images so first we check if images
     img_name = image_annotation["image_name"]
-    img_path = folder_base_path + "images/" + img_name
+    img_path = folder_base_path + "original_images/" + img_name
     if not os.path.isfile(img_path):
         print("No file Found")
         continue
@@ -43,13 +43,13 @@ for image_annotation in final_annotaion:
         h = int(bbox['h'])
         w = int(bbox['w'])
         if category == 'red blood cell':
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 7)
         else:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 7)
         roi = image[y:y + h, x:x + w]
         cell_name = img_name[:-4] + "_" + str(counter) + ".JPG"
 
-        cv2.imwrite(save_cells_path + category + '/' + cell_name, roi)
+        # cv2.imwrite(save_cells_path + category + '/' + cell_name, roi)
         counter += 1
 
     #     save image annotated image

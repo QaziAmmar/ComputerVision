@@ -80,42 +80,36 @@ def get_model(INPUT_SHAPE, classes=1):
     return model
 
 
-def get_vgg_model(INPUT_SHAPE, classes=2):
-    # these weights are trained on binary data and work fine
-    # save_weight_path= path.save_models_path + "IML_binary_CNN_experimtents/vgg_19_binary_temp/pv_vgg_binary_no_top.h5"
+def get_resnet101(INPUT_SHAPE, classes):
+    save_weight_path = path.save_models_path + "resnet152_weights_tf_dim_ordering_tf_kernels_notop.h5"
 
-    save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
-    vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
-                                            weights=save_weight_path,
-                                            input_shape=INPUT_SHAPE)
-    # Freeze the layers
-    vgg.trainable = True
+    resnet101 = tf.keras.applications.ResNet152(include_top=False, weights=save_weight_path,
+                                                input_shape=INPUT_SHAPE)
+    resnet101.trainable = False
 
     set_trainable = False
-    for layer in vgg.layers:
-        if layer.name in ['block5_conv1', 'block4_conv1']:
+    for layer in resnet101.layers:
+        if layer.name in ['conv5_block3', 'conv5_block2']:
             set_trainable = True
         if set_trainable:
             layer.trainable = True
         else:
             layer.trainable = False
 
-    base_vgg = vgg
-    base_out = base_vgg.output
+    base_resnet50 = resnet101
+    base_out = base_resnet50.output
     pool_out = tf.keras.layers.Flatten()(base_out)
-    hidden1 = tf.keras.layers.Dense(16, activation='relu')(pool_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
     drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-    hidden2 = tf.keras.layers.Dense(8, activation='relu')(drop1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
     drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
     out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
-    model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-
-    # opt = SGD(lr=0.00001)
-    # # model.compile(loss="categorical_crossentropy", optimizer=opt)
+    model = tf.keras.Model(inputs=base_resnet50.input, outputs=out)
     model.compile(optimizer="adam",
-                  loss=tf.losses.categorical_crossentropy,
+                  loss=custom_loss,
                   metrics=['accuracy'])
+
     model.summary()
     return model
 
@@ -125,13 +119,13 @@ def get_vgg_model(INPUT_SHAPE, classes=2):
 # just separated into train, test and validation so their read style is just different.
 # load_weights_path =  path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pv_binary_basic_cnn.h5"
 
+save_weights_path = path.save_models_path + "shamalar_data/balance_multiclass/balance_multiclass_resnet152.h5"
+data_set_base_path = path.dataset_path + "shalamar_training_data_balanced/train_test_seprate/"
 
-save_weights_path = path.save_models_path + "BBBC041/basic_CNN_binary.h5"
-data_set_base_path = path.dataset_path + "BBBC041/train_test_val/"
-INPUT_SHAPE = (125, 125, 3)
+# load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_cnn.h5"
 
 train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
-    load_train_test_val_images_from(data_set_base_path, file_extension=".png", show_train_data=True)
+    load_train_test_val_images_from(data_set_base_path, file_extension=".JPG", show_train_data=True)
 
 # %%
 
@@ -144,7 +138,7 @@ number_of_classes = len(list(np.unique(train_labels)))
 BATCH_SIZE = 64
 NUM_CLASSES = number_of_classes
 EPOCHS = 25
-
+INPUT_SHAPE = (125, 125, 3)
 # encode text category labels
 from sklearn.preprocessing import LabelEncoder
 
@@ -175,7 +169,7 @@ for train_item in Counter(train_labels).items():
 # load model according to your choice.
 # model = get_cnn_pretrained_weights_model(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
 # model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
-model = predefine_models.get_resnet50(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+model = get_resnet101(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, number_of_classes)
 # model.load_weights(path.save_models_path + "IML_binary_CNN_experimtents/vgg_2hidden_units"
 #                                            "/pf_plus_vgg_binary_2hiddenUnit.h5")

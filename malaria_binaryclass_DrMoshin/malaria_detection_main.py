@@ -12,14 +12,12 @@ from custom_classes.dataset_loader import *
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 
-save_weights_path = path.save_models_path + "binary_classification_test_CNN/pf_plus_vgg19_binary_cnn.h5"
-load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pfplus_binary_basic_cnn.h5"
+save_weights_path = path.save_models_path + "shamalar_data/binaryclass_vgg.h5"
 
-data_set_base_path = path.dataset_path + "IML_training_data/binary_classifcation_train_test_seperate/p.f_plus_p.v"
+data_set_base_path = path.dataset_path + "shalamar_training_data/train_test_seprate_binary/"
 
-train_files, train_labels, test_files, test_labels,  val_files, val_labels = \
+train_files, train_labels, test_files, test_labels, val_files, val_labels = \
     load_train_test_val_images_from(data_set_base_path, show_train_data=True)
-
 
 # %%
 
@@ -30,7 +28,6 @@ print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', C
 import cv2
 from concurrent import futures
 import threading
-
 
 # Load image data and resize on 125, 125 pixel.
 IMG_DIMS = (125, 125)
@@ -113,8 +110,8 @@ print(train_labels[:6], train_labels_enc[:6])
 # %%
 # load model according to your choice.
 # model = testing_models.get_1_CNN(INPUT_SHAPE)
-model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
-# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
+model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
 # model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
 # model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
 # model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
@@ -142,8 +139,8 @@ history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
 
 # %%
 # This cell shows the accuracy and loss graph and save the model for next time usage.
-# model.save(save_weights_path)
-model.load_weights(load_weights_path)
+model.save(save_weights_path)
+# model.load_weights(save_weights_path)
 score = model.evaluate(test_imgs_scaled, test_labels_enc)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
@@ -179,6 +176,6 @@ plt.show()
 basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
 basic_cnn_preds_labels = le.inverse_transform([1 if pred > 0.5 else 0
                                                for pred in basic_cnn_preds.ravel()])
-cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels,binary_classifcation=False ,pos_label="malaria")
-
+cv_iml.get_f1_score(test_labels, basic_cnn_preds_labels, binary_classifcation=True, pos_label="malaria",
+                    plot_confusion_matrix=True)
 

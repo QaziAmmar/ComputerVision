@@ -23,18 +23,18 @@ def calculateDistance(test1, test2):
 
 
 # base path of folder where images and annotaion are saved.
-folder_base_path = path.dataset_path + "Shalamar_Captured_Malaria/"
+folder_base_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041/original_data/"
 # path of folder where all images are save.
 original_images_path = folder_base_path + "images/"
 # save annotaion path.
 # save_annotation_path = folder_base_path + "code_annotation_file/"
 save_images_path = folder_base_path + "loclization_results/"
 
-save_annotation_path = folder_base_path + "code_generated_annotation/"
-background_img = cv2.imread(folder_base_path + "background_img.JPG")
-background_img_1 = cv2.imread(folder_base_path + "back.JPG")
+# save_annotation_path = folder_base_path + "code_generated_annotation/"
+# background_img = cv2.imread(folder_base_path + "background_img.JPG")
+# background_img_1 = cv2.imread(folder_base_path + "back.JPG")
 
-all_images_name = path.read_all_files_name_from(original_images_path, '.JPG')
+all_images_name = path.read_all_files_name_from(original_images_path, '.png')
 
 # %%
 # Read image
@@ -45,38 +45,39 @@ for image_name in all_images_name:
     img = cv2.imread(original_images_path + image_name)
     annotated_img, individual_cell_images, json_object = get_detected_segmentaion(original_images_path + image_name)
 
-    # cv2.imwrite(save_images_path + image_name, annotated_img)
+    cv2.imwrite(save_images_path + image_name, annotated_img)
 
     # save_annotation_json = save_annotation_path + image_name.split('.')[0] + ".json"
     # with open(save_annotation_json, "a") as outfile:
     #     json.dump(json_object, outfile)
 
-    json_objects_array = []
+#     json_objects_array = []
+#
+#     for bbox in json_object:
+#
+#         x = int(bbox['x'])
+#         y = int(bbox['y'])
+#         h = int(bbox['h'])
+#         w = int(bbox['w'])
+#
+#         roi = img[y:y + h, x:x + w]
+#         # diff imgs
+#         dist1 = calculateDistance(background_img, roi)
+#         dist2 = calculateDistance(background_img_1, roi)
+#
+#         if dist1 < 100 or dist2 < 100:
+#             continue
+#         json_objects_array.append({"bbox": {"x": x, "y": y, "h": h, "w": w},
+#                                    "type": "healthy"})
+#
+#     # save cell location in json file.
+#     json_dictionary.append({
+#         "image_name": image_name,
+#         "objects": json_objects_array
+#     })
+#
+# # save cell json file.
+# save_json_image_path = folder_base_path + "code_generated_localization.json"
+# with open(save_json_image_path, "w") as outfile:
+#     json.dump(json_dictionary, outfile)
 
-    for bbox in json_object:
-
-        x = int(bbox['x'])
-        y = int(bbox['y'])
-        h = int(bbox['h'])
-        w = int(bbox['w'])
-
-        roi = img[y:y + h, x:x + w]
-        # diff imgs
-        dist1 = calculateDistance(background_img, roi)
-        dist2 = calculateDistance(background_img_1, roi)
-
-        if dist1 < 100 or dist2 < 100:
-            continue
-        json_objects_array.append({"bbox": {"x": x, "y": y, "h": h, "w": w},
-                                   "type": "healthy"})
-
-    # save cell location in json file.
-    json_dictionary.append({
-        "image_name": image_name,
-        "objects": json_objects_array
-    })
-
-# save cell json file.
-save_json_image_path = folder_base_path + "code_generated_localization.json"
-with open(save_json_image_path, "w") as outfile:
-    json.dump(json_dictionary, outfile)

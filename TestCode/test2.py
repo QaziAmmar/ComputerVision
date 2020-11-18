@@ -1,30 +1,186 @@
+# //  Created by Qazi Ammar Arshad on 01/08/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
-import numpy
-from sklearn.metrics.pairwise import cosine_similarity
+# this code is a testing code that separate the cells after prediction.
+
+
+import tensorflow as tf
+from collections import Counter
+from custom_classes import path, predefine_models
+from keras.utils import to_categorical
+from custom_classes.dataset_loader import *
+
+
+def get_vgg_model(INPUT_SHAPE, classes=2):
+    save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
+    vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
+                                            weights=save_weight_path,
+                                            input_shape=INPUT_SHAPE)
+    # Freeze the layers
+    vgg.trainable = True
+
+    set_trainable = False
+    for layer in vgg.layers:
+        if layer.name in ['block5_conv1', 'block4_conv1']:
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
+
+    base_vgg = vgg
+    base_out = base_vgg.output
+    pool_out = tf.keras.layers.Flatten()(base_out)
+    hidden1 = tf.keras.layers.Dense(128, activation='relu')(pool_out)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(64, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
+
+    # opt = SGD(lr=0.00001)
+    # # model.compile(loss="categorical_crossentropy", optimizer=opt)
+    model.compile(optimizer="adam",
+                  loss=tf.losses.categorical_crossentropy,
+                  metrics=['accuracy'])
+    model.summary()
+    return model
+
+
+# hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
+# just separated into train, test and validation so their read style is just different.
+# load_weights_path =  path.save_models_path + "IML_binary_CNN_experimtents/basicCNN_binary/pv_binary_basic_cnn.h5"
+# %%
+data_set_base_path = path.dataset_path + "shalamar_training_data_balanced/train_test_seprate/"
+
+INPUT_SHAPE = (125, 125, 3)
+
+train_files, train_labels, test_files, test_labels, val_files, val_labels = \
+    load_train_test_val_images_from(data_set_base_path, file_extension=".JPG", show_train_data=True)
+
+# %%
+
+print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
+
+# %%
+train_data, val_data, test_data = load_img_data_parallel(train_files=train_files, test_files=test_files,
+                                                         val_files=val_files)
+
+# Normalized input data.
+train_imgs_scaled = train_data / 255.
+val_imgs_scaled = val_data / 255.
+test_imgs_scaled = test_data / 255.
+
+
+# %%
+
+def _replaceitem(x):
+    if x == 'healthy':
+        return 'healthy'
+    else:
+        return "malaria"
+
+
+binary_test_labels = list(map(_replaceitem, test_labels))
+binary_train_labels = list(map(_replaceitem, train_labels))
+binary_val_labels = list(map(_replaceitem, val_labels))
+
+# section for class balance loss
+number_of_binary_classes = 2
+
+BATCH_SIZE = 64
+
+# encode text category labels
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+le.fit(binary_test_labels)
+
+binary_test_labels_enc = le.transform(binary_test_labels)
+binary_test_labels_enc = to_categorical(binary_test_labels_enc, num_classes=number_of_binary_classes)
+
+binary_train_labels_enc = le.transform(binary_train_labels)
+binary_train_labels_enc = to_categorical(binary_train_labels_enc, num_classes=number_of_binary_classes)
+
+binary_val_labels_enc = le.transform(binary_val_labels)
+binary_val_labels_enc = to_categorical(binary_val_labels_enc, num_classes=number_of_binary_classes)
+
+print(binary_test_labels[:6], binary_test_labels_enc[:6])
+# %%
+print('Train:', Counter(binary_train_labels), '\nVal', Counter(binary_test_labels), '\nTest',
+      Counter(binary_val_labels))
+
+# %%
+# section for class balance loss
+# number_of_classes = len(list(np.unique(train_labels)))
+#
+# BATCH_SIZE = 64
+# NUM_CLASSES = number_of_classes
+# EPOCHS = 25
+#
+#
+# # encode text category labels
+# from sklearn.preprocessing import LabelEncoder
+#
+# le = LabelEncoder()
+# le.fit(train_labels)
+#
+# train_labels_enc = le.transform(train_labels)
+# val_labels_enc = le.transform(val_labels)
+# test_labels_enc = le.transform(test_labels)
+#
+# train_labels_enc = to_categorical(train_labels_enc, num_classes=number_of_classes)
+# val_labels_enc = to_categorical(val_labels_enc, num_classes=number_of_classes)
+# test_labels_enc = to_categorical(test_labels_enc, num_classes=number_of_classes)
+#
+# print(train_labels[:6], train_labels_enc[:6])
+
+
+# %%
+# load model according to your choice.
+# model = get_vgg_model(INPUT_SHAPE, classes=number_of_classes)
+model = predefine_models.get_resnet50v2(INPUT_SHAPE=INPUT_SHAPE, classes=2)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE, number_of_binary_classes)
+# %%
+# This cell shows the accuracy and loss graph and save the model for next time usage.
+binary_load_weights_path = path.save_models_path + "shamalar_data/binary/binary_resnet50v2.h5"
+model.load_weights(binary_load_weights_path)
+score = model.evaluate(test_imgs_scaled, binary_test_labels_enc)
+print('Test loss:', score[0])
+print('Test accuracy:', score[1])
+# model.save('basic_cnn.h5')
+
+
+# %%
+# Model Performance Evaluation
+basic_cnn_preds = model.predict(test_imgs_scaled, batch_size=512)
+# # Making prediction lables for multiclass
+basic_cnn_preds = basic_cnn_preds.argmax(1)
+prediction_labels = le.inverse_transform(basic_cnn_preds)
+cv_iml.get_f1_score(binary_test_labels, prediction_labels, binary_classifcation=False, pos_label='malaria',
+                    plot_confusion_matrix=True)
+
+# %%
+# get all the images which are healthy but our model predicts them as healthy
+counter = 0
+mis_predicted_cell = []
+for temp_train_lbl, temp_pred_lbl in zip(binary_test_labels, prediction_labels):
+    if temp_pred_lbl == 'malaria':
+        # print(test_files[counter])
+        mis_predicted_cell.append(test_files[counter])
+    counter += 1
+
+print(len(mis_predicted_cell))
+
+# %%
 import cv2
 
-def calculateDistance(i1, i2):
-    return numpy.sum((i1-i2)**2)
+save_new_cell_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Results/shamalar_resnet50v2_binary_results/"
 
-test1 = cv2.imread("/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/Shalamar_Captured_Malaria/background_img.JPG")
-test2 = cv2.imread("/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/Shalamar_Captured_Malaria/PA171818_8.JPG")
-test3 = cv2.imread("/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/Shalamar_Captured_Malaria/PA171855_49.JPG")
-test4 = cv2.imread("/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/Shalamar_Captured_Malaria/PA172017_19.JPG")
-
-test1 = cv2.resize(test1, (68, 68)) / 255.
-test2 = cv2.resize(test2, (68, 68)) / 255.
-test3 = cv2.resize(test3, (68, 68)) / 255.
-test4 = cv2.resize(test4, (68, 68)) / 255.
-
-
-
-# test1 = numpy.reshape(test1, (-1, 1))
-# test2 = numpy.reshape(test2, (-1, 1))
-# test3 = numpy.reshape(test3, (-1, 1))
-
-# diff imgs
-dist1 = calculateDistance(test1, test2)
-# same imgs
-dist2 = calculateDistance(test1, test3)
-# same diff slide
-dist3 = calculateDistance(test1, test4)
+for temp_cell in mis_predicted_cell:
+    img = cv2.imread(temp_cell)
+    save_name = temp_cell.split('/')[-1]
+    category = temp_cell.split('/')[-2]
+    cv2.imwrite(save_new_cell_path + category + "/" + save_name, img)
+    print(save_name)

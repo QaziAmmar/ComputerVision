@@ -72,16 +72,16 @@ def get_vgg_19_fine_tune(INPUT_SHAPE, binary_classification=True, classes=1, sav
                                             weights=save_weight_path,
                                             input_shape=INPUT_SHAPE)
     # Freeze the layers
-    vgg.trainable = True
+    vgg.trainable = False
 
-    set_trainable = False
-    for layer in vgg.layers:
-        if layer.name in ['block5_conv1', 'block4_conv1']:
-            set_trainable = True
-        if set_trainable:
-            layer.trainable = True
-        else:
-            layer.trainable = False
+    # set_trainable = False
+    # for layer in vgg.layers:
+    #     if layer.name in ['block5_conv1', 'block4_conv1']:
+    #         set_trainable = True
+    #     if set_trainable:
+    #         layer.trainable = True
+    #     else:
+    #         layer.trainable = False
 
     base_vgg = vgg
     base_out = base_vgg.output
@@ -96,14 +96,14 @@ def get_vgg_19_fine_tune(INPUT_SHAPE, binary_classification=True, classes=1, sav
         out = tf.keras.layers.Dense(1, activation='sigmoid')(drop2)
 
         model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-        model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-5),
+        model.compile(optimizer="adam",
                       loss='binary_crossentropy',
                       metrics=['accuracy'])
     else:
-        out = tf.keras.layers.Dense(classes, activation='softmax')(pool_out)
+        out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
 
         model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-        model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=1e-5),
+        model.compile(optimizer="adam",
                       loss=tf.losses.categorical_crossentropy,
                       metrics=['accuracy'])
 
@@ -154,14 +154,6 @@ def get_resnet50(INPUT_SHAPE, classes):
                                                        input_shape=INPUT_SHAPE)
     resnet50.trainable = True
 
-    # set_trainable = False
-    # for layer in resnet50.layers:
-    #     if layer.name in ['block5_conv1', 'block4_conv1']:
-    #         set_trainable = True
-    #     if set_trainable:
-    #         layer.trainable = True
-    #     else:
-    #         layer.trainable = False
     # to make whole network open for learning.
     # for layer in resnet50.layers:
     #     layer.trainable = False
@@ -169,12 +161,12 @@ def get_resnet50(INPUT_SHAPE, classes):
     base_resnet50 = resnet50
     base_out = base_resnet50.output
     pool_out = tf.keras.layers.Flatten()(base_out)
-    hidden1 = tf.keras.layers.Dense(2048, activation='relu')(pool_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
     drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-    # hidden2 = tf.keras.layers.Dense(32, activation='relu')(drop1)
-    # drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
 
-    out = tf.keras.layers.Dense(classes, activation='softmax')(drop1)
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
     model = tf.keras.Model(inputs=base_resnet50.input, outputs=out)
     model.compile(optimizer="adam",
                   loss=tf.losses.categorical_crossentropy,
@@ -184,26 +176,62 @@ def get_resnet50(INPUT_SHAPE, classes):
     return model
 
 
-def get_dennet121_transfer_learning(INPUT_SHAPE, classes=2):
+def get_resnet50v2(INPUT_SHAPE, classes):
+    save_weight_path = path.save_models_path + "resnet50v2_weights_tf_dim_ordering_tf_kernels_notop.h5"
 
-    save_weight_path = path.save_models_path + "densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5"
-    # binary_weights_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/SavedModel/IML_binary_CNN_experimtents" \
-    #                       "/vgg_19_binary_temp/pfPlusPv/pv_densnet_binary_no_top.h5"
-    # Model
-    dn121 = tf.keras.applications.DenseNet121(weights=save_weight_path, include_top=False, input_shape=INPUT_SHAPE)
-    dn121.trainable = False
+    resnet50v2 = tf.keras.applications.ResNet50V2(include_top=False, weights=save_weight_path,
+                                                 input_shape=INPUT_SHAPE)
+    resnet50v2.trainable = True
 
-    # Freeze the layers
-    for layer in dn121.layers:
-        layer.trainable = False
+    set_trainable = False
+    for layer in resnet50v2.layers:
+        if layer.name in ['conv5_block3', 'conv5_block2']:
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
 
-    base_dn121 = dn121
-    base_out = base_dn121.output
+    base_resnet50v2 = resnet50v2
+    base_out = base_resnet50v2.output
     pool_out = tf.keras.layers.Flatten()(base_out)
     hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
     drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
     hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
     drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=base_resnet50v2.input, outputs=out)
+    model.compile(optimizer="adam",
+                  loss=tf.losses.categorical_crossentropy,
+                  metrics=['accuracy'])
+
+    model.summary()
+    return model
+
+
+def get_densenet121(INPUT_SHAPE, classes=2):
+    save_weight_path = path.save_models_path + "densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5"
+    # Model
+    dn121 = tf.keras.applications.DenseNet121(weights=save_weight_path, include_top=False, input_shape=INPUT_SHAPE)
+    dn121.trainable = True
+
+    # set_trainable = False
+    # for layer in dn121.layers:
+    #     if layer.name in ['block5_conv1', 'block4_conv1']:
+    #         set_trainable = True
+    #     if set_trainable:
+    #         layer.trainable = True
+    #     else:
+    #         layer.trainable = False
+
+    base_dn121 = dn121
+    base_out = base_dn121.output
+    pool_out = tf.keras.layers.Flatten()(base_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+    drop1 = tf.keras.layers.Dropout(rate=0.6)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.6)(hidden2)
 
     # temp_model = tf.keras.Model(inputs=base_dn121.input, outputs=drop2)
     # temp_model.load_weights(binary_weights_path)
@@ -214,6 +242,108 @@ def get_dennet121_transfer_learning(INPUT_SHAPE, classes=2):
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
-    # model.summary()
+    model.summary()
 
+    return model
+
+
+def get_densenet169(INPUT_SHAPE, classes=2):
+    save_weight_path = path.save_models_path + "densenet169_weights_tf_dim_ordering_tf_kernels_notop.h5"
+    # Model
+    dn169 = tf.keras.applications.DenseNet169(weights=save_weight_path, include_top=False, input_shape=INPUT_SHAPE)
+    dn169.trainable = True
+
+    set_trainable = False
+    for layer in dn169.layers:
+        if layer.name in ['block5_conv1', 'block4_conv1']:
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
+
+    base_dn169 = dn169
+    base_out = base_dn169.output
+    pool_out = tf.keras.layers.Flatten()(base_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=base_dn169.input, outputs=out)
+    model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    model.summary()
+
+    return model
+
+
+def get_densenet201(INPUT_SHAPE, classes=2):
+    save_weight_path = path.save_models_path + "densenet201_weights_tf_dim_ordering_tf_kernels_notop.h5"
+
+    # Model
+    dn201 = tf.keras.applications.DenseNet201(weights=save_weight_path, include_top=False, input_shape=INPUT_SHAPE)
+    dn201.trainable = True
+
+    set_trainable = False
+    for layer in dn201.layers:
+        if layer.name in ['block5_conv1', 'block4_conv1']:
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
+
+    base_dn121 = dn201
+    base_out = base_dn121.output
+    pool_out = tf.keras.layers.Flatten()(base_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=dn201.input, outputs=out)
+    model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    model.summary()
+
+    return model
+
+
+def get_vgg16(INPUT_SHAPE, classes):
+    save_weight_path = path.save_models_path + "vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5"
+    vgg16 = tf.keras.applications.vgg16.VGG16(include_top=False, weights=save_weight_path,
+                                              input_shape=INPUT_SHAPE)
+    vgg16.trainable = True
+
+    set_trainable = False
+    for layer in vgg16.layers:
+        if layer.name in ['block5_conv1', 'block4_conv1']:
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
+
+    base_vgg16 = vgg16
+    base_out = base_vgg16.output
+    pool_out = tf.keras.layers.Flatten()(base_out)
+    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
+    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
+    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+
+    out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
+    model = tf.keras.Model(inputs=base_vgg16.input, outputs=out)
+    model.compile(optimizer="adam",
+                  loss=tf.losses.categorical_crossentropy,
+                  metrics=['accuracy'])
+
+    model.summary()
     return model

@@ -15,11 +15,11 @@ from localization_annotations_generator.model_classes.iml_labelbox_model import 
 
 # base path of folder where images and annotaion are saved.
 
-folder_base_path = path.dataset_path + "chughati_slides_shalamar_annotated_complete/"
+folder_base_path = "/home/iml/Desktop/qazi/paper_imgs/BBBC041/"
 # path of folder where all images are save.
-images_path = folder_base_path + "p.f_plus_p.v/"
+images_path = folder_base_path + "Detecion/"
 # save annotaion path.
-annotation_path = folder_base_path + "pv_pf.json"
+annotation_path = folder_base_path + "loclization.json"
 # save result path.
 save_result_path = folder_base_path + "annotation/"
 path.make_folder_with(save_result_path)
@@ -37,7 +37,7 @@ result = welcome_from_dict(json_annotation)
 counter = 1
 for image in result:
     # img_dict = {}
-    image_name = image.image_id
+    image_name = image.external_id
     # print(image_name, image.created_by, counter)
     counter += 1
     # reading images form the folder
@@ -48,14 +48,14 @@ for image in result:
     # draw detection points on images
     # draw annotation points on the image
     objects = []
-    if image.objects is not None:
-        for object in image.objects:
+    if image.label is not None:
+        for object in image.label.objects:
             # getting points form the folder and draw it on the image
-            x = object.bbox.x
-            y = object.bbox.y
-            w = object.bbox.w
-            h = object.bbox.h
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 3)
+            x = object.bbox.left
+            y = object.bbox.top
+            h = object.bbox.height
+            w = object.bbox.width
+            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 7)
 
     #         objects.append({
     #             "category": object.value.value,

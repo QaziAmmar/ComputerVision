@@ -103,7 +103,7 @@ def watershed_labels(binary_mask):
     # pixel to the nearest zero pixel, then find peaks in this
     # distance map
     D = ndimage.distance_transform_edt(binary_mask)
-    localMax = peak_local_max(D, indices=False, min_distance=20,
+    localMax = peak_local_max(D, indices=False, min_distance=10,
                               labels=binary_mask)
 
     # perform a connected component analysis on the local peaks,
@@ -151,9 +151,10 @@ def save_cells_annotation(annotated_img, labels):
             y = 0
         w = w + 15
         h = h + 15
+        #
         if (w < 60 or h < 60) or (w > 130 or h > 130):
             continue
-        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 7)
         roi = original_image[y:y + h, x:x + w, :]
 
         #  Make JSON object to save annotation file.

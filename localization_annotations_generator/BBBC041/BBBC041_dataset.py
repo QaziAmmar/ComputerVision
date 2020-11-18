@@ -18,9 +18,7 @@ from localization_annotations_generator.BBBC041.pvivax_model import Annotation_M
 # folder name can be healthy or malaria.
 # folder_name = "malaria/"
 # defining path for all images.
-
-dataset_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041_FasterRCNN/malaria/"
-
+dataset_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041/original_data/"
 images_path = dataset_path + "images/"
 train_image_annotation_path = dataset_path + "training.json"
 test_image_annotation_path = dataset_path + "test.json"
@@ -67,10 +65,12 @@ def separate_rbs(images_annotations, save_images_path):
     for image in images_annotations:
         # we need to split image path because it has also folder namd apped with it.
         image_name = image.image.path_name.split('/')[2]
-        # print(image.image.path_name)
+        print(image_name)
         # '', 'images', '8d02117d-6c71-4e47-b50a-6cc8d5eb1d55.png']
         img = cv2.imread(images_path + image_name)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if img is None:
+            continue
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         original_img = img.copy()
         # counter variable to append with image name to uniquely save the image name.
         count = 0
@@ -103,14 +103,17 @@ def separate_rbs(images_annotations, save_images_path):
                 save_name = save_images_path + leukocyte + image_tag + "_" + image_name
             elif object.category == red_blood_cell:
                 save_name = save_images_path + "healthy" + image_tag + "_" + image_name
-                # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 7)
             else:
                 continue
-            cv2.imwrite(save_name, crop_image)
+            cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 7)
+            # cv2.imwrite(save_name, crop_image)
             count += 1
 #         save complete image with annotation
-        folder_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/malaria/malaria/test/"
-        cv2.imwrite(folder_path + image_name, original_img)
+        folder_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Results/BBBC041_loclization/grount_truth/"
+
+        cv2.imwrite(folder_path + image_name, img)
+        # print(folder_path + image_name)
 
 
 def change_extension_of_image(images_annotations):

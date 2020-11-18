@@ -60,14 +60,14 @@ def crop_points_for_black_color(img, percentage_limit=6):
         temp_img_row = gray[k, :]
 
         # Count the number of pixels that has less value then 20 (consider as black pixel.)
-        zero_count = np.sum(temp_img_row < 70)
+        zero_count = np.sum(temp_img_row < 13)
         # Count the number of non_zero pixel in current image row.
         non_zero_count = row - zero_count
 
         # Percentage of zero_pixel in a row.
         percentage = (zero_count / len(temp_img_row)) * 100
         # If percentage reaches our defined threshold then terminate the loop.
-        if percentage < 3:
+        if percentage < percentage_limit:
             row_limit_lower = k
             break
 
