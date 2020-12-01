@@ -9,21 +9,12 @@ boxes from both annotation files.
 """
 
 from custom_classes import path, cv_iml
-from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
+from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion \
+    , get_mean_gray_image
 import cv2
-import json
-import numpy
 
-
-def calculateDistance(test1, test2):
-    test1 = cv2.resize(test1, (68, 68)) / 255.
-    test2 = cv2.resize(test2, (68, 68)) / 255.
-
-    return numpy.sum((test1 - test2) ** 2)
-
-
-# base path of folder where images and annotaion are saved.
-folder_base_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/BBBC041/original_data/"
+# base path of folder where images and annotation are saved.
+folder_base_path = path.dataset_path + "/BBBC041/healthy/"
 # path of folder where all images are save.
 original_images_path = folder_base_path + "images/"
 # save annotaion path.
@@ -34,7 +25,8 @@ save_images_path = folder_base_path + "loclization_results/"
 # background_img = cv2.imread(folder_base_path + "background_img.JPG")
 # background_img_1 = cv2.imread(folder_base_path + "back.JPG")
 
-all_images_name = path.read_all_files_name_from(original_images_path, '.png')
+all_images_name = path.read_all_files_name_from(original_images_path, '.jpg')
+all_images_name += path.read_all_files_name_from(original_images_path, '.png')
 
 # %%
 # Read image
@@ -42,8 +34,11 @@ json_dictionary = []
 
 for image_name in all_images_name:
     # reading images form the folder
+
     img = cv2.imread(original_images_path + image_name)
+    # get annotation box on images.
     annotated_img, individual_cell_images, json_object = get_detected_segmentaion(original_images_path + image_name)
+    # classify each boxes as healthy or malaria
 
     cv2.imwrite(save_images_path + image_name, annotated_img)
 
@@ -80,4 +75,3 @@ for image_name in all_images_name:
 # save_json_image_path = folder_base_path + "code_generated_localization.json"
 # with open(save_json_image_path, "w") as outfile:
 #     json.dump(json_dictionary, outfile)
-

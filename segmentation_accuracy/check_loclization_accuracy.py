@@ -49,10 +49,17 @@ def convert_points_into_boxes(points):
     # this code convert the points into boxes
     boxes_array = []
     for point in points:
-        x1 = int(point['x'])
-        y1 = int(point['y'])
-        h1 = int(point['h'])
-        w1 = int(point['w'])
+        if 'x' in point:
+            x1 = int(point['x'])
+            y1 = int(point['y'])
+            h1 = int(point['h'])
+            w1 = int(point['w'])
+        else:
+            bbox = point['bbox']
+            x1 = int(bbox['x'])
+            y1 = int(bbox['y'])
+            h1 = int(bbox['h'])
+            w1 = int(bbox['w'])
         boxes_array.append([x1, y1, x1 + w1, y1 + h1])
     return boxes_array
 
@@ -152,13 +159,13 @@ def convert_points_into_boxes(points):
 
 
 # base path of folder where images and annotaion are saved.
-folder_base_path = path.dataset_path + "IML_loclization_final/p.v/"
+folder_base_path = path.dataset_path + "100OLYMP/"
 # path of folder where all images are save.
-original_images_path = folder_base_path + "100X_crop/"
+original_images_path = folder_base_path
 
 all_images_name = path.read_all_files_name_from(original_images_path, '.JPG')
 
-ground_truth_labels_path = folder_base_path + "pv_loclization_annotation_code_plus_labelbox.json"
+ground_truth_labels_path = path.dataset_path + "shalamar_dataset.json"
 
 # %%
 with open(ground_truth_labels_path) as annotation_path:
@@ -185,8 +192,8 @@ for single_image_ground_truth in ground_truth:
     # ground_truth_boxes = detected_boxes
 
     # %%
-    if 'IMG_4533.JPG' == single_image_ground_truth['image_name']:
-        print("debug")
+    # if 'IMG_4533.JPG' == single_image_ground_truth['image_name']:
+    #     print("debug")
 
     iou_score_2d_array = []
     # make a 2d matrix of iou of all points with other points

@@ -1,102 +1,95 @@
-# Author: Jake Vanderplas -- <vanderplas@astro.washington.edu>
+# you can use interactive python interpreter, jupyter notebook, spyder or python code
+# I am using interactive python interpreter (Python 3.7)
+# import pandas dataframe formatted digits dataset for t-SNE analysis 
+# (dataset available at scikit-learn)
+import os
+import tensorflow as tf
+import numpy as np
+from collections import Counter
+from custom_classes import path, predefine_models, cv_iml
+from custom_classes.dataset_loader import *
 
-print(__doc__)
+# hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
+# just separated into train, test and validation so their read style is just different.
 
-from time import time
+save_weights_path = path.save_models_path + "shalamar_data/binary_resnet50v2.h5"
 
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.ticker import NullFormatter
+data_set_base_path = path.dataset_path + "subsample/test/"
 
-from sklearn import manifold, datasets
-
-# Next line to silence pyflakes. This import is needed.
-Axes3D
-
-n_points = 1000
-X, color = datasets.samples_generator.make_s_curve(n_points, random_state=0)
-n_neighbors = 10
-n_components = 2
-
-fig = plt.figure(figsize=(15, 8))
-plt.suptitle("Manifold Learning with %i points, %i neighbors"
-             % (1000, n_neighbors), fontsize=14)
-
-try:
-    # compatibility matplotlib < 1.0
-    ax = fig.add_subplot(251, projection='3d')
-    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
-    ax.view_init(4, -72)
-except:
-    ax = fig.add_subplot(251, projection='3d')
-    plt.scatter(X[:, 0], X[:, 2], c=color, cmap=plt.cm.Spectral)
-
-methods = ['standard', 'ltsa', 'hessian', 'modified']
-labels = ['LLE', 'LTSA', 'Hessian LLE', 'Modified LLE']
-
-for i, method in enumerate(methods):
-    t0 = time()
-    Y = manifold.LocallyLinearEmbedding(n_neighbors, n_components,
-                                        eigen_solver='auto',
-                                        method=method).fit_transform(X)
-    t1 = time()
-    print("%s: %.2g sec" % (methods[i], t1 - t0))
-
-    ax = fig.add_subplot(252 + i)
-    plt.scatter(Y[:, 0], Y[:, 1], c=color, cmap=plt.cm.Spectral)
-    plt.title("%s (%.2g sec)" % (labels[i], t1 - t0))
-    ax.xaxis.set_major_formatter(NullFormatter())
-    ax.yaxis.set_major_formatter(NullFormatter())
-    plt.axis('tight')
-
-t0 = time()
-Y = manifold.Isomap(n_neighbors, n_components).fit_transform(X)
-t1 = time()
-print("Isomap: %.2g sec" % (t1 - t0))
-ax = fig.add_subplot(257)
-plt.scatter(Y[:, 0], Y[:, 1], c=color, cmap=plt.cm.Spectral)
-plt.title("Isomap (%.2g sec)" % (t1 - t0))
-ax.xaxis.set_major_formatter(NullFormatter())
-ax.yaxis.set_major_formatter(NullFormatter())
-plt.axis('tight')
+test_files, test_labels = process_path(data_set_base_path, ".JPG")
 
 
-t0 = time()
-mds = manifold.MDS(n_components, max_iter=100, n_init=1)
-Y = mds.fit_transform(X)
-t1 = time()
-print("MDS: %.2g sec" % (t1 - t0))
-ax = fig.add_subplot(258)
-plt.scatter(Y[:, 0], Y[:, 1], c=color, cmap=plt.cm.Spectral)
-plt.title("MDS (%.2g sec)" % (t1 - t0))
-ax.xaxis.set_major_formatter(NullFormatter())
-ax.yaxis.set_major_formatter(NullFormatter())
-plt.axis('tight')
+# %%
+def get_img_data_parallel(idx, img, total_imgs):
+    if idx % 5000 == 0 or idx == (total_imgs - 1):
+        print('{}: working on img num {}'.format(threading.current_thread().name, idx))
+    img = cv2.imread(img)
+    img = cv2.resize(img, dsize=IMG_DIMS, interpolation=cv2.INTER_CUBIC)
+    img = np.array(img)
+
+    return img
 
 
-t0 = time()
-se = manifold.SpectralEmbedding(n_components=n_components,
-                                n_neighbors=n_neighbors)
-Y = se.fit_transform(X)
-t1 = time()
-print("SpectralEmbedding: %.2g sec" % (t1 - t0))
-ax = fig.add_subplot(259)
-plt.scatter(Y[:, 0], Y[:, 1], c=color, cmap=plt.cm.Spectral)
-plt.title("SpectralEmbedding (%.2g sec)" % (t1 - t0))
-ax.xaxis.set_major_formatter(NullFormatter())
-ax.yaxis.set_major_formatter(NullFormatter())
-plt.axis('tight')
+IMG_DIMS = (125, 125)
 
-t0 = time()
-tsne = manifold.TSNE(n_components=n_components, init='pca', random_state=0)
-Y = tsne.fit_transform(X)
-t1 = time()
-print("t-SNE: %.2g sec" % (t1 - t0))
-ax = fig.add_subplot(250)
-plt.scatter(Y[:, 0], Y[:, 1], c=color, cmap=plt.cm.Spectral)
-plt.title("t-SNE (%.2g sec)" % (t1 - t0))
-ax.xaxis.set_major_formatter(NullFormatter())
-ax.yaxis.set_major_formatter(NullFormatter())
-plt.axis('tight')
+ex = futures.ThreadPoolExecutor(max_workers=None)
+test_data_inp = [(idx, img, len(test_files)) for idx, img in enumerate(test_files)]
+print('\nLoading Test Images:')
+test_data_map = ex.map(get_img_data_parallel,
+                       [record[0] for record in test_data_inp],
+                       [record[1] for record in test_data_inp],
+                       [record[2] for record in test_data_inp])
+test_data = np.array(list(test_data_map))
 
-plt.show()
+# %%
+print(test_data.shape)
+print('\nTest', Counter(test_labels))
+#%%
+BATCH_SIZE = 64
+NUM_CLASSES = 2
+EPOCHS = 25
+INPUT_SHAPE = (125, 125, 3)
+
+test_imgs_scaled = test_data / 255.
+
+# encode text category labels
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+le.fit(test_labels)
+
+test_labels_enc = le.transform(test_labels)
+
+print(test_labels[:6], test_labels_enc[:6])
+#%%
+model = predefine_models.get_resnet50v2(INPUT_SHAPE, classes=2)
+model.load_weights(save_weights_path)
+
+# %%
+# this how we get intermedicate layers output form net work
+layer_name = 'dense_7'
+
+intermediate_from_a = model.get_layer(layer_name).output
+
+intermediate_model = tf.keras.models.Model(inputs=model.input,outputs=intermediate_from_a)
+
+#%%
+test_data_feature_map = intermediate_model.predict([test_imgs_scaled[:100]])
+
+# %%
+# run t-SNE
+from sklearn.manifold import TSNE
+
+# perplexity parameter can be changed based on the input datatset
+# dataset with larger number of variables requires larger perplexity
+# set this value between 5 and 50 (sklearn documentation)
+# verbose=1 displays run time messages
+# set n_ite sufficiently high to resolve the well stabilized cluster
+# get embeddings
+tsne_em = TSNE(n_components=2, perplexity=30.0, n_iter=1000, verbose=1).fit_transform(test_data_feature_map)
+# %%
+# plot t-SNE clusters
+from bioinfokit.visuz import cluster
+
+cluster.tsneplot(score=tsne_em)
+# plot will be saved in same directory (tsne_2d.png)

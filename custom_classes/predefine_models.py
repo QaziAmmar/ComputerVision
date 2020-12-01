@@ -177,10 +177,10 @@ def get_resnet50(INPUT_SHAPE, classes):
 
 
 def get_resnet50v2(INPUT_SHAPE, classes):
-    save_weight_path = path.save_models_path + "resnet50v2_weights_tf_dim_ordering_tf_kernels_notop.h5"
 
-    resnet50v2 = tf.keras.applications.ResNet50V2(include_top=False, weights=save_weight_path,
+    resnet50v2 = tf.keras.applications.ResNet50V2(include_top=False, weights=None,
                                                  input_shape=INPUT_SHAPE)
+
     resnet50v2.trainable = True
 
     set_trainable = False
