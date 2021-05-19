@@ -12,9 +12,8 @@ from custom_classes.dataset_loader import *
 # hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
 # just separated into train, test and validation so their read style is just different.
 
-save_weights_path = path.save_models_path + "shalamar_data/binary_resnet50v2.h5"
 
-data_set_base_path = path.dataset_path + "subsample/test/"
+data_set_base_path = path.dataset_path + "shalamar_training_data_balanced/train_test_seprate/train"
 
 test_files, test_labels = process_path(data_set_base_path, ".JPG")
 
@@ -44,7 +43,7 @@ test_data = np.array(list(test_data_map))
 # %%
 print(test_data.shape)
 print('\nTest', Counter(test_labels))
-#%%
+# %%
 BATCH_SIZE = 64
 NUM_CLASSES = 2
 EPOCHS = 25
@@ -61,22 +60,33 @@ le.fit(test_labels)
 test_labels_enc = le.transform(test_labels)
 
 print(test_labels[:6], test_labels_enc[:6])
-#%%
-model = predefine_models.get_resnet50v2(INPUT_SHAPE, classes=2)
+# %%
+# model = testing_models.get_1_CNN(INPUT_SHAPE)
+# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE)
+# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE)
+# model = predefine_models.get_vgg_19_transfer_learning(INPUT_SHAPE)
+# model = predefine_models.get_resnet50_transferLearning(INPUT_SHAPE)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE)
+# %%
+#save_weights_path = path.save_models_path + "shamalar_data/balance_multiclass/balance_multiclass_dense201.h5"
+save_weights_path = path.save_models_path + "shamalar_data/multiclass/multiclass_dense201.h5"
+model = predefine_models.get_densenet201(INPUT_SHAPE,
+                                                   classes=len(np.unique(test_labels)))
 model.load_weights(save_weights_path)
 
 # %%
 # this how we get intermedicate layers output form net work
-layer_name = 'dense_7'
+layer_name = 'dense_13'
 
 intermediate_from_a = model.get_layer(layer_name).output
 
-intermediate_model = tf.keras.models.Model(inputs=model.input,outputs=intermediate_from_a)
-
-#%%
-test_data_feature_map = intermediate_model.predict([test_imgs_scaled[:100]])
+intermediate_model = tf.keras.models.Model(inputs=model.input, outputs=intermediate_from_a)
 
 # %%
+test_data_feature_map = intermediate_model.predict([test_imgs_scaled])
+
+# %%
+RS = 123
 # run t-SNE
 from sklearn.manifold import TSNE
 
@@ -91,5 +101,8 @@ tsne_em = TSNE(n_components=2, perplexity=30.0, n_iter=1000, verbose=1).fit_tran
 # plot t-SNE clusters
 from bioinfokit.visuz import cluster
 
-cluster.tsneplot(score=tsne_em)
+# cluster.tsneplot(score=tsne_em)
 # plot will be saved in same directory (tsne_2d.png)
+
+color_class = test_labels
+cluster.tsneplot(score=tsne_em, colorlist=color_class, legendpos='upper right', legendanchor=(1.35, 1))

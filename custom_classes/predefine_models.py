@@ -7,7 +7,7 @@ from custom_classes import path
 
 # This file contained all models that are working perfectly.
 
-def get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=True, classes=1):
+def get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False, classes=1):
     """
     Model 1: CNN from Scratch.
     This model server for both binary and multiple-class classification of malaria. if you want to do

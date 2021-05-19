@@ -36,7 +36,7 @@ def calculate_distance(img1, img2):
 def get_background_patch_form():
     # This function get mean gary image. Randomly extract 2 patches that we consider as background
     # return these 2 patches.
-    media_path = "/Users/qaziammar/Documents/Pycharm/DjanogPractice/api/media/"
+    media_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/Shalamar_Captured_Malaria/background_images/"
     back_ground_img = cv2.imread(media_path + "background.JPG")
     back_ground_img_1 = cv2.imread(media_path + "background_1.JPG")
 
@@ -48,6 +48,7 @@ def preprocess_image(image):
 
     # Convert RGB to gray scale and improve contrast of the image
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     ####################### without divide path ####################
     # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     # imge_clahe = clahe.apply(gray)
@@ -61,14 +62,16 @@ def preprocess_image(image):
     # Remove the pixels which are very close to the mean. 60 is selected after watching a few images
     # mean_subtracted[mean_subtracted < 60] = 0
     # mobile code
-    # thresh = image_thresh_with_divide(gray, 12)
+    # thresh = image_thresh_with_divide(imge_clahe, 10)
 
     ret, thresh = cv2.threshold(imge_clahe, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     thresh = cv2.bitwise_not(thresh)
     # mean_subtracted[mean_subtracted < mean_subtracted.mean()] = 0
     # for IML microscope kernal size is 12 for opening operation
     # kernel = np.ones((12, 12), np.uint8)
-    # Shalamar Kernal Size
+    # Shalamar Kernal Size (5,5)
+    # Fill the holes inside the cell
+
     kernel = np.ones((5, 5), np.uint8)
     mean_subtracted_open = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
@@ -184,9 +187,9 @@ def save_cells_annotation(annotated_img, labels):
         h = h + 15
         # For BBBC041 cell size must be 130 - 200
         # if (w < 60 or h < 60) or (w > 130 or h > 130):
-        if (w < 130 or h < 130) or (w > 230 or h > 230):
+        if (w < 60 or h < 60) or (w > 130 or h > 130):
             continue
-        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 7)
+        cv2.rectangle(annotated_img, (x, y), (x + w, y + h), (0, 0, 255), 5)
         roi = original_image[y:y + h, x:x + w, :]
 
         # calculate distance with background_img if patch match with background then
@@ -312,5 +315,16 @@ def get_detected_segmentaion(image_name):
     # plot annotation on image
     annotated_img, individual_cell_images, json_object = save_cells_annotation(annotated_img,
                                                                                labels)
+
+    return annotated_img, individual_cell_images, json_object
+
+
+def getBoundingBoxes_from_UNet_detected_segmentaion(image, forground_background_mask):
+
+    annotated_img = image.copy()
+    # get labels with watershed algorithms.
+    labels = watershed_labels(forground_background_mask)
+    # plot annotation on image
+    annotated_img, individual_cell_images, json_object = save_cells_annotation(annotated_img, labels)
 
     return annotated_img, individual_cell_images, json_object

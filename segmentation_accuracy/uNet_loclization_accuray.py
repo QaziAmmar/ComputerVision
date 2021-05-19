@@ -8,7 +8,7 @@ import cv2
 import json
 # import torch
 from custom_classes import path, cv_iml
-from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image import get_detected_segmentaion
+from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image import getBoundingBoxes_from_UNet_detected_segmentaion
 
 
 def intersection_over_union(boxA, boxB):
@@ -64,108 +64,14 @@ def convert_points_into_boxes(points):
     return boxes_array
 
 
-#
-# def intersect(box_a, box_b):
-#     """ We resize both tensors to [A,B,2] without new malloc:
-#     [A,2] -> [A,1,2] -> [A,B,2]
-#     [B,2] -> [1,B,2] -> [A,B,2]
-#     Then we compute the area of intersect between box_a and box_b.
-#     Args:
-#       box_a: (tensor) bounding boxes, Shape: [A,4].
-#       box_b: (tensor) bounding boxes, Shape: [B,4].
-#     Return:
-#       (tensor) intersection area, Shape: [A,B].
-#     """
-#     A = box_a.size(0)
-#     B = box_b.size(0)
-#     max_xy = torch.min(box_a[:, 2:].unsqueeze(1).expand(A, B, 2),
-#                        box_b[:, 2:].unsqueeze(0).expand(A, B, 2))
-#     min_xy = torch.max(box_a[:, :2].unsqueeze(1).expand(A, B, 2),
-#                        box_b[:, :2].unsqueeze(0).expand(A, B, 2))
-#     inter = torch.clamp((max_xy - min_xy), min=0)
-#     return inter[:, :, 0] * inter[:, :, 1]
-
-
-#
-# def jaccard(box_a, box_b):
-#     """Compute the jaccard overlap of two sets of boxes.  The jaccard overlap
-#     is simply the intersection over union of two boxes.  Here we operate on
-#     ground truth boxes and default boxes.
-#     E.g.:
-#         A ∩ B / A ∪ B = A ∩ B / (area(A) + area(B) - A ∩ B)
-#     Args:
-#         box_a: (tensor) Ground truth bounding boxes, Shape: [num_objects,4]
-#         box_b: (tensor) Prior boxes from priorbox layers, Shape: [num_priors,4]
-#     Return:
-#         jaccard overlap: (tensor) Shape: [box_a.size(0), box_b.size(0)]
-#     """
-#     inter = intersect(box_a, box_b)
-#     area_a = ((box_a[:, 2] - box_a[:, 0]) *
-#               (box_a[:, 3] - box_a[:, 1])).unsqueeze(1).expand_as(inter)  # [A,B]
-#     area_b = ((box_b[:, 2] - box_b[:, 0]) *
-#               (box_b[:, 3] - box_b[:, 1])).unsqueeze(0).expand_as(inter)  # [A,B]
-#     union = area_a + area_b - inter
-#     return inter / union  # [A,B]
-#
-#
-# def get_region_props(image):
-#     im = image.copy()
-#
-#     if len(im.shape) == 3 and im.shape[2] == 3:
-#         im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-#
-#     label_image = skimage.measure.label(im)
-#     region_props = skimage.measure.regionprops(label_image)
-#     return region_props
-#
-#
-# def get_iou_score(mask_1: np.ndarray, mask_2: np.ndarray):
-#     props_mask_1 = get_region_props(mask_1)
-#     props_mask_2 = get_region_props(mask_2)
-#
-#     IOU_bbx_mul = np.zeros((props_mask_1.__len__(), props_mask_2.__len__()))
-#
-#     # returning -1 only if there is no gt bbox found
-#     # handle it in your code
-#     if len(props_mask_1) == 0:
-#         return -1
-#
-#     for g_b in range(0, props_mask_1.__len__()):
-#         for p_b in range(0, props_mask_2.__len__()):
-#             IOU_bbx_mul[g_b, p_b] = bb_intersection_over_union(props_mask_1[g_b].bbox, props_mask_2[p_b].bbox)
-#
-#     row_ind, col_ind = linear_sum_assignment(1 - IOU_bbx_mul)
-#
-# # if you calculate true positive, false positives etc using the IoU score. You won't need this calculated IoU. I
-# just made it for calculating average of all calculated_IoU = [] for ir in range(0, len(row_ind)): IOU_bbx_s =
-# IOU_bbx_mul[row_ind[ir], col_ind[ir]]
-#
-#         calculated_IoU.append(IOU_bbx_s)
-#
-#         # if IOU_bbx_s >= 0.5:
-#         #     TP = TP + 1
-#         # else:
-#         #     FP = FP + 1
-#         #     # FN = FN + 1
-#         #     FP_loc = 1
-#     # if (props_im.__len__() - props_gt.__len__()) > 0:
-#     #     FP = FP + (props_im.__len__() - props_gt.__len__())
-#     #     FP_loc = 1
-#
-#     if len(calculated_IoU) > 0:
-#         calculated_IoU_mean = np.mean(calculated_IoU)
-#     else:
-#         calculated_IoU_mean = 0.0
-
-
 # base path of folder where images and annotaion are saved.
-folder_base_path = path.dataset_path + "test/"
+original_images_path = path.dataset_path + "test/"
+masked_images_path = path.result_folder_path + "unet_segmentaion_result/"
 # path of folder where all images are save.
-original_images_path = folder_base_path
 
 all_images_name = path.read_all_files_name_from(original_images_path, '.JPG')
 
-ground_truth_labels_path =  path.dataset_path + "unet_segmentation_data/shalamar_dataset.json"
+ground_truth_labels_path = path.dataset_path + "unet_segmentation_data/shalamar_dataset.json"
 
 # %%
 with open(ground_truth_labels_path) as annotation_path:
@@ -178,24 +84,22 @@ false_negative = 0
 # %%
 # iterate through all images and find TF and FP.
 for single_image_ground_truth in ground_truth:
-    if not(single_image_ground_truth['image_name'] in all_images_name) :
+    if not (single_image_ground_truth['image_name'] in all_images_name):
         continue;
     print(single_image_ground_truth["image_name"])
     # single_image_ground_truth = ground_truth[0]
     original_img = cv2.imread(original_images_path + single_image_ground_truth["image_name"])
+    image_mask = cv2.imread(masked_images_path + single_image_ground_truth["image_name"])
+    image_mask = cv2.cvtColor(image_mask, cv2.COLOR_BGR2GRAY)
 
-    detected_annotated_img, _, json_object = get_detected_segmentaion(
-        original_images_path + single_image_ground_truth["image_name"])
-
-    cv2.imwrite(path.dataset_path + "test_result/" +  single_image_ground_truth["image_name"], detected_annotated_img)
+    detected_annotated_img, _, json_object = getBoundingBoxes_from_UNet_detected_segmentaion(original_img, image_mask)
+    # cv2.imwrite(path.result_folder_path + "unet_loclization_shamalar/" + single_image_ground_truth["image_name"], detected_annotated_img)
 
     detected_boxes = convert_points_into_boxes(json_object)
     ground_truth_boxes = convert_points_into_boxes(single_image_ground_truth["objects"])
     # ground_truth_boxes = detected_boxes
 
     # %%
-    # if 'IMG_4533.JPG' == single_image_ground_truth['image_name']:
-    #     print("debug")
 
     iou_score_2d_array = []
     # make a 2d matrix of iou of all points with other points
@@ -246,17 +150,3 @@ print("Recall:", recall)
 # find F1 score for
 F1 = (2 * precision * recall) / (precision + recall)
 print("F1 Score", F1)
-
-
-
-# precision = len(true_positive_count) / (len(true_positive_count) + (len(detected_boxes) - len(true_positive_count)))
-# recall = len(true_positive_count) / (len(true_positive_count) + false_negative)
-# # find F1 score for
-# F1 = (2 * precision * recall) / (precision + recall)
-
-
-# print("Precision: ", precision)
-# print("Recall:", recall)
-# print("F1 Score", F1)
-
-# MioU = true_positive_sum / (len(true_positive) + false_instances)

@@ -24,7 +24,7 @@ model_name = []
 
 # %%
 # Directory data
-save_weights_path = path.save_models_path + "shamalar_data/multiclass/multiclass_dense201.h5"
+#save_weights_path = path.save_models_path + "shamalar_data/multiclass/multiclass_dense201.h5"
 data_dir = path.dataset_path + "shalamar_training_data_balanced/train_test_seprate/"
 
 # load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_cnn.h5"
@@ -117,30 +117,30 @@ model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classific
 print("Total Layers:", len(model.layers))
 print("Total trainable layers:", sum([1 for l in model.layers if l.trainable]))
 # %%
-# # Model training
+# Model training
+
+import datetime
 #
-# import datetime
-# #
-# logdir = os.path.join(path.save_models_path + "resnet50_BBBC041_checkpoints/",
-#                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-# tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=0)
-# reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-#                                                  patience=2, min_lr=0.000001)
-# # This callback will stop the training when there is no improvement in
-# # the validation loss for three consecutive epochs.
-# earlyStop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
-#
-# callbacks = [reduce_lr, tensorboard_callback, earlyStop]
-#
-# history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
-#                     batch_size=BATCH_SIZE,
-#                     epochs=EPOCHS,
-#                     validation_data=(val_imgs_scaled, val_labels_enc),
-#                     callbacks=callbacks,
-#                     verbose=1)
+logdir = os.path.join(path.save_models_path + "resnet50_BBBC041_checkpoints/",
+                      datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=0)
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                                                 patience=2, min_lr=0.000001)
+# This callback will stop the training when there is no improvement in
+# the validation loss for three consecutive epochs.
+earlyStop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+
+callbacks = [reduce_lr, tensorboard_callback, earlyStop]
+
+history = model.fit(x=train_imgs_scaled, y=train_labels_enc,
+                    batch_size=BATCH_SIZE,
+                    epochs=EPOCHS,
+                    validation_data=(val_imgs_scaled, val_labels_enc),
+                    callbacks=callbacks,
+                    verbose=1)
 
 # %%
-save_weights_path = path.save_models_path + "shamalar_data/multiclass/multiclass_basic.h5"
+save_weights_path = path.save_models_path + "shamalar_data/balance_multiclass_basicCNN.h5"
 
 model.load_weights(save_weights_path)
 # score = model.evaluate(test_imgs_scaled, test_labels_enc)

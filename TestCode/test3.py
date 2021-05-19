@@ -1,60 +1,43 @@
-import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, roc_auc_score
-import numpy as np
+# //  Created by Qazi Ammar Arshad on 18/06/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
-lw = 2
 
-fpr = dict()
-tpr = dict()
-roc_auc = dict()
-class_name = []
+# Generate cell localization on Shalamar Dataset.
 
-test_labels_enc = np.array([[0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 0, 1],
-                            [0, 1, 0],
-                            ])
+from custom_classes import path, cv_iml
+from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image import watershed_labels,\
+    preprocess_image
+import cv2
 
-basic_cnn_preds = np.array([[0, 0, 0.1],
-                            [0, 0, 0.2],
-                            [0, 0, 0.3],
-                            [0, 0, 0.4],
-                            [0, 0, 0.5],
-                            [0, 0, 0.6],
-                            [0, 0, 0.7],
-                            [0, 0, 0.8],
-                            [0, 0, 0.9],
-                            [0, 0, 0.9],
-                            [0, 0, 0.9],
-                            [0, 0.9, 0],
-                            ])
+# base path of folder where images and annotation are saved.
 
-for i in range(3):
-    fpr[i], tpr[i], _ = roc_curve(test_labels_enc[:, i], basic_cnn_preds[:, i])
-    roc_auc[i] = auc(fpr[i], tpr[i])
+folder_base_path = path.dataset_path + "shalamar_segmentation_data/image/FirstSlide/"
+# path of folder where all images are save.
+original_images_path = folder_base_path
+
+# Save generated Mask
+save_images_path = path.dataset_path + "shalamar_segmentation_data/mask/FirstSlideMask/"
+
+
+all_images_name = path.read_all_files_name_from(original_images_path, '.JPG')
 
 # %%
-colors = ['aqua', 'darkorange', 'cornflowerblue', 'navy', 'deeppink', 'aqua', 'darkorange', 'cornflowerblue']
-color_counter = 0
-for key in range(3):
-    plt.plot(list(fpr[key]), list(tpr[key]), color=colors[color_counter], lw=lw,
-             label='ROC curve of Class {0} (area = {1:0.2f})'
-                   ''.format(key, roc_auc[key]))
-    color_counter += 1
+# Read image
+json_dictionary = []
 
-plt.plot([0, 1], [0, 1], 'k--', lw=lw)
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('ROC curve of Single Stage Classifiers')
-plt.legend(loc="lower right")
-plt.show()
+for image_name in all_images_name:
+    # reading images form the folder
+    # get annotation box on images.
+    print(original_images_path + image_name)
+    img = cv2.imread(original_images_path + image_name)
+    forground_background_mask = preprocess_image(img)
+    # classify each boxes as healthy or malaria
+    contours, hierarchy = cv2.findContours(forground_background_mask, cv2.RETR_TREE,
+                                           cv2.CHAIN_APPROX_SIMPLE)
+
+    # %%
+    # filling the "holes" of the cells
+    for cnt in contours:
+        cv2.drawContours(forground_background_mask, [cnt], 0, 255, -1)
+
+    cv2.imwrite(save_images_path + image_name, forground_background_mask)

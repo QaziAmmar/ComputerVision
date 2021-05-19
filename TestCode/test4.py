@@ -38,3 +38,5 @@ print([item for item, count in collections.Counter(all_images_name).items() if c
 #%%
 a = set(all_images_name)
 b = set(annotation_image)
+
+#%%

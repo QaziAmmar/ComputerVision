@@ -14,19 +14,19 @@ from RedBloodCell_Loclization.seg_dr_waqas_watershed_microscope_single_image imp
 import cv2
 
 # base path of folder where images and annotation are saved.
-folder_base_path = path.dataset_path + "/BBBC041/healthy/"
+folder_base_path = path.dataset_path + "/Shalamar_Captured_Malaria/"
 # path of folder where all images are save.
-original_images_path = folder_base_path + "images/"
+original_images_path = folder_base_path + "original_images/"
 # save annotaion path.
 # save_annotation_path = folder_base_path + "code_annotation_file/"
-save_images_path = folder_base_path + "loclization_results/"
+save_images_path = folder_base_path + "temp_loc/"
 
 # save_annotation_path = folder_base_path + "code_generated_annotation/"
 # background_img = cv2.imread(folder_base_path + "background_img.JPG")
 # background_img_1 = cv2.imread(folder_base_path + "back.JPG")
 
-all_images_name = path.read_all_files_name_from(original_images_path, '.jpg')
-all_images_name += path.read_all_files_name_from(original_images_path, '.png')
+all_images_name = path.read_all_files_name_from(original_images_path, '.JPG')
+# all_images_name += path.read_all_files_name_from(original_images_path, '.png')
 
 # %%
 # Read image
