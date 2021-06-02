@@ -65,13 +65,14 @@ def convert_points_into_boxes(points):
 
 
 # base path of folder where images and annotaion are saved.
-original_images_path = path.dataset_path + "test/"
-masked_images_path = path.result_folder_path + "unet_segmentaion_result/"
+
+original_images_path = path.dataset_path + "test_imgs/test/"
+masked_images_path = path.result_folder_path + "unet_combine_crop_segmentation_results/"
 # path of folder where all images are save.
 
 all_images_name = path.read_all_files_name_from(original_images_path, '.JPG')
 
-ground_truth_labels_path = path.dataset_path + "unet_segmentation_data/shalamar_dataset.json"
+ground_truth_labels_path = path.dataset_path + "shalamar_segmentation_data/shalamar_dataset.json"
 
 # %%
 with open(ground_truth_labels_path) as annotation_path:
@@ -93,7 +94,7 @@ for single_image_ground_truth in ground_truth:
     image_mask = cv2.cvtColor(image_mask, cv2.COLOR_BGR2GRAY)
 
     detected_annotated_img, _, json_object = getBoundingBoxes_from_UNet_detected_segmentaion(original_img, image_mask)
-    # cv2.imwrite(path.result_folder_path + "unet_loclization_shamalar/" + single_image_ground_truth["image_name"], detected_annotated_img)
+    cv2.imwrite(path.result_folder_path + "unet_combine_crop_loclization_shamalar/" + single_image_ground_truth["image_name"], detected_annotated_img)
 
     detected_boxes = convert_points_into_boxes(json_object)
     ground_truth_boxes = convert_points_into_boxes(single_image_ground_truth["objects"])

@@ -72,7 +72,7 @@ def get_vgg_19_fine_tune(INPUT_SHAPE, binary_classification=True, classes=1, sav
                                             weights=save_weight_path,
                                             input_shape=INPUT_SHAPE)
     # Freeze the layers
-    vgg.trainable = False
+    vgg.trainable = True
 
     # set_trainable = False
     # for layer in vgg.layers:
@@ -86,10 +86,10 @@ def get_vgg_19_fine_tune(INPUT_SHAPE, binary_classification=True, classes=1, sav
     base_vgg = vgg
     base_out = base_vgg.output
     pool_out = tf.keras.layers.Flatten()(base_out)
-    hidden1 = tf.keras.layers.Dense(512, activation='relu')(pool_out)
-    drop1 = tf.keras.layers.Dropout(rate=0.3)(hidden1)
-    hidden2 = tf.keras.layers.Dense(512, activation='relu')(drop1)
-    drop2 = tf.keras.layers.Dropout(rate=0.3)(hidden2)
+    hidden1 = tf.keras.layers.Dense(8, activation='relu')(pool_out)
+    drop1 = tf.keras.layers.Dropout(rate=0.4)(hidden1)
+    hidden2 = tf.keras.layers.Dense(4, activation='relu')(drop1)
+    drop2 = tf.keras.layers.Dropout(rate=0.4)(hidden2)
 
     if binary_classification:
 
@@ -202,6 +202,7 @@ def get_resnet50v2(INPUT_SHAPE, classes):
 
     out = tf.keras.layers.Dense(classes, activation='softmax')(drop2)
     model = tf.keras.Model(inputs=base_resnet50v2.input, outputs=out)
+
     model.compile(optimizer="adam",
                   loss=tf.losses.categorical_crossentropy,
                   metrics=['accuracy'])

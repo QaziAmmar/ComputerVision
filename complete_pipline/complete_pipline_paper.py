@@ -1,8 +1,9 @@
 # //  Created by Qazi Ammar Arshad on 01/08/2020.
 # //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 """
-this code perform 2 stage classification of malaria cells. This file is only for testing purpose, we train
- both model and then load these model to predict the cells
+ This code perform 2 stage classification of malaria cells. This file is only for testing purpose, we train
+ both model in "Malaria_binaryClass and Malaria_multiclass" folder and then load these models
+ into this file to predict the cells.
 """
 # this code is a testing code that separate the cells after prediction.
 
@@ -140,12 +141,12 @@ print(cnn_indicated_test_labels[:6], cnn_indicated_test_labels_enc[:6])
 
 # %%
 # load model according to your choice.
-# model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
-#                                                      classes=number_of_classes)
+model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
+                                                     classes=number_of_classes)
 # model = predefine_models.get_vgg16(INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
 #                                                classes=number_of_classes)
-model = predefine_models.get_resnet50v2(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+# model = predefine_models.get_resnet50v2(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_densenet121(INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_densenet169(INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_densenet201(INPUT_SHAPE, classes=number_of_classes)

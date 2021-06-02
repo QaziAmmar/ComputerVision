@@ -6,8 +6,8 @@ from custom_classes import path
 import pathlib
 import cv2
 # Directory data
-images_extension = ".JPG"
-data_dir = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/shalamar_training_data/shalamar_origial/"
+images_extension = ".png"
+data_dir = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/cell_imgs/"
 data_dir = pathlib.Path(data_dir)
 
 # %%
@@ -38,7 +38,7 @@ from collections import Counter
 # Generating tanning and testing data.
 train_files, test_files, train_labels, test_labels = train_test_split(files_df['filename'].values,
                                                                       files_df['label'].values,
-                                                                      test_size=0.2,
+                                                                      test_size=0.3,
                                                                       random_state=1)
 # Generating validation data form tanning data.
 train_files, val_files, train_labels, val_labels = train_test_split(train_files,
@@ -50,7 +50,7 @@ print(train_files.shape, val_files.shape, test_files.shape)
 print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
 
 # %%
-base_train_test_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/shalamar_training_data/train_test_seprate/"
+base_train_test_path = "/home/iml/Desktop/qazi/Model_Result_Dataset/Dataset/cell_images_train_test/"
 # save train data
 train_folder = base_train_test_path + "train/"
 # save test data

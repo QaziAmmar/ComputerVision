@@ -1,365 +1,192 @@
-import pandas as pd
-import numpy as np
-import os
-from custom_classes import path
+# //  Created by Qazi Ammar Arshad on 01/08/2020.
+# //  Copyright © 2020 Qazi Ammar Arshad. All rights reserved.
 
-import matplotlib.pyplot as plt
-# %matplotlib inline
-
-from skimage.io import imread, imshow
-from skimage.transform import resize
-
-# Don't Show Warning Messages
-import warnings
-
-warnings.filterwarnings('ignore')
-
-# %%
-IMG_HEIGHT = 128
-IMG_WIDTH = 128
-IMG_CHANNELS = 3
-
-# %%
-folder_base_path = path.dataset_path + 'unet_segmentation_data/'
-
-train_img_list = os.listdir(folder_base_path + 'images/train/')
-train_mask_list = os.listdir(folder_base_path + 'mask/train/')
-
-test_img_list = os.listdir(folder_base_path + '/images/test/')
-test_mask_list = os.listdir(folder_base_path + '/mask/test/')
-
-val_img_list = os.listdir(folder_base_path + '/images/val/')
-val_mask_list = os.listdir(folder_base_path + '/mask/val/')
-
-# %%
-# create a dataframe
-train_df_images = pd.DataFrame(train_img_list, columns=['image_id'])
-test_df_images = pd.DataFrame(test_img_list, columns=['image_id'])
-val_df_images = pd.DataFrame(val_img_list, columns=['image_id'])
-
-# %%
-# ======================================================
-# Add a column showing how many cells are on each image
-# ======================================================
-
-train_df_masks = train_df_images
-test_df_masks = test_df_images
-val_df_masks = val_df_images
-
-# create a new column called mask_id that is just a copy of image_id
-train_df_masks['mask_id'] = train_df_images['image_id']
-test_df_masks['mask_id'] = test_df_images['image_id']
-val_df_masks['mask_id'] = val_df_images['image_id']
-
-train_df_masks.shape
-
-# %%
-# create a test set
-df_test = test_df_masks
-
-# Reset the index.
-# This is so that we can use loc to access mask id's later.
-
-# create a list of test images
-test_images_list = list(df_test['image_id'])
-
-# Select only rows that are not part of the test set.
-# Note the use of ~ to execute 'not in'.
-df_masks = train_df_masks
-
-print(df_masks.shape)
-print(df_test.shape)
-
-# %%
-# Get lists of images and their masks.
-image_id_list = list(df_masks['image_id'])
-mask_id_list = list(df_masks['mask_id'])
-test_id_list = list(df_test['image_id'])
-
-# Create empty arrays
-
-X_train = np.zeros((len(image_id_list), IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS), dtype=np.uint8)
-
-Y_train = np.zeros((len(image_id_list), IMG_HEIGHT, IMG_WIDTH, 1), dtype=np.bool)
-
-X_test = np.zeros((len(test_id_list), IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS), dtype=np.uint8)
-
-Y_test = np.zeros((len(test_id_list), IMG_HEIGHT, IMG_WIDTH, 1), dtype=np.uint8)
-
-# %%
-
-for i, image_id in enumerate(image_id_list):
-    path_image = path.dataset_path + 'mask/images/' + image_id
-
-    # read the image using skimage
-    image = imread(path_image)
-
-    # resize the image
-    image = resize(image, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
-
-    # use np.expand dims to add a channel axis so the shape becomes (IMG_HEIGHT, IMG_WIDTH, 1)
-    # image = np.expand_dims(image, axis=-1)
-
-    # insert the image into X_train
-    X_train[i] = image
-
-X_train.shape
-
-# Y_train
-
-for i, mask_id in enumerate(mask_id_list):
-    path_mask = path.dataset_path + 'mask/mask/' + mask_id
-
-    # read the image using skimage
-    mask = imread(path_mask)
-
-    # resize the image
-    mask = resize(mask, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
-
-    # use np.expand dims to add a channel axis so the shape becomes (IMG_HEIGHT, IMG_WIDTH, 1)
-    mask = np.expand_dims(mask, axis=-1)
-
-    # insert the image into Y_Train
-    Y_train[i] = mask
-
-Y_train.shape
-
-# X_test
-
-for i, image_id in enumerate(test_id_list):
-    path_image = path.dataset_path + 'mask/images/' + image_id
-
-    # read the image using skimage
-    image = imread(path_image)
-
-    # resize the image
-    image = resize(image, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
-
-    # use np.expand dims to add a channel axis so the shape becomes (IMG_HEIGHT, IMG_WIDTH, 1)
-    # image = np.expand_dims(image, axis=-1)
-
-    # insert the image into X_test
-    X_test[i] = image
-
-X_test.shape
-
-# Y_test
-
-for i, mask_id in enumerate(test_id_list):
-    path_mask = path.dataset_path + 'mask/mask/' + mask_id
-
-    # read the image using skimage
-    mask = imread(path_mask)
-
-    # resize the image
-    mask = resize(mask, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
-
-    # use np.expand dims to add a channel axis so the shape becomes (IMG_HEIGHT, IMG_WIDTH, 1)
-    mask = np.expand_dims(mask, axis=-1)
-
-    # insert the image into Y_Train
-    Y_test[i] = mask
-
-Y_test.shape
-
-# %%
-from keras.models import Model, load_model
-from keras.layers import Input
-from keras.layers.core import Dropout, Lambda
-from keras.layers.convolutional import Conv2D, Conv2DTranspose
-from keras.layers.pooling import MaxPooling2D
-from keras.layers.merge import concatenate
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras import backend as K
+#  Traing code
 
 import tensorflow as tf
+from collections import Counter
+from custom_classes import path, predefine_models
+from keras.utils import to_categorical
+from custom_classes.dataset_loader import *
 
-# %% Preparing model
-inputs = Input((IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS))
-
-s = Lambda(lambda x: x / 255)(inputs)
-
-c1 = Conv2D(16, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(s)
-c1 = Dropout(0.1)(c1)
-c1 = Conv2D(16, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c1)
-p1 = MaxPooling2D((2, 2))(c1)
-
-c2 = Conv2D(32, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(p1)
-c2 = Dropout(0.1)(c2)
-c2 = Conv2D(32, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c2)
-p2 = MaxPooling2D((2, 2))(c2)
-
-c3 = Conv2D(64, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(p2)
-c3 = Dropout(0.2)(c3)
-c3 = Conv2D(64, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c3)
-p3 = MaxPooling2D((2, 2))(c3)
-
-c4 = Conv2D(128, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(p3)
-c4 = Dropout(0.2)(c4)
-c4 = Conv2D(128, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c4)
-p4 = MaxPooling2D(pool_size=(2, 2))(c4)
-
-c5 = Conv2D(256, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(p4)
-c5 = Dropout(0.3)(c5)
-c5 = Conv2D(256, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c5)
-
-u6 = Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c5)
-u6 = concatenate([u6, c4])
-c6 = Conv2D(128, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(u6)
-c6 = Dropout(0.2)(c6)
-c6 = Conv2D(128, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c6)
-
-u7 = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c6)
-u7 = concatenate([u7, c3])
-c7 = Conv2D(64, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(u7)
-c7 = Dropout(0.2)(c7)
-c7 = Conv2D(64, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c7)
-
-u8 = Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(c7)
-u8 = concatenate([u8, c2])
-c8 = Conv2D(32, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(u8)
-c8 = Dropout(0.1)(c8)
-c8 = Conv2D(32, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c8)
-
-u9 = Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(c8)
-u9 = concatenate([u9, c1], axis=3)
-c9 = Conv2D(16, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(u9)
-c9 = Dropout(0.1)(c9)
-c9 = Conv2D(16, (3, 3), activation='elu', kernel_initializer='he_normal', padding='same')(c9)
-
-outputs = Conv2D(1, (1, 1), activation='sigmoid')(c9)
-
-model = Model(inputs=[inputs], outputs=[outputs])
-
-model.compile(optimizer='adam', loss='binary_crossentropy')
-
-model.summary()
-
-# %%
-filepath = "model.h5"
-
-# earlystopper = EarlyStopping(patience=5, verbose=1)
-
-checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1,
-                             save_best_only=True, mode='min')
-
-callbacks_list = [checkpoint]
-
-history = model.fit(X_train, Y_train, validation_split=0.1, batch_size=16, epochs=50,
-                    callbacks=callbacks_list)
+# hard_negative_mining_experiments parameter specify the type of experiment. In hard negative mining images are
+# just separated into train, test and validation so their read style is just different.
 
 # %%
 
-# Make a prediction
-# use the best epoch
-model.load_weights('model.h5')
+data_set_base_path = path.dataset_path + "cell_images/"
 
-test_preds = model.predict(X_test)
+INPUT_SHAPE = (125, 125, 3)
 
-preds_test_thresh = (test_preds >= 0.5).astype(np.uint8)
+train_imgs_scaled, train_labels, test_imgs_scaled, test_labels, val_imgs_scaled, val_labels = \
+    load_train_test_val_images_from(data_set_base_path, file_extension=".png", show_train_data=True)
 
-test_img = preds_test_thresh[5, :, :, 0]
+# %%
 
-plt.imshow(test_img, cmap='gray')
+print('Train:', Counter(train_labels), '\nVal', Counter(val_labels), '\nTest', Counter(test_labels))
+
+
+# %%
+# First complete the binary cycle
+
+def _replaceitem(x):
+    if x == 'healthy':
+        return 'healthy'
+    else:
+        return "malaria"
+
+
+# binary_train_labels = list(map(_replaceitem, train_labels))
+# binary_test_labels = list(map(_replaceitem, test_labels))
+# binary_val_labels = list(map(_replaceitem, val_labels))
+binary_train_labels = train_labels
+binary_test_labels = test_labels
+binary_val_labels = val_labels
+
+number_of_binary_classes = len(np.unique(binary_train_labels))
+
+BATCH_SIZE = 64
+
+# encode text category labels
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+le.fit(binary_test_labels)
+
+binary_train_labels_enc = le.transform(binary_train_labels)
+binary_train_labels_enc = to_categorical(binary_train_labels_enc, num_classes=number_of_binary_classes)
+
+binary_test_labels_enc = le.transform(binary_test_labels)
+binary_test_labels_enc = to_categorical(binary_test_labels_enc, num_classes=number_of_binary_classes)
+
+binary_val_labels_enc = le.transform(binary_val_labels)
+binary_val_labels_enc = to_categorical(binary_val_labels_enc, num_classes=number_of_binary_classes)
+
+print(binary_test_labels[:6], binary_test_labels_enc[:6])
+
+# %%
+# load model according to your choice.
+# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
+#                                                classes=number_of_binary_classes)
+model = predefine_models.get_resnet50v2(INPUT_SHAPE=INPUT_SHAPE,
+                                        classes=number_of_binary_classes)
+# model = predefine_models.get_dennet121_transfer_learning(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_binary_classes)
+# model.load_weights("/home/iml/Desktop/qazi/Model_Result_Dataset/SavedModel/shamalar_data/binary/binary_resnet50v2.h5")
+
+# %%
+import datetime
+
+#
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                                                 patience=2, min_lr=0.000001)
+# This callback will stop the training when there is no improvement in
+# the validation loss for three consecutive epochs.
+earlyStop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+
+callbacks = [reduce_lr, earlyStop]
+
+history = model.fit(x=train_imgs_scaled, y=binary_train_labels_enc,
+                    batch_size=BATCH_SIZE,
+                    epochs=25,
+                    validation_data=(val_imgs_scaled, binary_val_labels_enc),
+                    callbacks=callbacks,
+                    verbose=1)
+
+#%%
+import matplotlib.pyplot as plt
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+t = f.suptitle('Basic CNN Performance', fontsize=12)
+f.subplots_adjust(top=0.85, wspace=0.3)
+
+max_epoch = len(history.history['accuracy'])+1
+epoch_list = list(range(1,max_epoch))
+ax1.plot(epoch_list, history.history['accuracy'], label='Train Accuracy')
+ax1.plot(epoch_list, history.history['val_accuracy'], label='Validation Accuracy')
+ax1.set_xticks(np.arange(1, max_epoch, 5))
+ax1.set_ylabel('Accuracy Value')
+ax1.set_xlabel('Epoch')
+ax1.set_title('Accuracy')
+l1 = ax1.legend(loc="best")
+
+ax2.plot(epoch_list, history.history['loss'], label='Train Loss')
+ax2.plot(epoch_list, history.history['val_loss'], label='Validation Loss')
+ax2.set_xticks(np.arange(1, max_epoch, 5))
+ax2.set_ylabel('Loss Value')
+ax2.set_xlabel('Epoch')
+ax2.set_title('Loss')
+l2 = ax2.legend(loc="best")
 plt.show()
+# %%
+# This cell shows the accuracy and loss graph and save the model for next time usage.
+
+binary_load_weights_path = path.save_models_path + "BBBC041/balance_binary_resnet50v2.h5"
+
+model.load_weights(binary_load_weights_path)
 
 # %%
-# loop trhour all images and save them into a separate folder
-import cv2
+# Model Performance Evaluation
+cnn_preds_binary = model.predict(test_imgs_scaled, batch_size=512)
+# # Making prediction lables for multiclass
+cnn_preds_binary = cnn_preds_binary.argmax(1)
+prediction_labels_binary = le.inverse_transform(cnn_preds_binary)
+cv_iml.get_f1_score(binary_test_labels, prediction_labels_binary, binary_classifcation=False, pos_label='malaria',
+                    confusion_matrix_title="Binary classification Result")
 
-save_segmantaion_path = path.result_folder_path + "unet_segmentaion_result/"
-count = 0
-for img, img_name in zip(preds_test_thresh, test_img_list):
-    test_img = preds_test_thresh[count, :, :, 0] * 255
-    resized = cv2.resize(test_img, (1280, 960), interpolation=cv2.INTER_NEAREST)
-    cv2.imwrite(save_segmantaion_path + img_name, resized)
-    count += 1
+# %%
+# only chose those test images which are classified as malaria by binary cnn
+cnn_indicated_test_imgs_scaled = test_imgs_scaled[prediction_labels_binary == "malaria"]
+cnn_indicated_test_labels = test_labels[prediction_labels_binary == "malaria"]
+print(Counter(cnn_indicated_test_labels))
+# %%
+# section for multiclass classification.
+number_of_classes = len(list(np.unique(train_labels)))
 
-# %% # set up the canvas for the subplots
-plt.figure(figsize=(10, 10))
-plt.axis('Off')
+le = LabelEncoder()
+le.fit(train_labels)
 
-# Our subplot will contain 3 rows and 3 columns
-# plt.subplot(nrows, ncols, plot_number)
+cnn_indicated_test_labels_enc = le.transform(cnn_indicated_test_labels)
+cnn_indicated_test_labels_enc = to_categorical(cnn_indicated_test_labels_enc, num_classes=number_of_classes)
 
+print(cnn_indicated_test_labels[:6], cnn_indicated_test_labels_enc[:6])
 
-# == row 1 ==
+# %%
+# load model according to your choice.
+model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
+                                                   classes=number_of_classes)
+# model = predefine_models.get_vgg16(INPUT_SHAPE, classes=number_of_classes)
+# model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
+#                                                classes=number_of_classes)
+# model = predefine_models.get_resnet50v2(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes)
+# model = predefine_models.get_densenet121(INPUT_SHAPE, classes=number_of_classes)
+# model = predefine_models.get_densenet169(INPUT_SHAPE, classes=number_of_classes)
+# model = predefine_models.get_densenet201(INPUT_SHAPE, classes=number_of_classes)
 
-# image
-plt.subplot(3, 3, 1)
-test_image = X_test[1, :, :, 0]
-plt.imshow(test_image)
-plt.title('Test Image', fontsize=14)
-plt.axis('off')
+# %%
+# This cell shows the accuracy and loss graph and save the model for next time usage.
 
-# true mask
-plt.subplot(3, 3, 2)
-mask_id = df_test.loc[1, 'mask_id']
-path_mask = path.dataset_path + 'mask/mask/' + mask_id
-mask = imread(path_mask)
-mask = resize(mask, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
-plt.imshow(mask, cmap='gray')
-plt.title('True Mask', fontsize=14)
-plt.axis('off')
+load_weights_path = path.save_models_path + "shamalar_data/balance_multiclass/balance_multiclass_resnet50v2.h5"
 
-# predicted mask
-plt.subplot(3, 3, 3)
-test_mask = preds_test_thresh[1, :, :, 0]
-plt.imshow(test_mask, cmap='gray')
-plt.title('Pred Mask', fontsize=14)
-plt.axis('off')
+model.load_weights(load_weights_path)
+score = model.evaluate(cnn_indicated_test_imgs_scaled, cnn_indicated_test_labels_enc)
+print('Test loss:', score[0])
+print('Test accuracy:', score[1])
+# get all the images which are healthy but our model predicts them as healthy
 
-# == row 2 ==
+# %%
 
-# image
-plt.subplot(3, 3, 4)
-test_image = X_test[2, :, :, 0]
-plt.imshow(test_image)
-plt.title('Test Image', fontsize=14)
-plt.axis('off')
+# Model Performance Evaluation
+cnn_preds = model.predict(cnn_indicated_test_imgs_scaled, batch_size=512)
+# # Making prediction lables for multiclass
+cnn_preds = cnn_preds.argmax(1)
+prediction_labels = le.inverse_transform(cnn_preds)
+# cv_iml.get_f1_score(cnn_indicated_test_labels, prediction_labels, binary_classifcation=False, pos_label='malaria',
+#                     confusion_matrix_title="Two Stage classification")
 
-# true mask
-plt.subplot(3, 3, 5)
-mask_id = df_test.loc[2, 'mask_id']
-path_mask = path.dataset_path + 'mask/images/' + mask_id
-mask = imread(path_mask)
-mask = resize(mask, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
-plt.imshow(mask, cmap='gray')
-plt.title('True Mask', fontsize=14)
-plt.axis('off')
+# combined F1 score for stage 1 and stage 2
+cnn_indicated_healthy_labels = test_labels[prediction_labels_binary == "healthy"]
+prediction_labels_binary = prediction_labels_binary[prediction_labels_binary == "healthy"]
+print(Counter(cnn_indicated_test_labels))
 
-# predicted mask
-plt.subplot(3, 3, 6)
-test_mask = preds_test_thresh[2, :, :, 0]
-plt.imshow(test_mask, cmap='gray')
-plt.title('Pred Mask', fontsize=14)
-plt.axis('off')
-
-# == row 3 ==
-
-# image
-plt.subplot(3, 3, 7)
-test_image = X_test[3, :, :, 0]
-plt.imshow(test_image)
-plt.title('Test Image', fontsize=14)
-plt.axis('off')
-
-# true mask
-plt.subplot(3, 3, 8)
-mask_id = df_test.loc[3, 'mask_id']
-path_mask = path.dataset_path + 'mask/mask/' + mask_id
-mask = imread(path_mask)
-mask = resize(mask, (IMG_HEIGHT, IMG_WIDTH), mode='constant', preserve_range=True)
-plt.imshow(mask, cmap='gray')
-plt.title('True Mask', fontsize=14)
-plt.axis('off')
-
-# predicted mask
-plt.subplot(3, 3, 9)
-test_mask = preds_test_thresh[3, :, :, 0]
-plt.imshow(test_mask, cmap='gray')
-plt.title('Pred Mask', fontsize=14)
-plt.axis('off')
-
-plt.tight_layout()
-plt.show()
+cv_iml.get_f1_score(np.concatenate((cnn_indicated_test_labels, cnn_indicated_healthy_labels)),
+                    np.concatenate((prediction_labels, prediction_labels_binary)), binary_classifcation=False,
+                    pos_label='malaria', confusion_matrix_title="Two Stage classification")

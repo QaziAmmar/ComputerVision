@@ -12,7 +12,7 @@ IMG_DIMS = (125, 125)
 
 #  load test data.
 
-test_dataset_path = path.dataset_path + "IML_cell_images/test/malaria/"
+test_dataset_path = path.dataset_path + "BBBC041_test/"
 files_names = path.read_all_files_name_from(test_dataset_path, ".JPG")
 test_files = []
 for name in files_names:
@@ -49,7 +49,7 @@ print(test_data.shape)
 
 test_imgs_scaled = test_data / 255.
 
-train_labels = ['gametocyte', 'leukocyte', 'ring', 'schizont', 'trophozoite']
+train_labels = ['gametocyte', 'healthy', 'ring', 'schizont', 'trophozoite']
 
 number_of_classes = len(train_labels)
 le = LabelEncoder()

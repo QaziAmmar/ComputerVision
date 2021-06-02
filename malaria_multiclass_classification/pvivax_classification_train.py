@@ -24,7 +24,7 @@ model_name = []
 
 # %%
 # Directory data
-#save_weights_path = path.save_models_path + "shamalar_data/multiclass/multiclass_dense201.h5"
+# save_weights_path = path.save_models_path + "shamalar_data/multiclass/multiclass_dense201.h5"
 data_dir = path.dataset_path + "shalamar_training_data_balanced/train_test_seprate/"
 
 # load_weights_path = path.save_models_path + "IML_binary_CNN_experimtents/cell_images_basic_cnn.h5"
@@ -81,30 +81,8 @@ def custom_loss(y_true, y_pred):
 
 
 # %%
-# def getvgg19(INPUT_SHAPE=INPUT_SHAPE, classes=number_of_classes):
-#     save_weight_path = path.save_models_path + "vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
-#     vgg = tf.keras.applications.vgg19.VGG19(include_top=False,
-#                                             weights=save_weight_path,
-#                                             input_shape=INPUT_SHAPE)
-#
-#     base_vgg = vgg
-#     base_out = base_vgg.output
-#     pool_out = tf.keras.layers.Flatten()(base_out)
-#
-#     out = tf.keras.layers.Dense(classes, activation='softmax')(pool_out)
-#
-#     model = tf.keras.Model(inputs=base_vgg.input, outputs=out)
-#     model.compile(optimizer="adam",
-#                   loss=tf.losses.categorical_crossentropy,
-#                   metrics=['accuracy'])
-#
-#     model.summary()
-#     return model
-
-
-# %%
 model = predefine_models.get_basic_CNN_for_malaria(INPUT_SHAPE, binary_classification=False,
-                                                    classes=number_of_classes)
+                                                   classes=number_of_classes)
 # model = predefine_models.get_vgg16(INPUT_SHAPE, classes=number_of_classes)
 # model = predefine_models.get_vgg_19_fine_tune(INPUT_SHAPE=INPUT_SHAPE, binary_classification=False,
 #                                                       classes=number_of_classes)
@@ -120,6 +98,7 @@ print("Total trainable layers:", sum([1 for l in model.layers if l.trainable]))
 # Model training
 
 import datetime
+
 #
 logdir = os.path.join(path.save_models_path + "resnet50_BBBC041_checkpoints/",
                       datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -184,7 +163,6 @@ prediction_labels = le.inverse_transform(basic_cnn_preds)
 cv_iml.get_f1_score(test_labels, prediction_labels, pos_label='malaria', binary_classifcation=False,
                     confusion_matrix_title="Single Stage confusion matrix")
 
-
 # %%
 
 # plot ROC Curve for the code.
@@ -195,7 +173,7 @@ cv_iml.get_f1_score(test_labels, prediction_labels, pos_label='malaria', binary_
 
 # print("One-vs-Rest ROC AUC scores:\n{:.6f} (macro),".format(macro_roc_auc_ovr))
 
-#%%
+# %%
 
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, roc_auc_score
