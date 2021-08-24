@@ -11,9 +11,9 @@ List of class that can support in Computer Vision task.
 
 | Class Name | Link |
 | ------ | ------ |
-| cv_iml | [https://github.com/QaziAmmar/ComputerVision/blob/master/custom_classes/cv_iml.py][PlDb] |
-| path | [https://github.com/QaziAmmar/ComputerVision/blob/master/custom_classes/path.py][PlDb] |
-| perdefine_models | [https://github.com/QaziAmmar/ComputerVision/blob/master/custom_classes/predefine_models.py][PlDb] |
+| cv_iml | https://github.com/QaziAmmar/ComputerVision/blob/master/custom_classes/cv_iml.py|
+| path | https://github.com/QaziAmmar/ComputerVision/blob/master/custom_classes/path.py |
+| perdefine_models | https://github.com/QaziAmmar/ComputerVision/blob/master/custom_classes/predefine_models.py][PlDb |
 
 
 
